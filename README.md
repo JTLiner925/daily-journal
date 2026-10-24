@@ -2,7 +2,7 @@
 
 A private, phone-first journal: thoughts, notes, meetings, scripture notes, a morning Office with a daily reading plan, and an evening Examen. Entries can be pushed to Notion.
 
-**Status:** sign-in and saving are live on Supabase. Every form saves to your private `entries` table, and your lists, People, follow-ups, reading plan and week view are built from what you've saved. Not built yet: Notion push, live ESV lookup (only a few sample verses work), and voice transcription.
+**Status:** sign-in and saving are live on Supabase. Every form saves to your private `entries` table, and your lists, People, follow-ups, reading plan and week view are built from what you've saved. Not built yet: live ESV lookup (only a few sample verses work).
 
 ## Turn on real sign-in
 
@@ -30,3 +30,11 @@ Entries with "Push to Notion" ticked are sent to the **Daily Journal** page in N
 4. Supabase → **Edge Functions → Deploy a new function → Via Editor:** name it `notion-push`, paste `index.ts`, deploy (leave "Verify JWT" on).
 
 Settings → Notion shows "Connected" once it works. Re-sending an entry replaces its earlier Notion page.
+
+## Voice notes
+
+Every text box has a **Record** button. It records audio (saved privately to Supabase Storage and attached to the entry) and, where the browser supports it, transcribes as you talk using the browser's own free speech recognition. No paid service is used.
+
+One-time setup: run [`supabase/audio.sql`](supabase/audio.sql) in the Supabase SQL Editor to create the private `audio` bucket.
+
+Notes: recording needs the microphone permission and HTTPS (GitHub Pages is HTTPS); audio is only saved while online; Notion gets the transcript text, not the audio file.

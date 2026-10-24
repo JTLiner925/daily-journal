@@ -552,6 +552,8 @@
   const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const CFG=window.JOURNAL_CONFIG||{};
   const sb=(CFG.url&&CFG.anonKey&&window.supabase)?window.supabase.createClient(CFG.url,CFG.anonKey):null;
+  const AUDIO={};let CURRENT_UID=null;
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   function show(id){$$('.view').forEach(v=>v.classList.toggle('active',v.id===id));window.scrollTo(0,0)}
   let cur='home';
   const base=p=>p.replace(/-new$/,'');
@@ -741,6 +743,7 @@
   document.addEventListener('click',e=>{
     const mb=e.target.closest('.mini');
     if(mb){
+      if(mb.dataset.play){playAudio(mb);return}
       if(mb.dataset.del!==undefined){delEntry(mb.dataset.del);return}
       if(mb.dataset.send){pushEntry(mb.dataset.send);return}
       toast(sb?'That’s coming soon.':'Mockup: this would '+mb.textContent.toLowerCase());return}
@@ -758,7 +761,7 @@
     const r=document.createElement('div');r.className='rec';
     r.innerHTML='<button type="button" class="recbtn">🎙 Record</button><span class="rtime"></span><span class="bars"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="rmsg">Audio is transcribed into the box above</span>';
     ta.after(r);
-    if(sb){r.querySelector('.recbtn').disabled=true;r.querySelector('.rmsg').textContent='Voice transcription is coming soon';return}
+    if(sb){setupRealRecorder(ta,r);return}
     let t=0,iv=null;const btn=r.querySelector('.recbtn'),tm=r.querySelector('.rtime'),msg=r.querySelector('.rmsg');
     const fmt=s=>Math.floor(s/60)+':'+String(s%60).padStart(2,'0');
     btn.onclick=()=>{
@@ -822,8 +825,8 @@
 
   // Quick capture (floating +)
   const qc=$('#qcModal'),qcRec=$('#qcModal .rec');
-  function qcStopIfLive(){if(!sb&&qcRec.classList.contains('live'))qcRec.querySelector('.recbtn').click()}
-  function openQC(){$('#qcText').value='';qc.classList.add('open');if(!sb&&!qcRec.classList.contains('live'))qcRec.querySelector('.recbtn').click();else if(sb)$('#qcText').focus()}
+  function qcStopIfLive(){if(qcRec.classList.contains('live'))qcRec.querySelector('.recbtn').click()}
+  function openQC(){$('#qcText').value='';delete AUDIO.qc;qc.classList.add('open');if(!qcRec.classList.contains('live'))qcRec.querySelector('.recbtn').click()}
   function closeQC(){qcStopIfLive();qc.classList.remove('open')}
   $('#fab').onclick=openQC;
   $('#qcClose').onclick=$('#qcCancel').onclick=closeQC;
@@ -831,11 +834,13 @@
   document.addEventListener('keydown',e=>{if(e.key==='Escape'&&qc.classList.contains('open'))closeQC()});
   $('#qcSave').onclick=async()=>{
     const k=qc.querySelector('.chip.on').textContent.toLowerCase();
-    const live=!sb&&qcRec.classList.contains('live');
-    if(live){qcRec.querySelector('.recbtn').click();await new Promise(r=>setTimeout(r,1400))}
+    if(qcRec.classList.contains('live')){
+      if(sb){qcRec._stop();await qcRec._busy}else{qcRec.querySelector('.recbtn').click();await new Promise(r=>setTimeout(r,1400))}
+    }else if(sb)await qcRec._busy;
     const text=$('#qcText').value.trim();closeQC();
     if(!text){toast('Nothing to save yet');return}
     const body=k==='note'?{folder:'Inbox',text}:k==='thought'?{category:'',text}:{text};
+    const au=takeAudio('qc');if(au)body.audio=au;
     const st=await saveRow(k,snip(text,50),snip(text),body);
     toast(st==='queued'?QUEUED_MSG:'✓ Saved as a '+k);
   };
@@ -945,6 +950,75 @@
   $('#expJson').onclick=()=>download('journal-backup.json',JSON.stringify(sb?DBROWS:ENTRIES.map(e=>({type:e[0],title:e[1],summary:e[2],when:e[3],sentToNotion:!!e[4],detail:strip(e[5])})),null,2),'application/json');
   $('#expMd').onclick=()=>download('journal-backup.md',ENTRIES.map(e=>`## ${e[1]}\n_${e[0]} · ${e[3]}_\n\n${strip(e[5])}\n`).join('\n'),'text/markdown');
 
+  // ===== Voice: records audio to Supabase Storage + free in-browser dictation =====
+  const formOf=ta=>{const pg=ta.closest('.page');return pg?base(pg.id):'qc'};
+  const takeAudio=k=>{const a=AUDIO[k];delete AUDIO[k];return a&&a.length?a:null};
+  async function settleRecorders(type){
+    const recs=$$('#'+(type==='qc'?'qcModal':type+'-new')+' .rec');
+    recs.forEach(r=>r._stop&&r._stop());
+    await Promise.all(recs.map(r=>r._busy));
+  }
+  function setupRealRecorder(ta,r){
+    const btn=r.querySelector('.recbtn'),tm=r.querySelector('.rtime'),msg=r.querySelector('.rmsg');
+    msg.textContent='Records audio'+(SR?' and transcribes as you talk':'');
+    const fmt=s=>Math.floor(s/60)+':'+String(s%60).padStart(2,'0');
+    let stream,mr,chunks=[],t=0,iv=null,sr=null,live=false,base0='',got=false;
+    r._busy=Promise.resolve();
+    function stop(){
+      if(!live)return;live=false;clearInterval(iv);r.classList.remove('live');btn.textContent='🎙 Record';
+      if(sr){const s0=sr;sr=null;try{s0.stop()}catch(e){}}
+      if(mr&&mr.state!=='inactive')mr.stop();
+    }
+    r._stop=stop;
+    btn.onclick=async()=>{
+      if(live){stop();return}
+      try{stream=await navigator.mediaDevices.getUserMedia({audio:true})}
+      catch(e){msg.textContent='Microphone blocked. Allow it in your browser’s site settings.';return}
+      const mime=window.MediaRecorder&&MediaRecorder.isTypeSupported('audio/webm')?'audio/webm':'audio/mp4';
+      mr=new MediaRecorder(stream);chunks=[];got=false;
+      mr.ondataavailable=e=>{if(e.data&&e.data.size)chunks.push(e.data)};
+      r._busy=new Promise(res=>{r._res=res});
+      mr.onstop=async()=>{
+        stream.getTracks().forEach(x=>x.stop());
+        const secs=Math.max(t,1),blob=new Blob(chunks,{type:mr.mimeType||mime});
+        try{
+          if(isOffline()){msg.textContent='Offline, so the audio wasn’t saved'+(got?'. Your transcript was kept.':'.');return}
+          msg.textContent='Saving audio…';
+          const ext=blob.type.includes('webm')?'webm':'m4a',path=`${CURRENT_UID}/${Date.now()}-${Math.random().toString(36).slice(2,8)}.${ext}`;
+          const {error}=await sb.storage.from('audio').upload(path,blob,{contentType:blob.type});
+          if(error){msg.textContent='Couldn’t save the audio: '+error.message;return}
+          const k=formOf(ta);(AUDIO[k]=AUDIO[k]||[]).push({path,secs,mime:blob.type});
+          msg.innerHTML='<span class="audio-chip">🎧 '+fmt(secs)+' audio saved</span>'+(got?' · transcribed ✓':'');
+        }finally{r._res()}
+      };
+      mr.start();live=true;t=0;tm.textContent='0:00';r.classList.add('live');btn.textContent='⏹ Stop';
+      msg.textContent=SR?'Listening…':'Recording (this browser can’t transcribe live)';
+      iv=setInterval(()=>{t++;tm.textContent=fmt(t)},1000);
+      if(SR){
+        base0=ta.value;
+        const start=()=>{
+          const s0=new SR();sr=s0;s0.continuous=true;s0.interimResults=true;s0.lang='en-US';
+          s0.onresult=e=>{
+            let fin='',interim='';
+            for(let i=0;i<e.results.length;i++){const tx=e.results[i][0].transcript;if(e.results[i].isFinal)fin+=tx.trim()+' ';else interim+=tx}
+            const say=(fin+interim).trim();if(say)got=true;
+            ta.value=base0+(base0&&say&&!base0.endsWith('\n')?'\n':'')+say;
+          };
+          s0.onerror=e=>{if(e.error==='not-allowed'||e.error==='service-not-allowed'||e.error==='language-not-supported'){sr=null;msg.textContent='Live transcription isn’t available here. Recording audio only.'}};
+          s0.onend=()=>{if(live&&sr===s0){base0=ta.value;try{start()}catch(e){}}};
+          try{s0.start()}catch(e){sr=null}
+        };
+        start();
+      }
+    };
+  }
+  async function playAudio(btn){
+    if(btn.nextElementSibling&&btn.nextElementSibling.tagName==='AUDIO'){btn.nextElementSibling.remove();return}
+    const {data,error}=await sb.storage.from('audio').createSignedUrl(btn.dataset.play,3600);
+    if(error||!data){toast('Couldn’t load that recording');return}
+    btn.insertAdjacentHTML('afterend',`<audio controls autoplay src="${esc(data.signedUrl)}" style="display:block;margin-top:8px;max-width:100%"></audio>`);
+  }
+
   // ===== Data layer (Supabase) =====
   let DBROWS=[];
   const snip=(t,n=70)=>t.length>n?t.slice(0,n).trim()+'…':t;
@@ -980,6 +1054,7 @@
     if(r.type==='scripture')html=T('Notes',nl(b.text))+T('Tags',esc(b.tags));
     if(r.type==='office')html=T('Readings',esc([b.psalmRef,b.proverbRef,b.ntRef].filter(Boolean).join(' · ')))+T('Psalm',nl(b.psalm))+T('Proverb',nl(b.proverb))+T('New Testament',nl(b.nt))+T('Praying for',nl(b.praying))+T('Intention',nl(b.intention));
     if(r.type==='examen')html=T('Gratitude',nl(b.gratitude))+T('Emotions',esc([b.emotions,b.emotionsNote].filter(Boolean).join(' — ')))+T('Prayer',nl(b.prayer))+T('Tomorrow',nl(b.tomorrow));
+    if((b.audio||[]).length)html+=kv('Audio',b.audio.map(a=>`<button class="mini" data-play="${esc(a.path)}">▶ ${Math.floor(a.secs/60)}:${String(a.secs%60).padStart(2,'0')}</button>`).join(' '));
     if(!html)html='<div class="kv"><span>No details.</span></div>';
     return [r.type,esc(r.title||'Untitled'),esc(r.summary||''),when,r.pending?2:(r.sent_to_notion?1:0),html,r.id,r.created_at,b];
   }
@@ -1078,8 +1153,11 @@
     if(!id){return}
     if(id.startsWith('q')){const q=loadQ();q.splice(+id.slice(1),1);saveQ(q);rebuild();return}
     if(!confirm('Delete this entry? This can’t be undone.'))return;
+    const gone=DBROWS.find(r=>r.id===id);
     const {error}=await sb.from('entries').delete().eq('id',id);
     if(error){toast('Couldn’t delete: '+error.message);return}
+    const files=((gone&&gone.body&&gone.body.audio)||[]).map(a=>a.path);
+    if(files.length)sb.storage.from('audio').remove(files);
     DBROWS=DBROWS.filter(r=>r.id!==id);rebuild();toast('Entry deleted');
   }
 
@@ -1106,6 +1184,7 @@
   };
   function resetForm(type){
     const pg=$('#'+type+'-new');
+    delete AUDIO[type];pg.querySelectorAll('.rec .rmsg').forEach(m=>{if(sb)m.textContent='Records audio'+(SR?' and transcribes as you talk':'')});
     pg.querySelectorAll('textarea').forEach(t=>t.value='');
     pg.querySelectorAll('input:not([type=checkbox]):not([type=date]):not([type=time])').forEach(i=>i.value='');
     pg.querySelectorAll('.emo .chip.on').forEach(c=>c.classList.remove('on'));
@@ -1115,8 +1194,10 @@
   let saving=false;
   async function submitForm(type){
     if(saving)return;
+    await settleRecorders(type);
     const c=COLLECT[type]();
     if(!c){toast('Add a little something first');return}
+    const au=takeAudio(type);if(au)c.body.audio=au;
     saving=true;
     try{
       const st=await saveRow(type,c.title,c.summary,c.body);
@@ -1129,7 +1210,7 @@
   window.addEventListener('offline',renderSync);
 
   // ===== Sign-in (Supabase Auth; demo mode until config.js is filled in) =====
-  async function enterApp(){show('app');await loadRows();await checkNotion();await flushQueue()}
+  async function enterApp(){show('app');const u=await sb.auth.getUser();CURRENT_UID=u.data&&u.data.user?u.data.user.id:null;await loadRows();await checkNotion();await flushQueue()}
   async function doLogin(e){
     e.preventDefault();
     if(!sb){show('app');return}
