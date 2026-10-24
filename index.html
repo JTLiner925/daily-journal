@@ -195,6 +195,29 @@
   .bpanel textarea{min-height:90px;font-size:15px}.bpanel input{margin-top:6px}
   .plink{background:none;border:0;color:var(--accent);padding:0;font-weight:600;text-decoration:underline;cursor:pointer}
 
+
+  .fnline{white-space:pre-wrap;font-size:13px;color:var(--muted);line-height:1.9;font-family:var(--sans);margin:0}.fnline b{color:var(--ink)}
+  .otext{margin:8px 0 12px}.otbox{max-height:380px;overflow:auto;border:1px solid var(--line);border-radius:var(--radius-sm);background:var(--field);padding:12px 16px;font-family:var(--serif);font-size:17px;line-height:1.85}
+  .otbox .bp{margin:0 0 .8em}
+  /* Scripture memory */
+  .mcard{border:1px solid var(--line);border-radius:var(--radius-sm);background:var(--field);padding:12px 14px;margin:10px 0}
+  .mcard .mt{display:flex;justify-content:space-between;gap:8px;align-items:baseline;flex-wrap:wrap}
+  .mcard .mt b{font-family:var(--serif);font-size:18px;font-weight:500}
+  .mbadge{display:inline-block;font-size:11px;border-radius:99px;padding:2px 9px;background:var(--accent-soft);color:var(--accent);margin:6px 6px 0 0}
+  .mbtns{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px}
+  .mbtns select{width:auto;padding:6px 10px;font-size:13px}
+  .mdue{font-size:12px;color:var(--muted)}.mdue.now{color:var(--gold);font-weight:600}
+  .mex{font-family:var(--serif);font-size:20px;line-height:2.2;margin:12px 0}
+  .blank{min-width:3ch;border:0;border-bottom:2px solid var(--accent);background:color-mix(in srgb,var(--accent) 8%,transparent);color:var(--ink);font:inherit;padding:0 6px;border-radius:4px 4px 0 0;cursor:pointer;height:1.5em;vertical-align:baseline}
+  .blank.active{background:color-mix(in srgb,var(--accent) 24%,transparent)}
+  .blank.ok{border-color:var(--sage);background:color-mix(in srgb,var(--sage) 22%,transparent)}.blank.bad{border-color:#d86a6a;background:rgba(216,106,106,.22)}
+  .bank{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0;padding:12px;border:1px dashed var(--line);border-radius:var(--radius-sm)}
+  .bw{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:99px;padding:6px 14px;font-size:15px}
+  .bw:hover{border-color:var(--accent)}.bw[disabled]{opacity:.25;cursor:default}
+  .fl{display:inline-block;min-width:.7em;text-align:center;font-weight:600;color:var(--accent);letter-spacing:.02em}.fl.hid{color:var(--muted);font-weight:400}
+  .good{color:var(--sage)}.miss{color:#d86a6a;text-decoration:underline}
+  .mtabs{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
+
   .toast{position:fixed;bottom:24px;left:50%;transform:translate(-50%,20px);background:var(--ink);color:var(--bg);padding:12px 20px;border-radius:99px;font-size:14px;opacity:0;pointer-events:none;transition:.25s;z-index:9}
   .toast.show{opacity:1;transform:translate(-50%,0)}
 
@@ -304,6 +327,7 @@
     <a class="extra" data-p="note"><span>📝</span><span>Note</span></a>
     <a class="extra" data-p="meeting"><span>🤝</span><span>Meeting</span></a>
     <a class="extra" data-p="bible"><span>📜</span><span>Bible</span></a>
+    <a class="extra" data-p="memory"><span>🧠</span><span>Memorize</span></a>
     <a class="extra" data-p="scripture"><span>📖</span><span>Scripture</span></a>
     <a class="extra" data-p="people"><span>👥</span><span>People</span></a>
     <div class="sep"></div>
@@ -339,6 +363,7 @@
       </div>
       <div class="card" id="weekCard"></div>
       <div class="card" id="followCard"></div>
+      <div class="card" id="memDueCard" hidden></div>
       <div class="card">
         <h3 style="margin-bottom:6px">Today so far</h3>
         <div id="todayList"></div>
@@ -477,6 +502,7 @@
     <!-- MORNING OFFICE -->
     <div class="page" id="office-new">
       <div class="eyebrow">Daily Office · Morning · <span id="planDayLbl"></span></div>
+      <div class="hint" style="margin:2px 0 8px">Version <select id="oTrans" style="width:auto;display:inline-block;padding:6px 10px"><option>CSB</option><option>NIV</option><option>NLT</option></select></div>
       <div class="steps dots"></div>
       <div class="card">
         <div class="xstep active">
@@ -488,16 +514,19 @@
         <div class="xstep">
           <div class="num">Step 2 of 6 · Psalm</div><h2 class="refbadge" data-ref="psalm"></h2>
           <p class="prompt">Read today's psalm slowly, aloud if you can. What word or phrase stands out?</p>
+          <div class="otext" data-ot="psalm"></div>
           <textarea placeholder="A word or phrase that stood out…" style="min-height:90px"></textarea>
         </div>
         <div class="xstep">
           <div class="num">Step 3 of 6 · Proverb</div><h2 class="refbadge" data-ref="proverb"></h2>
           <p class="prompt">Read today's chapter of Proverbs. What wisdom is it offering you today?</p>
+          <div class="otext" data-ot="proverb"></div>
           <textarea placeholder="What is God saying to me here?" style="min-height:90px"></textarea>
         </div>
         <div class="xstep">
           <div class="num">Step 4 of 6 · New Testament</div><h2 class="refbadge" data-ref="nt"></h2>
           <p class="prompt">Read today's chapter. How does it invite you to live today?</p>
+          <div class="otext" data-ot="nt"></div>
           <textarea placeholder="What will I carry into today?" style="min-height:90px"></textarea>
         </div>
         <div class="xstep">
@@ -555,7 +584,7 @@
 
     <!-- LIST PAGES (rendered by script) -->
     <div class="page" id="thought"></div><div class="page" id="note"></div><div class="page" id="meeting"></div>
-    <div class="page" id="scripture"></div><div class="page" id="people"></div><div class="page" id="office"></div><div class="page" id="examen"></div>
+    <div class="page" id="scripture"></div><div class="page" id="memory"></div><div class="page" id="people"></div><div class="page" id="office"></div><div class="page" id="examen"></div>
 
     <!-- LOG -->
     <div class="page" id="log">
@@ -657,6 +686,7 @@
     if(flows[base(p)]&&p.endsWith('-new')){flows[base(p)].i=0;flowRender(base(p))}
     $('#fab').style.display=(p.endsWith('-new')||p==='bible')?'none':'';
     if(p==='bible'&&typeof bibleOpen==='function')bibleOpen();
+    if(p==='memory'&&typeof renderMemory==='function')renderMemory();
     window.scrollTo(0,0);
   }
   $$('nav a[data-p]').forEach(a=>a.onclick=()=>go(a.dataset.p));
@@ -716,6 +746,7 @@
     s.forEach((x,k)=>x.classList.toggle('active',k===i));
     pg.querySelector('.flow-back').style.visibility=i===0?'hidden':'visible';
     pg.querySelector('.flow-next').textContent=i===s.length-1?'Finish & save':'Next';
+    if(p==='office'&&typeof loadOfficeText==='function')loadOfficeText(i);
   }
   function flowStep(p,d){
     const f=flows[p],n=fsteps(p).length;
@@ -1160,7 +1191,7 @@
       html+='</p>';
     });
     $('#bText').innerHTML=html;
-    $('#bFoot').innerHTML=R.notes&&(d.notes||[]).length?'<h4 class="bh">Footnotes</h4>'+d.notes.map((n,i)=>{const p=vparse(n.v);return `<div class="hint" style="font-size:13px"><b>${String.fromCharCode(97+(i%26))}</b> (v${p?p.v:''}) ${esc(n.t)}</div>`}).join(''):'';
+    $('#bFoot').innerHTML=R.notes&&(d.notes||[]).length?'<h4 class="bh">Footnotes</h4><p class="fnline">'+d.notes.map((n,i)=>{const p=vparse(n.v);return `<b>${String.fromCharCode(97+(i%26))}</b> (v${p?p.v:''}) ${esc(n.t)}`}).join('  ')+'</p>':'';
     $('#bCopy').textContent=d.copyright||'';
     applyMarks();
   }
@@ -1247,7 +1278,7 @@
     h+=`<h4>Linked verses (${links.length})</h4>`;
     h+=links.map(l=>{const here=ids.some(v=>inRange(v,l.a)),other=here?l.b:l.a;const [o1,o2]=other.split('-');return `<div class="pl"><button class="plink" data-pa="jump" data-range="${esc(other)}">${esc(vlabel(o1,o2))}</button>${l.note?' · '+esc(l.note):''} <button class="mini" data-pa="dellink" data-id="${esc(l.id)}" style="float:right">Remove</button></div>`}).join('');
     h+=`<input id="pLinkRef" placeholder="Link ${esc(lab)} to… e.g. Romans 5:8"><input id="pLinkNote" placeholder="Why are they connected? (optional)"><div class="actions" style="margin-top:8px"><button class="btn ghost" data-pa="link">Add link</button></div>`;
-    if(fns.length)h+='<h4>Footnotes</h4>'+fns.map(n=>`<div class="hint" style="font-size:13px"><b>${String.fromCharCode(97+(n.i%26))}</b> ${esc(n.t)}</div>`).join('');
+    if(fns.length)h+='<h4>Footnotes</h4><p class="fnline">'+fns.map(n=>`<b>${String.fromCharCode(97+(n.i%26))}</b> ${esc(n.t)}`).join('  ')+'</p>';
     p.innerHTML=h;
   }
   async function addVerseNote(){
@@ -1305,6 +1336,214 @@
     if(a==='jump')goVerse(b.dataset.range);if(a==='sjump')goVerse(b.dataset.id);
     if(a==='dellink')delVerseLink(b.dataset.id);if(a==='closesearch'){R.search=null;renderPanel()}
   });
+
+
+  // ===== Daily Office: show the day's passages =====
+  const OT={1:'psalm',2:'proverb',3:'nt'};
+  const chapIdOf=name=>{const m=/^(.*)\s(\d+)$/.exec(name||'');if(!m)return null;const nm=m[1]==='Psalm'?'Psalms':m[1];const b=BK.find(x=>x[1]===nm);return b?b[0]+'.'+m[2]:null};
+  const otBlocks=d=>d.blocks.map(b=>b.k==='h'?`<h4 class="bh">${esc(b.t)}</h4>`:`<p class="bp ${/^q\d$/.test(b.s)?esc(b.s):''}">`+b.runs.map(r=>r.n?`<sup class="vn">${esc(r.n)}</sup>`:r.t!==undefined?esc(r.t):'').join('')+'</p>').join('');
+  async function loadOfficeText(i){
+    const key=OT[i];if(!key)return;
+    const el=document.querySelector(`[data-ot="${key}"]`);if(!el)return;
+    $('#oTrans').value=R.trans;
+    if(!sb){el.innerHTML='<p class="hint">Sign in to the real app to read today’s passage here.</p>';return}
+    const id=chapIdOf(today[key]);if(!id){el.innerHTML='';return}
+    const sig=R.trans+id;if(el.dataset.sig===sig)return;
+    el.innerHTML='<p class="hint">Loading '+esc(today[key])+'…</p>';
+    const d=await bibleCall({action:'read',translation:R.trans,chapterId:id,notes:false});
+    if(!d.ok){el.innerHTML=`<p class="hint" style="color:var(--gold)">${esc(d.error)}</p>`;return}
+    el.dataset.sig=sig;track(d.fumsToken);
+    el.innerHTML=`<div class="otbox">${otBlocks(d)}</div><div class="hint" style="font-size:12px;margin-top:6px">${esc(d.copyright)} · <button type="button" class="plink" data-open="${esc(id)}">Open in the Bible reader</button></div>`;
+  }
+  $('#oTrans').onchange=e=>{R.trans=e.target.value;saveRead();$$('[data-ot]').forEach(el=>delete el.dataset.sig);loadOfficeText(flows.office.i)};
+  function openChapter(id){const [b,c]=id.split('.');R.book=b;R.ch=+c;R.sel=new Set();bibleStarted=true;go('bible');syncSelects();loadChapter()}
+  $('#office-new').addEventListener('click',e=>{const b=e.target.closest('[data-open]');if(b)openChapter(b.dataset.open)});
+
+  // ===== Scripture memory =====
+  let MEMP=[],MEM_OK=true,MS=null;
+  const ymd=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  const todayStr=()=>ymd(new Date());
+  const addDays=n=>{const d=new Date();d.setDate(d.getDate()+n);return ymd(d)};
+  const daysUntil=s=>Math.round((new Date(s+'T00:00:00')-day0(new Date()))/864e5);
+  const INTERVALS=[[7,'Every week'],[14,'Every 2 weeks'],[30,'Every month'],[90,'Every 3 months']];
+  const intLabel=n=>(INTERVALS.find(i=>i[0]===n)||[n,'Every '+n+' days'])[1];
+  const intOptions=sel=>INTERVALS.map(i=>`<option value="${i[0]}" ${i[0]===sel?'selected':''}>${i[1]}</option>`).join('');
+  const LEVELS=[['beginner','Beginner'],['intermediate','Intermediate'],['expert','Expert'],['pro','Pro']];
+  const LV=Object.fromEntries(LEVELS.map((l,i)=>[l[0],i]));
+  const PCT={beginner:.25,intermediate:.5,expert:.75,pro:1};
+  const STOP=new Set('the a an and of to in is are was were be been that this with for as but or not on at by from it his her he she they them their you your i we our us my me so if than then who whom which'.split(' '));
+  const normW=w=>String(w).toLowerCase().replace(/[’]/g,"'").replace(/[^\p{L}\p{N}']/gu,'');
+  const TOK=/^([^\p{L}\p{N}]*)([\p{L}\p{N}][\p{L}\p{N}'’\-]*)?([\s\S]*)$/u;
+  const tokenize=text=>String(text).split(/\s+/).filter(Boolean).map(t=>{const m=TOK.exec(t);return {pre:m[1]||'',w:m[2]||'',post:m[3]||''}});
+  const hashS=s=>{let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)}return h>>>0};
+  const rng=seed=>{let a=seed>>>0;return()=>{a=(a+0x6D2B79F5)>>>0;let t=a;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return((t^t>>>14)>>>0)/4294967296}};
+  const shuffleA=(arr,r)=>{const a=arr.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+  async function loadMemory(){
+    const {data,error}=await sb.from('memory_passages').select('*').order('created_at');
+    MEM_OK=!error;MEMP=error?[]:(data||[]);renderMemory();renderMemDue();
+  }
+  const mErr=e=>{MEM_OK=false;toast('Couldn’t save that. '+(e&&e.code==='PGRST205'?'Run supabase/memory.sql first.':(e&&e.message)||''));renderMemory()};
+  async function memUpdate(id,patch){
+    const {error}=await sb.from('memory_passages').update(patch).eq('id',id);if(error){mErr(error);return false}
+    const r=MEMP.find(x=>x.id===id);if(r)Object.assign(r,patch);return true;
+  }
+  async function addPassage(){
+    const raw=($('#mRef').value||'').trim();if(!raw){toast('Type a passage, like Psalm 23:1–6');return}
+    const tr=$('#mTr').value;
+    const r=await bibleCall({action:'resolve',ref:raw});if(!r.ok){toast(r.error);return}
+    const {data,error}=await sb.from('memory_passages').insert({user_id:CURRENT_UID,ref:r.label,translation:tr,interval_days:30}).select().single();
+    if(error){mErr(error);return}
+    MEMP.push(data);$('#mRef').value='';renderMemory();toast('✓ Added '+r.label);
+  }
+  async function setMemorized(id,on,days){
+    const now=new Date().toISOString();
+    const patch=on?{status:'memorized',interval_days:days,memorized_at:now,last_reviewed:now,next_review:addDays(days)}:{status:'learning',next_review:null};
+    if(await memUpdate(id,patch)){renderMemory();renderMemDue();toast(on?'✓ Moved to your memorized bank':'Moved back to learning')}
+  }
+  // --- exercises ---
+  async function startStudy(id,mode,level,review){
+    const row=MEMP.find(x=>x.id===id);if(!row)return;
+    MS={id,row,mode:mode||'words',level:level||'beginner',review:!!review,loading:true,seed:1};go('memory');renderMemory();
+    const d=await bibleCall({action:'passage',translation:row.translation,ref:row.ref});
+    if(!MS||MS.id!==id)return;MS.loading=false;
+    if(!d.ok){MS.error=d.error;renderMemory();return}
+    track(d.fumsToken);MS.text=d.text;MS.copyright=d.copyright;MS.tokens=tokenize(d.text);buildExercise();renderMemory();
+  }
+  function buildExercise(){
+    const S=MS;S.result=null;S.typed='';S.reveal=false;S.checked=false;
+    if(S.mode!=='words')return;
+    const idx=S.tokens.map((t,i)=>t.w?i:-1).filter(i=>i>=0),r=rng(hashS(S.text+S.level)+S.seed*7919);
+    const cnt=Math.max(1,Math.round(PCT[S.level]*idx.length));
+    let pool=shuffleA(idx,r);
+    if(S.level==='beginner'||S.level==='intermediate'){const easy=i=>STOP.has(normW(S.tokens[i].w))||S.tokens[i].w.length<4;pool.sort((x,y)=>(easy(x)?1:0)-(easy(y)?1:0))}
+    S.blanks=pool.slice(0,cnt).sort((x,y)=>x-y);
+    S.bank=shuffleA(S.blanks.map((i,k)=>({id:k,word:S.tokens[i].w})),r);
+    S.fill={};S.active=S.blanks[0];
+  }
+  async function recordProgress(){
+    const S=MS,have=(S.row.progress||{})[S.mode];
+    if(have!==undefined&&LV[have]>=LV[S.level])return;
+    const progress={...(S.row.progress||{}),[S.mode]:S.level};
+    await memUpdate(S.id,{progress});
+  }
+  function placeWord(bid){
+    const S=MS;let t=(S.active!==undefined&&S.fill[S.active]===undefined)?S.active:S.blanks.find(i=>S.fill[i]===undefined);
+    if(t===undefined)return;S.fill[t]=bid;S.checked=false;S.active=S.blanks.find(i=>S.fill[i]===undefined);renderMemory();
+  }
+  function checkWords(){
+    const S=MS;let ok=0;
+    S.blanks.forEach(i=>{if(S.fill[i]!==undefined&&normW(S.bank.find(b=>b.id===S.fill[i]).word)===normW(S.tokens[i].w))ok++});
+    S.checked=true;S.result={ok,total:S.blanks.length};if(ok===S.blanks.length)recordProgress();renderMemory();
+  }
+  function lcsMatch(a,b){
+    const n=a.length,m=b.length,dp=Array.from({length:n+1},()=>new Uint16Array(m+1));
+    for(let i=1;i<=n;i++)for(let j=1;j<=m;j++)dp[i][j]=a[i-1]===b[j-1]?dp[i-1][j-1]+1:Math.max(dp[i-1][j],dp[i][j-1]);
+    const hit=new Set();let i=n,j=m;
+    while(i>0&&j>0){if(a[i-1]===b[j-1]){hit.add(j-1);i--;j--}else if(dp[i-1][j]>=dp[i][j-1])i--;else j--}
+    return hit;
+  }
+  function checkLetters(){
+    const S=MS,typed=tokenize(S.typed).filter(t=>t.w).map(t=>normW(t.w)),tw=S.tokens.filter(t=>t.w);
+    const hit=lcsMatch(typed,tw.map(t=>normW(t.w)));
+    S.result={ok:hit.size,total:tw.length,hit};S.checked=true;
+    if(hit.size/tw.length>=.95)recordProgress();renderMemory();
+  }
+  function lettersHTML(S){
+    let wi=0,starts=true;
+    return S.tokens.map(t=>{
+      if(!t.w){starts=starts||/[.,;:!?—–]/.test(t.pre);return esc(t.pre)}
+      const i=wi++;let show=false;
+      if(S.level==='beginner')show=true;else if(S.level==='intermediate')show=i%2===0;else if(S.level==='expert')show=starts;
+      starts=/[.,;:!?—–]/.test(t.post);
+      const ch=[...t.w][0];
+      return esc(t.pre)+`<span class="fl ${show?'':'hid'}">${show?esc(ch):'·'}</span>`+esc(t.post);
+    }).join(' ');
+  }
+  function renderStudy(){
+    const S=MS,row=S.row;
+    let h=`<button class="mini" data-m="back">‹ Back to my passages</button><div class="pagehead" style="margin-top:10px"><h1 style="font-size:28px">${esc(row.ref)}</h1><span class="hint">${esc(row.translation)}${S.review?' · review':''}</span></div>`;
+    if(S.loading)return h+'<p class="hint">Loading the passage…</p>';
+    if(S.error)return h+`<p class="hint" style="color:var(--gold)">${esc(S.error)}</p>`;
+    h+='<div class="mtabs"><button class="chip '+(S.mode==='words'?'on':'')+'" data-m="mode" data-v="words">Missing words</button><button class="chip '+(S.mode==='letters'?'on':'')+'" data-m="mode" data-v="letters">First letters</button></div>';
+    h+='<div class="mtabs">'+LEVELS.map(l=>`<button class="chip ${S.level===l[0]?'on':''}" data-m="level" data-v="${l[0]}">${l[1]}</button>`).join('')+'</div>';
+    h+=`<div class="hint">${S.mode==='words'?({beginner:'About a quarter of the words are missing.',intermediate:'About half of the words are missing.',expert:'About three quarters of the words are missing.',pro:'Every word is missing. Rebuild the whole passage from the word bank.'})[S.level]:({beginner:'Every word shows its first letter, with all the punctuation.',intermediate:'Every other word shows its first letter.',expert:'Only the first word of each phrase shows its letter.',pro:'Only the punctuation is shown. Everything else is up to you.'})[S.level]}</div>`;
+    if(S.mode==='words'){
+      h+='<div class="mex">'+S.tokens.map((t,i)=>{
+        if(!S.blanks.includes(i))return esc(t.pre+t.w+t.post);
+        const f=S.fill[i],w=f===undefined?'':S.bank.find(b=>b.id===f).word;
+        let cls=i===S.active?' active':'';
+        if(S.checked&&f!==undefined)cls+=normW(w)===normW(t.w)?' ok':' bad';
+        return esc(t.pre)+`<button class="blank${cls}" data-b="${i}" style="min-width:${Math.max(3,t.w.length)}ch">${esc(w)||'&nbsp;'}</button>`+esc(t.post);
+      }).join(' ')+'</div>';
+      h+='<div class="bank">'+S.bank.map(b=>`<button class="bw" data-w="${b.id}" ${Object.values(S.fill).includes(b.id)?'disabled':''}>${esc(b.word)}</button>`).join('')+'</div>';
+      h+='<div class="mbtns"><button class="btn" data-m="check">Check</button><button class="btn ghost" data-m="reset">Start over</button><button class="btn ghost" data-m="reshuffle">Different words</button>'+(S.level!=='pro'?`<button class="btn ghost" data-m="level" data-v="${LEVELS[LV[S.level]+1][0]}">Next level ›</button>`:'')+'</div>';
+      if(S.result)h+=`<p class="${S.result.ok===S.result.total?'good':'hint'}" style="font-weight:600">${S.result.ok===S.result.total?'✓ All '+S.result.total+' correct!':S.result.ok+' of '+S.result.total+' correct. Fix the red ones or place the rest.'}</p>`;
+    }else{
+      h+=`<div class="mex">${lettersHTML(S)}</div>`;
+      h+=`<textarea id="mTyped" placeholder="Say it in your head, then type it from memory…" style="min-height:120px">${esc(S.typed)}</textarea>`;
+      h+='<div class="mbtns"><button class="btn" data-m="checkL">Check</button><button class="btn ghost" data-m="reveal">'+(S.reveal?'Hide the passage':'Show the passage')+'</button>'+(S.level!=='pro'?`<button class="btn ghost" data-m="level" data-v="${LEVELS[LV[S.level]+1][0]}">Next level ›</button>`:'')+'</div>';
+      if(S.reveal)h+=`<div class="mex" style="font-size:18px">${esc(S.text)}</div>`;
+      if(S.result){
+        const tw=S.tokens;let k=0;
+        h+=`<p class="${S.result.ok/S.result.total>=.95?'good':'hint'}" style="font-weight:600">${S.result.ok} of ${S.result.total} words right (${Math.round(S.result.ok/S.result.total*100)}%)</p><div class="mex" style="font-size:18px">`+tw.map(t=>{if(!t.w)return esc(t.pre+t.post);const ok=S.result.hit.has(k++);return esc(t.pre)+`<span class="${ok?'good':'miss'}">${esc(t.w)}</span>`+esc(t.post)}).join(' ')+'</div>';
+      }
+    }
+    h+=`<div class="hint" style="font-size:12px">${esc(S.copyright||'')}</div>`;
+    if(S.review){
+      h+='<div class="mbtns" style="margin-top:14px"><button class="btn" data-m="recalled">✓ I recalled it</button><button class="btn ghost" data-m="needwork">Needs more work</button></div>';
+    }else if(row.status==='learning'){
+      h+=`<div class="toggle" style="margin-top:16px"><input type="checkbox" id="mDone"><label for="mDone" style="margin:0;text-transform:none;letter-spacing:0;font-size:14px;color:var(--ink)">I’ve memorized this passage</label><select id="mDoneInt" style="width:auto;margin-left:auto;padding:6px 10px">${intOptions(30)}</select></div>`;
+    }
+    return h;
+  }
+  function renderMemory(){
+    const pg=$('#memory');if(!pg)return;
+    if(!sb){pg.innerHTML='<div class="eyebrow">Hide it in your heart</div><h1>🧠 Memorize</h1><p class="sub">Sign in to the real app to memorize Scripture.</p>';return}
+    if(MS){pg.innerHTML=renderStudy();return}
+    const prog=r=>Object.entries(r.progress||{}).map(([m,l])=>`<span class="mbadge">${m==='words'?'Missing words':'First letters'}: ${(LEVELS.find(x=>x[0]===l)||[0,l])[1]}</span>`).join('');
+    const learning=MEMP.filter(p=>p.status==='learning'),done=MEMP.filter(p=>p.status==='memorized').sort((a,b)=>String(a.next_review).localeCompare(String(b.next_review)));
+    let h='<div class="eyebrow">Hide it in your heart</div><h1>🧠 Memorize</h1><p class="sub">Study a passage two ways, then keep it fresh with reviews.</p>';
+    if(!MEM_OK)h+='<p class="hint" style="color:var(--gold)">One setup step is missing: run supabase/memory.sql in Supabase (see the README), then reload.</p>';
+    h+=`<div class="card"><h3 style="margin-bottom:6px">Add a passage</h3><div class="bctl-row"><input id="mRef" placeholder="e.g. Psalm 23:1–6 or Romans 8:28–30" style="flex:1;min-width:200px"><select id="mTr" style="width:auto">${TRANS.map(t=>`<option ${t===R.trans?'selected':''}>${t}</option>`).join('')}</select><button class="btn" data-m="add">Add</button></div></div>`;
+    h+=`<div class="card"><h3>Learning (${learning.length})</h3>`+(learning.length?learning.map(p=>`<div class="mcard"><div class="mt"><b>${esc(p.ref)}</b><span class="hint">${esc(p.translation)}</span></div><div>${prog(p)}</div><div class="mbtns"><button class="btn" data-m="study" data-id="${esc(p.id)}">Study</button><label class="bchk"><input type="checkbox" data-m="memo" data-id="${esc(p.id)}"> Memorized</label><select data-m="interval" data-id="${esc(p.id)}" title="How often to review it once memorized">${intOptions(p.interval_days||30)}</select><button class="mini" data-m="remove" data-id="${esc(p.id)}">Remove</button></div></div>`).join(''):'<p class="hint">No passages yet. Add one above.</p>')+'</div>';
+    h+=`<div class="card"><h3>Memorized bank (${done.length})</h3>`+(done.length?done.map(p=>{const n=p.next_review?daysUntil(p.next_review):null,due=n!==null&&n<=0;return `<div class="mcard"><div class="mt"><b>${esc(p.ref)}</b><span class="hint">${esc(p.translation)}</span></div><div>${prog(p)}</div><div class="mdue ${due?'now':''}">${due?'Due for review '+(n===0?'today':Math.abs(n)+' day'+(Math.abs(n)>1?'s':'')+' ago'):'Next review in '+n+' day'+(n===1?'':'s')} · ${esc(intLabel(p.interval_days))}</div><div class="mbtns"><button class="btn" data-m="review" data-id="${esc(p.id)}">Review</button><select data-m="interval" data-id="${esc(p.id)}" title="Follow-up schedule">${intOptions(p.interval_days)}</select><button class="mini" data-m="unmemo" data-id="${esc(p.id)}">Back to learning</button><button class="mini" data-m="remove" data-id="${esc(p.id)}">Remove</button></div></div>`}).join(''):'<p class="hint">Passages you finish memorizing will live here, with a review schedule (monthly by default).</p>')+'</div>';
+    pg.innerHTML=h;
+  }
+  function renderMemDue(){
+    const c=$('#memDueCard');if(!c)return;
+    const due=(MEMP||[]).filter(p=>p.status==='memorized'&&p.next_review&&p.next_review<=todayStr());
+    c.hidden=!due.length;if(!due.length)return;
+    c.innerHTML=`<div class="pagehead"><h3>🧠 Time to review</h3><span class="hint" style="margin:0">${due.length} passage${due.length>1?'s':''}</span></div>`+due.map(p=>`<div class="fu"><div><div class="ft">${esc(p.ref)} <span class="hint">${esc(p.translation)}</span></div><div class="fm">${esc(intLabel(p.interval_days))}</div></div><button class="mini" style="margin-left:auto" data-memrev="${esc(p.id)}">Review</button></div>`).join('');
+  }
+  $('#memDueCard').addEventListener('click',e=>{const b=e.target.closest('[data-memrev]');if(b)startStudy(b.dataset.memrev,'words','expert',true)});
+  $('#memory').addEventListener('click',async e=>{
+    const bl=e.target.closest('.blank');if(bl&&MS){const i=+bl.dataset.b;if(MS.fill[i]!==undefined){delete MS.fill[i];MS.checked=false}MS.active=i;renderMemory();return}
+    const bw=e.target.closest('.bw');if(bw&&MS){placeWord(+bw.dataset.w);return}
+    const b=e.target.closest('[data-m]');if(!b||b.tagName==='SELECT'||b.type==='checkbox')return;
+    const a=b.dataset.m,id=b.dataset.id;
+    if(a==='add')addPassage();
+    if(a==='study')startStudy(id,'words','beginner',false);
+    if(a==='review')startStudy(id,'words','expert',true);
+    if(a==='remove'){if(!confirm('Remove this passage?'))return;const {error}=await sb.from('memory_passages').delete().eq('id',id);if(error){mErr(error);return}MEMP=MEMP.filter(p=>p.id!==id);renderMemory();renderMemDue()}
+    if(a==='unmemo')setMemorized(id,false);
+    if(a==='back'){MS=null;renderMemory()}
+    if(!MS)return;
+    if(a==='mode'){MS.mode=b.dataset.v;buildExercise();renderMemory()}
+    if(a==='level'){MS.level=b.dataset.v;buildExercise();renderMemory()}
+    if(a==='check')checkWords();if(a==='checkL')checkLetters();
+    if(a==='reset'){MS.fill={};MS.active=MS.blanks[0];MS.checked=false;MS.result=null;renderMemory()}
+    if(a==='reshuffle'){MS.seed++;buildExercise();renderMemory()}
+    if(a==='reveal'){MS.reveal=!MS.reveal;renderMemory()}
+    if(a==='recalled'){const ok=await memUpdate(MS.id,{last_reviewed:new Date().toISOString(),next_review:addDays(MS.row.interval_days)});if(ok){toast('✓ Nice. Next review in '+intLabel(MS.row.interval_days).toLowerCase().replace('every ','')+'.');MS=null;renderMemory();renderMemDue()}}
+    if(a==='needwork'){const ok=await memUpdate(MS.id,{next_review:addDays(3)});if(ok){toast('Okay. I’ll bring it back in 3 days.');MS=null;renderMemory();renderMemDue()}}
+  });
+  $('#memory').addEventListener('change',e=>{
+    const t=e.target,a=t.dataset&&t.dataset.m;
+    if(a==='memo'&&t.checked){const sel=document.querySelector(`select[data-m="interval"][data-id="${t.dataset.id}"]`);setMemorized(t.dataset.id,true,+(sel?sel.value:30))}
+    if(a==='interval'){const p=MEMP.find(x=>x.id===t.dataset.id);if(!p)return;const days=+t.value,patch={interval_days:days};if(p.status==='memorized'&&p.last_reviewed)patch.next_review=ymd(new Date(new Date(p.last_reviewed).getTime()+days*864e5));memUpdate(p.id,patch).then(()=>{renderMemory();renderMemDue()})}
+    if(t.id==='mDone'&&t.checked)setMemorized(MS.id,true,+$('#mDoneInt').value).then(()=>{MS=null;renderMemory()});
+  });
+  $('#memory').addEventListener('input',e=>{if(e.target.id==='mTyped'&&MS)MS.typed=e.target.value});
 
   // Backup & export (downloads the sample entries)
   const strip=h=>{const d=document.createElement('div');d.innerHTML=h.replace(/<br>/g,'\n').replace(/<\/div>/g,'\n');return d.textContent.replace(/\n{2,}/g,'\n').trim()};
@@ -1484,6 +1723,7 @@
   function renderAll(){
     renderPlan();renderLists();renderLog();renderFollow();renderPeopleField();renderWeek();renderIntent();renderSync();
     if(typeof renderBibleAgain==='function')renderBibleAgain();
+    try{renderMemDue()}catch(e){}
     $('#bkInfo').textContent='Download a copy of everything: '+ENTRIES.length+' entr'+(ENTRIES.length===1?'y':'ies')+(sb?'.':' (sample data).');
   }
   function rebuild(){
@@ -1636,7 +1876,7 @@
   window.addEventListener('offline',renderSync);
 
   // ===== Sign-in (Supabase Auth; demo mode until config.js is filled in) =====
-  async function enterApp(){show('app');const u=await sb.auth.getUser();CURRENT_UID=u.data&&u.data.user?u.data.user.id:null;await loadRows();await loadStudy();await checkNotion();await flushQueue()}
+  async function enterApp(){show('app');const u=await sb.auth.getUser();CURRENT_UID=u.data&&u.data.user?u.data.user.id:null;await loadRows();await loadStudy();await loadMemory();await checkNotion();await flushQueue()}
   async function doLogin(e){
     e.preventDefault();
     if(!sb){show('app');return}
@@ -1646,10 +1886,10 @@
     if(error){msg.textContent='That email or password didn’t work.';return}
     $('#p').value='';await enterApp();
   }
-  function clearData(){DBROWS=[];try{R.data=null;R.sel.clear();R.search=null;R.cmp={};HL={};LINKS=[];$('#bText').innerHTML='';$('#bPanel').innerHTML='';$('#bBar').hidden=true}catch(e){}rebuild();go('home')}
+  function clearData(){DBROWS=[];try{MEMP=[];MS=null;renderMemory();renderMemDue();R.data=null;R.sel.clear();R.search=null;R.cmp={};HL={};LINKS=[];$('#bText').innerHTML='';$('#bPanel').innerHTML='';$('#bBar').hidden=true}catch(e){}rebuild();go('home')}
   async function signOut(){if(sb)await sb.auth.signOut();clearData();show('login')}
   (async function initAuth(){
-    renderAll();
+    renderAll();renderMemory();
     if(!sb){$('#demoNote').textContent='DEMO MODE — sign-in is not connected yet; sample data only, nothing is saved';return}
     $('#u').value='';$('#p').value='';
     $('#demoNote').textContent='Private journal';

@@ -57,3 +57,18 @@ Verse text is not stored by the function. The app shows each translation's copyr
 One-time setup for highlights and links: run [`supabase/bible.sql`](supabase/bible.sql) in the Supabase SQL Editor. Notes are saved as Scripture notes (and can go to Notion). Verse text is never stored in your database, only your notes and verse references.
 
 After changing `supabase/functions/scripture/index.ts`, paste it into the `scripture` function in Supabase and deploy again.
+
+## Daily Office passages
+
+Each day's psalm, proverb and New Testament chapter show their full text (in the version you pick at the top of the Office) so you can read without leaving the Office. Each passage has an "Open in the Bible reader" link.
+
+## Scripture memory
+
+**Memorize** in the menu keeps your passages in two lists: Learning and a Memorized bank. Two ways to study, each with four levels (Beginner, Intermediate, Expert, Pro):
+
+- **Missing words** with a word bank to put the words back (Pro removes every word).
+- **First letters**, showing only the first letter of each word with all the punctuation. Higher levels show fewer letters, and Pro shows only punctuation. Type it from memory and check.
+
+Tick "Memorized" to move a passage to the bank with a review schedule (monthly by default; weekly, every 2 weeks, or every 3 months also available). Passages due for review show on the Today page.
+
+One-time setup: run [`supabase/memory.sql`](supabase/memory.sql) in the Supabase SQL Editor. Only the reference is stored, never the verse text.
