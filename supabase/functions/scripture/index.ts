@@ -146,13 +146,110 @@ async function fetchRef(translation: string, ref: Ref, given?: string, verseNumb
   };
 }
 
+
+// ---- Bible reader helpers ----
+const HEAD = new Set(["s", "s1", "s2", "s3", "s4", "ms", "ms1", "ms2", "mt", "mt1", "mt2", "mt3", "mr", "r", "d", "sp", "qa", "cl", "sr", "hr"]);
+const vid = (sid: string) => String(sid || "").split("-")[0].trim().replace(/\s+/g, ".").replace(":", ".");
+// deno-lint-ignore no-explicit-any
+const flatten = (items: any[]): string => (items || []).map((i) => (i.type === "text" ? i.text : flatten(i.items))).join("").replace(/\s+/g, " ").trim();
+// deno-lint-ignore no-explicit-any
+function walk(nodes: any[], runs: any[], st: { cur: string; notes: any[] }) {
+  for (const n of nodes || []) {
+    if (n.type === "text") {
+      const t = String(n.text ?? "");
+      if (t.length) runs.push({ v: st.cur || n.attrs?.verseId || undefined, t });
+    } else if (n.name === "verse") {
+      st.cur = vid(n.attrs?.sid || n.attrs?.verseId || "");
+      runs.push({ v: st.cur, n: String(n.attrs?.number || "") });
+    } else if (n.name === "note") {
+      st.notes.push({ v: st.cur, t: flatten(n.items) });
+      runs.push({ v: st.cur, f: st.notes.length });
+    } else if (n.items) walk(n.items, runs, st);
+  }
+}
+// deno-lint-ignore no-explicit-any
+function toBlocks(content: any[]) {
+  const st = { cur: "", notes: [] as { v: string; t: string }[] };
+  // deno-lint-ignore no-explicit-any
+  const blocks: any[] = [];
+  for (const item of content || []) {
+    const style = String(item.attrs?.style || "p");
+    if (HEAD.has(style)) { const t = flatten(item.items); if (t) blocks.push({ k: "h", s: style, t }); continue; }
+    if (style === "b") continue;
+    // deno-lint-ignore no-explicit-any
+    const runs: any[] = [];
+    walk(item.items || [], runs, st);
+    if (runs.length) blocks.push({ k: "p", s: style, runs });
+  }
+  return { blocks, notes: st.notes };
+}
+function fromPlain(text: string, chapterId: string) {
+  // fallback: "[1] In the beginning... [2] ..." style text
+  const parts = String(text || "").split(/\[(\d+)\]/);
+  // deno-lint-ignore no-explicit-any
+  const runs: any[] = [];
+  if (parts[0].trim()) runs.push({ t: parts[0].trim() });
+  for (let i = 1; i < parts.length; i += 2) {
+    const v = `${chapterId}.${parts[i]}`;
+    runs.push({ v, n: parts[i] }, { v, t: (parts[i + 1] || "").replace(/\s+/g, " ").trim() + " " });
+  }
+  return { blocks: [{ k: "p", s: "p", runs }], notes: [] };
+}
+const hasVerses = (blocks: { k: string; runs?: { n?: string }[] }[]) => blocks.some((b) => b.k === "p" && b.runs?.some((r) => r.n));
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
   try {
-    const { action, translation = "CSB", ref, bibleId: given } = await req.json();
+    const body = await req.json();
+    const { action, translation = "CSB", ref, bibleId: given } = body;
     if (action === "bibles") {
       const found = await bibles();
       return json({ ok: true, bibles: found, missing: WANTED.filter((w) => !found[w]), errors, sample });
+    }
+    if (action === "resolve") {
+      const r = parseRef(String(ref));
+      if (!r.v1) throw new Error("Add a verse number, like Romans 5:8.");
+      const id = BOOKS[r.book][0];
+      const a = `${id}.${r.ch}.${r.v1}`;
+      return json({ ok: true, id: a, end: r.v2 ? `${id}.${r.ch2 ?? r.ch}.${r.v2}` : "", label: label(r) });
+    }
+    if (action === "search") {
+      const id = ENV_IDS[translation] || given || await bibleId(translation);
+      const q = encodeURIComponent(String(body.query || "").slice(0, 100));
+      const r = await api(`/bibles/${id}/search?query=${q}&limit=20&sort=relevance&fums-version=3`);
+      const d = r.data || {};
+      return json({ ok: true, translation, bibleId: id, total: d.total ?? (d.verses || []).length, fumsToken: r.meta?.fumsToken || "",
+        // deno-lint-ignore no-explicit-any
+        verses: (d.verses || []).map((v: any) => ({ id: v.id, reference: v.reference, text: clean(v.text) })),
+        passages: (d.passages || []).map((v: { id: string; reference: string; content: string }) => ({ id: v.id, reference: v.reference, text: clean(String(v.content || "").replace(/<[^>]+>/g, " ")) })) });
+    }
+    if (action === "read") {
+      const id = ENV_IDS[translation] || given || await bibleId(translation);
+      const chapterId = String(body.chapterId || "");
+      if (!/^[1-3A-Z]{3}\.\d+$/.test(chapterId)) throw new Error("Bad chapter.");
+      const notes = body.notes ? "true" : "false";
+      const base = `include-notes=${notes}&include-titles=true&include-chapter-numbers=false&include-verse-numbers=true&include-verse-spans=false&fums-version=3`;
+      const r = await api(`/bibles/${id}/chapters/${chapterId}?content-type=json&${base}`);
+      const d = r.data || {};
+      let out = toBlocks(Array.isArray(d.content) ? d.content : []);
+      let fums = r.meta?.fumsToken || "";
+      if (!hasVerses(out.blocks)) {
+        const t = await api(`/bibles/${id}/chapters/${chapterId}?content-type=text&${base}`);
+        out = fromPlain(String(t.data?.content || ""), chapterId);
+        fums = t.meta?.fumsToken || fums;
+      }
+      return json({ ok: true, translation, bibleId: id, chapterId, reference: d.reference || chapterId, blocks: out.blocks, notes: out.notes, copyright: d.copyright || "", fumsToken: fums });
+    }
+    if (action === "compare") {
+      const r = parseRef(String(ref));
+      if (!r.v1) throw new Error("Pick a verse first.");
+      // deno-lint-ignore no-explicit-any
+      const results: Record<string, any> = {};
+      await Promise.all(WANTED.map(async (t) => {
+        try { const d = await fetchRef(t, r, undefined); results[t] = { text: d.text, copyright: d.copyright, reference: d.reference, fumsToken: d.fumsToken, bibleId: d.bibleId }; }
+        catch (e) { results[t] = { error: e instanceof Error ? e.message : String(e) }; }
+      }));
+      return json({ ok: true, results });
     }
     if (!WANTED.includes(translation)) throw new Error("Unknown translation.");
     if (action === "passage") return json(await fetchRef(translation, parseRef(String(ref)), given));

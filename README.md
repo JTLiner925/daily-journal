@@ -49,3 +49,11 @@ Scripture notes look up any reference (type `John 3:16` and press Enter) through
 4. In the app: **Settings → Bible text → Check connection**.
 
 Verse text is not stored by the function. The app shows each translation's copyright line and reports views to API.Bible's FUMS as their terms require. The free plan allows 5,000 calls a month; repeats within a visit are cached in the page.
+
+## Bible reader
+
+**Bible** in the menu opens a full reader (CSB, NIV, NLT), one chapter at a time. Tap verses to select them, then highlight, write a note, compare all three versions, link to another verse, share or copy. Tapping a verse brings up your notes and links in a panel next to the text. Search and footnotes use API.Bible.
+
+One-time setup for highlights and links: run [`supabase/bible.sql`](supabase/bible.sql) in the Supabase SQL Editor. Notes are saved as Scripture notes (and can go to Notion). Verse text is never stored in your database, only your notes and verse references.
+
+After changing `supabase/functions/scripture/index.ts`, paste it into the `scripture` function in Supabase and deploy again.
