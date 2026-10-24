@@ -310,14 +310,14 @@
       <p class="sub">Get it out of your head. Sort it later.</p>
       <div class="card">
         <label style="margin-top:0">Category</label>
-        <div class="chips" data-single><button class="chip on">Personal</button><button class="chip">Work</button><button class="chip">Faith</button><button class="chip">Family</button></div>
-        <label>Title (optional)</label><input placeholder="A short label…">
-        <label>What are you thinking?</label><textarea placeholder="Write freely…"></textarea>
+        <div class="chips" data-single data-f="category"><button class="chip on">Personal</button><button class="chip">Work</button><button class="chip">Faith</button><button class="chip">Family</button></div>
+        <label>Title (optional)</label><input data-f="title" placeholder="A short label…">
+        <label>What are you thinking?</label><textarea data-f="text" placeholder="Write freely…"></textarea>
         <label>Mood</label>
-        <div class="chips" data-single><button class="chip">😌 Peaceful</button><button class="chip">😊 Joyful</button><button class="chip">😟 Anxious</button><button class="chip">😔 Heavy</button><button class="chip">🔥 Energized</button></div>
-        <label class="notion-lbl">Tags</label><input placeholder="e.g. vision, prayer, idea">
+        <div class="chips" data-single data-f="mood"><button class="chip">😌 Peaceful</button><button class="chip">😊 Joyful</button><button class="chip">😟 Anxious</button><button class="chip">😔 Heavy</button><button class="chip">🔥 Energized</button></div>
+        <label class="notion-lbl">Tags</label><input data-f="tags" placeholder="e.g. vision, prayer, idea">
         <div class="toggle"><input type="checkbox" checked id="t1"><label for="t1" style="margin:0;text-transform:none;letter-spacing:0;font-size:14px;color:var(--ink)">Push to Notion → <b>Thoughts</b> database</label></div>
-        <div class="actions"><button class="btn ghost" onclick="go('home')">Cancel</button><button class="btn" onclick="saved('Thought saved & sent to Notion')">Save</button></div>
+        <div class="actions"><button class="btn ghost" onclick="go('home')">Cancel</button><button class="btn" onclick="submitForm('thought')">Save</button></div>
       </div>
     </div>
 
@@ -326,14 +326,14 @@
       <div class="eyebrow">New entry</div><h1>📝 Note</h1>
       <p class="sub">Quick capture — links, ideas, reminders, anything.</p>
       <div class="card">
-        <label style="margin-top:0">Title</label><input placeholder="What's this note about?">
-        <label>Note</label><textarea placeholder="Jot it down…" style="min-height:110px"></textarea>
+        <label style="margin-top:0">Title</label><input data-f="title" placeholder="What's this note about?">
+        <label>Note</label><textarea data-f="text" placeholder="Jot it down…" style="min-height:110px"></textarea>
         <div class="row2">
-          <div><label>Folder</label><select><option>Inbox</option><option>Reading list</option><option>Ideas</option><option>Podcast</option><option>Merch store</option></select></div>
-          <div><label>Link (optional)</label><input placeholder="https://"></div>
+          <div><label>Folder</label><select data-f="folder"><option>Inbox</option><option>Reading list</option><option>Ideas</option><option>Podcast</option><option>Merch store</option></select></div>
+          <div><label>Link (optional)</label><input data-f="link" placeholder="https://"></div>
         </div>
         <div class="toggle"><input type="checkbox" checked id="n1"><label for="n1" style="margin:0;text-transform:none;letter-spacing:0;font-size:14px;color:var(--ink)">Push to Notion → <b>Notes</b> database</label></div>
-        <div class="actions"><button class="btn ghost" onclick="go('home')">Cancel</button><button class="btn" onclick="saved('Note saved & sent to Notion')">Save</button></div>
+        <div class="actions"><button class="btn ghost" onclick="go('home')">Cancel</button><button class="btn" onclick="submitForm('note')">Save</button></div>
       </div>
     </div>
 
@@ -342,7 +342,7 @@
       <div class="eyebrow">New entry</div><h1>🤝 Meeting</h1>
       <p class="sub">Log who you met, what was said, and what happens next.</p>
       <div class="card">
-        <label style="margin-top:0">Meeting title</label><input placeholder="e.g. Coffee with Sam">
+        <label style="margin-top:0">Meeting title</label><input data-f="title" placeholder="e.g. Coffee with Sam">
         <div class="row2">
           <div><label>Date</label><input type="date" id="mDate"></div>
           <div><label>Start time</label><input type="time" id="mTime" value="14:30"></div>
@@ -351,20 +351,20 @@
           <div><label>Duration</label>
             <select id="mDur"><option value="15">15 min</option><option value="30">30 min</option><option value="45" selected>45 min</option><option value="60">1 hour</option><option value="90">1 hr 30 min</option><option value="120">2 hours</option><option value="180">3 hours</option></select>
             <div class="hint" style="margin-top:6px" id="mEnd"></div></div>
-          <div><label>Type</label><select><option>1-on-1</option><option>Team</option><option>Partner / church</option><option>Training</option><option>Phone call</option></select></div>
+          <div><label>Type</label><select data-f="type"><option>1-on-1</option><option>Team</option><option>Partner / church</option><option>Training</option><option>Phone call</option></select></div>
         </div>
         <label>People</label>
         <div class="people-field" id="peopleField"><span id="peopleChips"></span><input id="peopleInput" placeholder="Type a name…" autocomplete="off"></div>
         <div class="suggest" id="peopleSuggest"></div>
-        <label>Notes</label><textarea style="min-height:120px" placeholder="Key points, stories, prayer requests…"></textarea>
+        <label>Notes</label><textarea data-f="text" style="min-height:120px" placeholder="Key points, stories, prayer requests…"></textarea>
         <label>Action items</label>
         <div id="actions">
           <div style="display:flex;gap:8px;margin-bottom:8px"><input type="checkbox" style="width:auto"><input placeholder="Follow-up…"></div>
         </div>
         <button class="btn ghost" style="margin-top:4px" onclick="addAction()">+ Add action item</button>
-        <label>Follow up by</label><input type="date">
+        <label>Follow up by</label><input type="date" data-f="followUp">
         <div class="toggle"><input type="checkbox" checked id="m1"><label for="m1" style="margin:0;text-transform:none;letter-spacing:0;font-size:14px;color:var(--ink)">Push to Notion → <b>Meetings</b> database</label></div>
-        <div class="actions"><button class="btn ghost" onclick="go('home')">Cancel</button><button class="btn" onclick="saved('Meeting logged & sent to Notion')">Save</button></div>
+        <div class="actions"><button class="btn ghost" onclick="go('home')">Cancel</button><button class="btn" onclick="submitForm('meeting')">Save</button></div>
       </div>
     </div>
 
@@ -373,7 +373,7 @@
       <div class="eyebrow">New entry</div><h1>📖 Scripture note <span class="esv">ESV</span></h1>
       <p class="sub">Type a verse reference, press Enter, and the passage appears.</p>
       <div class="card">
-        <label style="margin-top:0">Title</label><input placeholder="e.g. Sermon on anxiety, Reading in Philippians">
+        <label style="margin-top:0">Title</label><input data-f="title" placeholder="e.g. Sermon on anxiety, Reading in Philippians">
         <label>Notes</label>
         <textarea id="scrText" placeholder="Write your notes… On a new line type a reference like John 3:16 and press Enter."></textarea>
         <div class="lookup-status" id="lookupStatus"></div>
@@ -387,7 +387,7 @@
         </div>
         <label>Tags</label><input id="scrTags" placeholder="e.g. anxiety, sermon, prayer">
         <div class="toggle"><input type="checkbox" checked id="s1c"><label for="s1c" style="margin:0;text-transform:none;letter-spacing:0;font-size:14px;color:var(--ink)">Push to Notion → <b>Scripture Notes</b> database</label></div>
-        <div class="actions"><button class="btn ghost" onclick="go('home')">Cancel</button><button class="btn" onclick="saved('Scripture note saved & sent to Notion')">Save</button></div>
+        <div class="actions"><button class="btn ghost" onclick="go('home')">Cancel</button><button class="btn" onclick="submitForm('scripture')">Save</button></div>
       </div>
       <p class="hint">Mockup uses a few sample verses. The real build looks up any passage from the ESV API (api.esv.org) and shows “(ESV)” on each quote.</p>
     </div>
@@ -501,7 +501,7 @@
       </div>
       <div class="card">
         <h3 style="margin-bottom:2px">💾 Backup &amp; export</h3>
-        <p class="hint" style="margin-top:4px">Last backup: <b>Today, 3:00 am</b> · 17 sample entries</p>
+        <p class="hint" id="bkInfo" style="margin-top:4px"></p>
         <div class="actions" style="justify-content:flex-start;margin-top:10px"><button class="btn" id="expJson">Download all (JSON)</button><button class="btn ghost" id="expMd">Download as Markdown</button></div>
         <div class="toggle"><input type="checkbox" checked id="bk1"><label for="bk1" style="margin:0;text-transform:none;letter-spacing:0;font-size:14px;color:var(--ink)">Remind me to back up every Sunday</label></div>
       </div>
@@ -514,13 +514,14 @@
       <div class="card">
         <h3 style="margin-bottom:2px">🔗 Notion connection</h3>
         <p class="hint" style="margin:4px 0 6px">Each entry type pushes to its own Notion database.</p>
-        <div class="db"><div class="ic">💭</div><div class="meta"><b>Thoughts</b><span>Title · Category · Mood · Tags · Body · Date</span></div><span class="ok">● Connected</span></div>
-        <div class="db"><div class="ic">📝</div><div class="meta"><b>Notes</b><span>Title · Folder · Link · Body · Date</span></div><span class="ok">● Connected</span></div>
-        <div class="db"><div class="ic">🤝</div><div class="meta"><b>Meetings</b><span>Title · Type · People · Notes · Actions · Follow-up</span></div><span class="ok">● Connected</span></div>
-        <div class="db"><div class="ic">📖</div><div class="meta"><b>Scripture Notes</b><span>Title · Passages · Notes with ESV text · Tags · Date</span></div><span class="ok">● Connected</span></div>
-        <div class="db"><div class="ic">☀️</div><div class="meta"><b>Daily Office</b><span>Day · Psalm · Proverb · NT chapter · Reflections · Intention</span></div><span class="ok">● Connected</span></div>
-        <div class="db"><div class="ic">👥</div><div class="meta"><b>People</b><span>Name · Meetings · Last met · Open follow-ups</span></div><span class="ok">● Connected</span></div>
-        <div class="db"><div class="ic">🌙</div><div class="meta"><b>Examen</b><span>Date · Gratitude · Emotions · Prayer · Tomorrow</span></div><span class="ok">● Connected</span></div>
+        <p class="hint" id="notionNote" style="display:none;color:var(--gold)">Notion isn’t connected yet. Your “Push to Notion” choice on each form is saved with the entry and will be used once it is.</p>
+        <div class="db"><div class="ic">💭</div><div class="meta"><b>Thoughts</b><span>Title · Category · Mood · Tags · Body · Date</span></div><span class="ok notion-st">● Connected</span></div>
+        <div class="db"><div class="ic">📝</div><div class="meta"><b>Notes</b><span>Title · Folder · Link · Body · Date</span></div><span class="ok notion-st">● Connected</span></div>
+        <div class="db"><div class="ic">🤝</div><div class="meta"><b>Meetings</b><span>Title · Type · People · Notes · Actions · Follow-up</span></div><span class="ok notion-st">● Connected</span></div>
+        <div class="db"><div class="ic">📖</div><div class="meta"><b>Scripture Notes</b><span>Title · Passages · Notes with ESV text · Tags · Date</span></div><span class="ok notion-st">● Connected</span></div>
+        <div class="db"><div class="ic">☀️</div><div class="meta"><b>Daily Office</b><span>Day · Psalm · Proverb · NT chapter · Reflections · Intention</span></div><span class="ok notion-st">● Connected</span></div>
+        <div class="db"><div class="ic">👥</div><div class="meta"><b>People</b><span>Name · Meetings · Last met · Open follow-ups</span></div><span class="ok notion-st">● Connected</span></div>
+        <div class="db"><div class="ic">🌙</div><div class="meta"><b>Examen</b><span>Date · Gratitude · Emotions · Prayer · Tomorrow</span></div><span class="ok notion-st">● Connected</span></div>
       </div>
       <div class="card">
         <h3 style="margin-bottom:8px">Sync behavior</h3>
@@ -549,6 +550,9 @@
 <script src="config.js"></script>
 <script>
   const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+  const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const CFG=window.JOURNAL_CONFIG||{};
+  const sb=(CFG.url&&CFG.anonKey&&window.supabase)?window.supabase.createClient(CFG.url,CFG.anonKey):null;
   function show(id){$$('.view').forEach(v=>v.classList.toggle('active',v.id===id));window.scrollTo(0,0)}
   let cur='home';
   const base=p=>p.replace(/-new$/,'');
@@ -566,20 +570,31 @@
   function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('show');setTimeout(()=>e.classList.remove('show'),2200)}
   // Offline queue (mockup): entries save on-device and wait when offline
   let offline=false,pending=0;
+  const QKEY='jr-queue';
+  let MEMQ=(()=>{try{return JSON.parse(localStorage.getItem(QKEY)||'[]')}catch(e){return[]}})();
+  const loadQ=()=>MEMQ.slice();
+  const saveQ=q=>{MEMQ=q.slice();try{localStorage.setItem(QKEY,JSON.stringify(q))}catch(e){}};
+  const pendingN=()=>sb?loadQ().length:pending;
+  const isOffline=()=>offline||!navigator.onLine;
+  const QUEUED_MSG='✓ Saved on this device · will save to your journal when you’re back online';
   function notify(msg){
-    if(offline){pending++;renderSync();toast('✓ Saved on this device · will send to Notion when you’re back online')}
+    if(offline){pending++;renderSync();toast(QUEUED_MSG)}
     else toast(msg);
   }
   function renderSync(){
-    const t=offline?`◌ Offline · ${pending} waiting`:'● Online · all synced';
-    const c=$('#syncChip');c.textContent=t;c.classList.toggle('off',offline);
+    const pn=pendingN(),off=isOffline();
+    const t=off?`◌ Offline · ${pn} waiting`:(pn?`◌ Saving ${pn}…`:'● Online · all saved');
+    const c=$('#syncChip');c.textContent=t;c.classList.toggle('off',off||pn>0);
     const m=$('#moreSync');if(m)m.textContent='📶 '+t;
     $('#offToggle').checked=offline;
-    $('#queueMsg').textContent=offline?(pending?pending+' entries saved on this device, waiting to send to Notion.':'Nothing waiting yet. New entries will queue here.'):'Everything is synced to Notion.';
+    $('#queueMsg').textContent=off?(pn?pn+' entr'+(pn===1?'y':'ies')+' saved on this device, waiting to save to your journal.':'Nothing waiting yet. New entries will queue here.'):(pn?'Saving '+pn+' waiting entr'+(pn===1?'y':'ies')+'…':'Everything is saved.');
   }
   function setOffline(v){
-    const was=pending;offline=v;
-    if(!v&&was){pending=0;toast('✓ Back online · sent '+was+(was>1?' entries':' entry')+' to Notion')}
+    const was=pendingN();offline=v;
+    if(!v&&was){
+      if(sb)flushQueue().then(n=>{if(n)toast('✓ Back online · saved '+n+(n>1?' entries':' entry'))});
+      else{pending=0;toast('✓ Back online · saved '+was+(was>1?' entries':' entry'))}
+    }
     renderSync();
   }
   function saved(t){notify('✓ '+t+' (mockup)');const back=base(cur);setTimeout(()=>go(back),900)}
@@ -609,7 +624,7 @@
   }
   function flowStep(p,d){
     const f=flows[p],n=fsteps(p).length;
-    if(d>0&&f.i===n-1){notify(f.done);setTimeout(()=>go(p),1400);return}
+    if(d>0&&f.i===n-1){submitForm(p);return}
     f.i=Math.max(0,Math.min(n-1,f.i+d));flowRender(p);
   }
   Object.keys(flows).forEach(flowRender);
@@ -626,18 +641,21 @@
   // Reading plan: one psalm, one proverb, one New Testament chapter a day, in order
   const NT=[['Matthew',28],['Mark',16],['Luke',24],['John',21],['Acts',28],['Romans',16],['1 Corinthians',16],['2 Corinthians',13],['Galatians',6],['Ephesians',6],['Philippians',4],['Colossians',4],['1 Thessalonians',5],['2 Thessalonians',3],['1 Timothy',6],['2 Timothy',4],['Titus',3],['Philemon',1],['Hebrews',13],['James',5],['1 Peter',5],['2 Peter',3],['1 John',5],['2 John',1],['3 John',1],['Jude',1],['Revelation',22]];
   const NT_CH=NT.flatMap(([b,n])=>Array.from({length:n},(_,i)=>b+' '+(i+1)));
-  const PLAN_DAY=23;
+  let PLAN_DAY=sb?1:23,doneToday=false;
   const planFor=d=>({psalm:'Psalm '+(((d-1)%150)+1),proverb:'Proverbs '+(((d-1)%31)+1),nt:NT_CH[(d-1)%NT_CH.length]});
-  const today=planFor(PLAN_DAY),tmrw=planFor(PLAN_DAY+1);
-  $$('.refbadge').forEach(b=>{b.textContent=today[b.dataset.ref]});
-  $('#planDayLbl').textContent='Day '+PLAN_DAY;
-  $('#homeReading').textContent='Day '+PLAN_DAY+' · '+today.psalm+' · '+today.proverb+' · '+today.nt;
+  let today,tmrw;
+  function renderPlan(){
+    today=planFor(PLAN_DAY);tmrw=planFor(PLAN_DAY+1);
+    $$('.refbadge').forEach(b=>{b.textContent=today[b.dataset.ref]});
+    $('#planDayLbl').textContent='Day '+PLAN_DAY;
+    $('#homeReading').textContent='Day '+PLAN_DAY+' · '+today.psalm+' · '+today.proverb+' · '+today.nt+(doneToday?' · ✓ done':'');
+  }
   const hr=new Date().getHours();
   $('#greet').textContent=(hr<12?'Good morning':hr<18?'Good afternoon':'Good evening')+', JT.';
 
   // Entries: [type, title, summary, when, sentToNotion, expanded detail]
   const kv=(k,v)=>`<div class="kv"><b>${k}</b><span>${v}</span></div>`;
-  const ENTRIES=[
+  let ENTRIES=sb?[]:[
     ['meeting','Launch Global team sync','2:30–3:15 pm · 45 min · 3 people · 2 action items','Today · 2:30 pm',1,
       kv('When','Fri, Oct 23 · 2:30–3:15 pm (45 min)')+kv('Type','Team')+kv('People','Maria, Dan, Priya')+kv('Notes','Reviewed fall training schedule. Maria will lead the new-cohort orientation. We need a clearer follow-up process for partner churches.')+kv('Action items','☐ Send updated schedule to the team<br>☐ Draft follow-up email template')+kv('Follow up by','Fri, Oct 30')],
     ['scripture','Philippians 4 reflection','2 verses · ESV','Today · 12:10 pm',1,
@@ -676,21 +694,23 @@
   const tagOf=e=>SECTIONS[e[0]];
   const entryHTML=e=>{const s=tagOf(e);
     return `<div class="entry"><span class="tag ${s.tag}">${s.label}</span><div class="emain"><h4>${e[1]}</h4><p class="esub">${e[2]}</p>
-      <div class="detail">${e[5]}<div class="eactions"><button class="mini">Edit</button><button class="mini">${e[4]?'Re-send to Notion':'Send to Notion'}</button><button class="mini">Delete</button></div></div></div>
-      <div class="when">${e[3].replace(' · ','<br>')}<br><span class="sync ${e[4]?'':'pending'}">${e[4]?'✓ Notion':'● Not sent'}</span></div></div>`};
+      <div class="detail">${e[5]}<div class="eactions"><button class="mini">Edit</button><button class="mini">${e[4]===1?'Re-send to Notion':'Send to Notion'}</button><button class="mini" data-del="${e[6]||''}">Delete</button></div></div></div>
+      <div class="when">${e[3].replace(' · ','<br>')}<br><span class="sync ${e[4]===1?'':'pending'}">${e[4]===2?'◌ Waiting to save':e[4]===1?'✓ Notion':'● Not sent'}</span></div></div>`};
   const listHTML=(rows,empty)=>rows.length?rows.map(entryHTML).join(''):`<div class="empty">${empty||'Nothing here yet.'}</div>`;
-  $('#todayList').innerHTML=listHTML(ENTRIES.filter(e=>e[3].startsWith('Today')));
+  function renderLists(){
+  $('#todayList').innerHTML=listHTML(ENTRIES.filter(e=>e[3].startsWith('Today')),'Nothing yet today. Tap + to capture something.');
   Object.entries(SECTIONS).forEach(([k,s])=>{
     const plan=k!=='office'?'':`<div class="card plan">
-        <div class="eyebrow">Today's reading · Day ${PLAN_DAY}</div>
+        <div class="eyebrow">Today's reading · Day ${PLAN_DAY}</div>${doneToday?'<div class="hint" style="margin:6px 0 0;color:var(--sage)">✓ You finished today’s reading.</div>':''}
         <div class="reads"><div><span>Psalm</span><b>${today.psalm}</b></div><div><span>Proverb</span><b>${today.proverb}</b></div><div><span>New Testament</span><b>${today.nt}</b></div></div>
-        <div class="prog"><span>New Testament · ${PLAN_DAY} of ${NT_CH.length} chapters</span><div class="bar"><i style="width:${(PLAN_DAY/NT_CH.length*100).toFixed(1)}%"></i></div></div>
+        <div class="prog"><span>New Testament · ${doneToday?PLAN_DAY:PLAN_DAY-1} of ${NT_CH.length} chapters</span><div class="bar"><i style="width:${((doneToday?PLAN_DAY:PLAN_DAY-1)/NT_CH.length*100).toFixed(1)}%"></i></div></div>
         <div class="hint">Tomorrow: ${tmrw.psalm} · ${tmrw.proverb} · ${tmrw.nt}. The plan moves forward each day you finish it, starting in Matthew 1.</div></div>`;
     $('#'+k).innerHTML=`<div class="eyebrow">${s.title}</div>
       <div class="pagehead"><h1>${s.icon} ${s.title}</h1><button class="btn" onclick="go('${k}-new')">+ ${s.btn}</button></div>
       <p class="sub" style="margin-top:6px">${s.sub}</p>${plan}
       <div class="card">${listHTML(ENTRIES.filter(e=>e[0]===k))}</div>`;
   });
+  }
 
   // All entries: search + type filter
   let logType='all';
@@ -720,7 +740,10 @@
 
   // Expand an entry on click; collapse when clicking elsewhere
   document.addEventListener('click',e=>{
-    if(e.target.closest('.mini')){toast('Mockup: this would '+e.target.textContent.toLowerCase());return}
+    const mb=e.target.closest('.mini');
+    if(mb){
+      if(mb.dataset.del!==undefined){delEntry(mb.dataset.del);return}
+      toast(sb?'That’s coming soon.':'Mockup: this would '+mb.textContent.toLowerCase());return}
     const en=e.target.closest('.entry');
     $$('.entry.open').forEach(x=>{if(x!==en)x.classList.remove('open')});
     if(en&&!e.target.closest('.detail'))en.classList.toggle('open');
@@ -735,6 +758,7 @@
     const r=document.createElement('div');r.className='rec';
     r.innerHTML='<button type="button" class="recbtn">🎙 Record</button><span class="rtime"></span><span class="bars"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="rmsg">Audio is transcribed into the box above</span>';
     ta.after(r);
+    if(sb){r.querySelector('.recbtn').disabled=true;r.querySelector('.rmsg').textContent='Voice transcription is coming soon';return}
     let t=0,iv=null;const btn=r.querySelector('.recbtn'),tm=r.querySelector('.rtime'),msg=r.querySelector('.rmsg');
     const fmt=s=>Math.floor(s/60)+':'+String(s%60).padStart(2,'0');
     btn.onclick=()=>{
@@ -754,7 +778,9 @@
     $('#mEnd').textContent='Ends at '+((hh%12)||12)+':'+String(mm).padStart(2,'0')+' '+ap;
   }
   $('#mTime').oninput=$('#mDur').onchange=mEnd;mEnd();
-  $('#mDate').valueAsDate=new Date();
+  const ld=new Date(),p2=n=>String(n).padStart(2,'0');
+  $('#mDate').value=ld.getFullYear()+'-'+p2(ld.getMonth()+1)+'-'+p2(ld.getDate());
+  $('#mTime').value=p2(ld.getHours())+':'+p2(Math.floor(ld.getMinutes()/15)*15);mEnd();
 
   // Scripture lookup (mockup: sample verses; real build calls the ESV API)
   const ESV={
@@ -769,7 +795,7 @@
     const m=line.trim().match(REF);if(!m)return null;
     const ref=m[1].replace(/\b\w/g,c=>c.toUpperCase())+' '+m[2]+(m[3]?':'+m[3]+(m[4]?'–'+m[4]:''):'');
     const key=ref.toLowerCase().replace('–','-').replace(/^psalms/,'psalm');
-    return {ref,text:ESV[key]||'[ESV text for '+ref+' loads here from the API]'};
+    return {ref,text:ESV[key]||'[ESV text for '+ref+' loads here from the API]',known:!!ESV[key]};
   }
   const scr=$('#scrText');
   scr.addEventListener('keydown',e=>{
@@ -777,6 +803,7 @@
     const pos=scr.selectionStart,before=scr.value.slice(0,pos),start=before.lastIndexOf('\n')+1;
     const hit=lookup(before.slice(start));if(!hit)return;
     e.preventDefault();
+    if(sb&&!hit.known){$('#lookupStatus').textContent='Live ESV lookup isn’t connected yet. Only the sample verses (like John 3:16) work for now.';return}
     const ins='📖 '+hit.ref+'\n“'+hit.text+'” (ESV)\n\n';
     scr.value=before.slice(0,start)+ins+scr.value.slice(pos);
     scr.selectionStart=scr.selectionEnd=start+ins.length;
@@ -795,23 +822,32 @@
 
   // Quick capture (floating +)
   const qc=$('#qcModal'),qcRec=$('#qcModal .rec');
-  function qcStopIfLive(){if(qcRec.classList.contains('live'))qcRec.querySelector('.recbtn').click()}
-  function openQC(){$('#qcText').value='';qc.classList.add('open');if(!qcRec.classList.contains('live'))qcRec.querySelector('.recbtn').click()}
+  function qcStopIfLive(){if(!sb&&qcRec.classList.contains('live'))qcRec.querySelector('.recbtn').click()}
+  function openQC(){$('#qcText').value='';qc.classList.add('open');if(!sb&&!qcRec.classList.contains('live'))qcRec.querySelector('.recbtn').click();else if(sb)$('#qcText').focus()}
   function closeQC(){qcStopIfLive();qc.classList.remove('open')}
   $('#fab').onclick=openQC;
   $('#qcClose').onclick=$('#qcCancel').onclick=closeQC;
   qc.addEventListener('click',e=>{if(e.target===qc)closeQC()});
   document.addEventListener('keydown',e=>{if(e.key==='Escape'&&qc.classList.contains('open'))closeQC()});
-  $('#qcSave').onclick=()=>{const k=qc.querySelector('.chip.on').textContent;closeQC();notify('✓ Saved as a '+k.toLowerCase()+' (mockup)')};
+  $('#qcSave').onclick=async()=>{
+    const k=qc.querySelector('.chip.on').textContent.toLowerCase();
+    const live=!sb&&qcRec.classList.contains('live');
+    if(live){qcRec.querySelector('.recbtn').click();await new Promise(r=>setTimeout(r,1400))}
+    const text=$('#qcText').value.trim();closeQC();
+    if(!text){toast('Nothing to save yet');return}
+    const body=k==='note'?{folder:'Inbox',text}:k==='thought'?{category:'',text}:{text};
+    const st=await saveRow(k,snip(text,50),snip(text),body);
+    toast(st==='queued'?QUEUED_MSG:'✓ Saved as a '+k);
+  };
 
   // Follow-ups + people
-  const FOLLOW=[
+  let FOLLOW=sb?[]:[
     {t:'Send updated schedule to the team',who:['Maria','Dan','Priya'],from:'Launch Global team sync',due:'Due today',st:'now',done:false},
     {t:'Check in after he prays about the trip',who:['Sam'],from:'Coffee with Sam',due:'Due Wed',st:'over',done:false},
     {t:'Draft follow-up email template',who:['Maria'],from:'Launch Global team sync',due:'Due Mon',st:'soon',done:false},
     {t:'Send host guide',who:['Pastor Luis'],from:'Missions partner call',due:'Due next Thu',st:'soon',done:false}
   ];
-  const PEOPLE=[
+  let PEOPLE=sb?[]:[
     {n:'Sam',about:'Friend · weighing the spring trip',m:['Coffee with Sam · Mon, Oct 19','Lunch · Oct 5','Coffee · Sep 14'],last:'Mon'},
     {n:'Maria',about:'Team lead',m:['Launch Global team sync · Today','Team sync · Oct 16','Planning call · Oct 9'],last:'Today'},
     {n:'Dan',about:'Team',m:['Launch Global team sync · Today','Team sync · Oct 16'],last:'Today'},
@@ -823,31 +859,30 @@
     const rows=FOLLOW.slice().sort((a,b)=>(a.done-b.done)||rank[a.st]-rank[b.st]);
     const open=FOLLOW.filter(f=>!f.done).length;
     $('#followCard').innerHTML=`<div class="pagehead"><h3>📋 Follow-ups</h3><span class="hint" style="margin:0">${open?open+' open':'All caught up 🎉'}</span></div>`+
-      rows.map(f=>`<label class="fu ${f.done?'done':''}"><input type="checkbox" data-fu="${FOLLOW.indexOf(f)}" ${f.done?'checked':''}><div><div class="ft">${f.t}</div><div class="fm">From ${f.from} · with ${f.who.join(', ')}</div></div><span class="due ${f.done?'':f.st}">${f.done?'Done':f.due}</span></label>`).join('');
+      rows.map(f=>`<label class="fu ${f.done?'done':''}"><input type="checkbox" data-fu="${FOLLOW.indexOf(f)}" ${f.done?'checked':''}><div><div class="ft">${esc(f.t)}</div><div class="fm">From ${esc(f.from)}${f.who.length?' · with '+esc(f.who.join(', ')):''}</div></div><span class="due ${f.done?'':f.st}">${f.done?'Done':f.due}</span></label>`).join('');
     renderPeople();
   }
-  $('#followCard').addEventListener('change',e=>{const i=e.target.dataset.fu;if(i!==undefined){FOLLOW[i].done=e.target.checked;renderFollow()}});
+  $('#followCard').addEventListener('change',e=>{const i=e.target.dataset.fu;if(i===undefined)return;const f=FOLLOW[i];f.done=e.target.checked;if(sb){persistFollow(f)}else renderFollow()});
   function renderPeople(){
     const rows=PEOPLE.map(p=>{
       const items=FOLLOW.filter(f=>!f.done&&f.who.includes(p.n));
-      return `<div class="entry"><span class="tag t-meeting">Person</span><div class="emain"><h4>${p.n}</h4><p class="esub">${p.m.length} meeting${p.m.length>1?'s':''} · last ${p.last} · ${items.length?items.length+' open item'+(items.length>1?'s':''):'nothing open'}</p>
-        <div class="detail">${kv('About',p.about)}${kv('Meetings',p.m.join('<br>'))}${kv('Open items',items.length?items.map(i=>'☐ '+i.t).join('<br>'):'None 🎉')}
+      return `<div class="entry"><span class="tag t-meeting">Person</span><div class="emain"><h4>${esc(p.n)}</h4><p class="esub">${p.m.length} meeting${p.m.length>1?'s':''} · last ${p.last} · ${items.length?items.length+' open item'+(items.length>1?'s':''):'nothing open'}</p>
+        <div class="detail">${p.about?kv('About',esc(p.about)):''}${kv('Meetings',p.m.map(esc).join('<br>'))}${kv('Open items',items.length?items.map(i=>'☐ '+esc(i.t)).join('<br>'):'None 🎉')}
         <div class="eactions"><button class="mini">New meeting</button><button class="mini">Edit</button></div></div></div><div class="when">Last met<br>${p.last}</div></div>`}).join('');
     $('#people').innerHTML=`<div class="eyebrow">People</div>
       <div class="pagehead"><h1>👥 People</h1><button class="btn" onclick="go('meeting-new')">+ New Meeting</button></div>
       <p class="sub" style="margin-top:6px">Everyone you've met with, their meetings and anything still open.</p>
-      <div class="card">${rows}</div><p class="hint">The real build can sync this with the People database in your Missions Pipeline in Notion.</p>`;
+      <div class="card">${rows||'<div class="empty">People appear here as you log meetings.</div>'}</div><p class="hint">The real build can sync this with the People database in your Missions Pipeline in Notion.</p>`;
   }
-  renderFollow();
 
   // People field on the meeting form (suggests people you've met before)
   const picked=[];
   function renderPeopleField(){
-    $('#peopleChips').innerHTML=picked.map((n,i)=>`<span class="pchip">${n}<button type="button" data-rm="${i}">×</button></span>`).join('');
+    $('#peopleChips').innerHTML=picked.map((n,i)=>`<span class="pchip">${esc(n)}<button type="button" data-rm="${i}">×</button></span>`).join('');
     const q=$('#peopleInput').value.trim().toLowerCase();
     const opts=PEOPLE.filter(p=>!picked.includes(p.n)&&(!q||p.n.toLowerCase().includes(q)));
     const exact=PEOPLE.some(p=>p.n.toLowerCase()===q)||picked.map(x=>x.toLowerCase()).includes(q);
-    $('#peopleSuggest').innerHTML=(q?'':'Met before: ')+opts.map(p=>`<button type="button" data-add="${p.n}">${p.n} <span style="color:var(--muted)">· met ${p.m.length}×</span></button>`).join('')+(q&&!exact?`<button type="button" data-add="${$('#peopleInput').value.trim()}">＋ Add “${$('#peopleInput').value.trim()}” as new</button>`:'');
+    $('#peopleSuggest').innerHTML=(q?'':'Met before: ')+opts.map(p=>`<button type="button" data-add="${esc(p.n)}">${esc(p.n)} <span style="color:var(--muted)">· met ${p.m.length}×</span></button>`).join('')+(q&&!exact?`<button type="button" data-add="${esc($('#peopleInput').value.trim())}">＋ Add “${esc($('#peopleInput').value.trim())}” as new</button>`:'');
   }
   function addPerson(n){n=n.trim();if(n&&!picked.includes(n))picked.push(n);$('#peopleInput').value='';renderPeopleField()}
   $('#peopleSuggest').onclick=e=>{const b=e.target.closest('[data-add]');if(b)addPerson(b.dataset.add)};
@@ -857,21 +892,23 @@
     if(e.key==='Enter'||e.key===','){e.preventDefault();const q=$('#peopleInput').value.trim();const m=PEOPLE.find(p=>p.n.toLowerCase()===q.toLowerCase());if(q)addPerson(m?m.n:q)}
     if(e.key==='Backspace'&&!$('#peopleInput').value&&picked.length){picked.pop();renderPeopleField()}
   };
-  renderPeopleField();
 
   // Week at a glance (no guilt: missed days are just empty)
-  (function(){
-    const days=['M','T','W','T','F','S','S'];
-    const rows=[['☀️ Office',[0,1,1,1,'t',-1,-1]],['🌙 Examen',[0,1,1,1,'t',-1,-1]]];
-    const run=a=>{let n=0;for(let i=3;i>=0;i--){if(a[i]===1)n++;else break}return n};
-    $('#weekCard').innerHTML=`<div class="pagehead"><h3>This week</h3><span class="hint" style="margin:0">☀️ ${run(rows[0][1])} days running · 🌙 ${run(rows[1][1])} days running</span></div><div class="week">`+
+  let WEEK=sb?{office:[-1,-1,-1,-1,-1,-1,-1],examen:[-1,-1,-1,-1,-1,-1,-1],runs:[0,0]}:{office:[0,1,1,1,'t',-1,-1],examen:[0,1,1,1,'t',-1,-1],runs:[3,3]};
+  function renderWeek(){
+    const days=['M','T','W','T','F','S','S'],rows=[['☀️ Office',WEEK.office],['🌙 Examen',WEEK.examen]];
+    const run=n=>n?n+' day'+(n>1?'s':'')+' running':'ready when you are';
+    $('#weekCard').innerHTML=`<div class="pagehead"><h3>This week</h3><span class="hint" style="margin:0">☀️ ${run(WEEK.runs[0])} · 🌙 ${run(WEEK.runs[1])}</span></div><div class="week">`+
       rows.map(([l,a])=>`<div class="wl">${l}</div><div class="wk">${a.map((v,i)=>`<div class="wd ${v===1?'done':v==='t'?'today':v===-1?'future':''}"><i></i>${days[i]}</div>`).join('')}</div>`).join('')+'</div>';
-  })();
+  }
 
   // Examen intention carries into the Morning Office
-  const INTENT='Patience with the team.';
-  $('#homeIntent').textContent='From last night: “'+INTENT+'”';
-  $('#officeIntent').innerHTML='<small>🌙 Your intention from last night’s Examen</small>“'+INTENT+'”';
+  let INTENT=sb?'':'Patience with the team.';
+  function renderIntent(){
+    $('#homeIntent').textContent=INTENT?'From your last Examen: “'+INTENT+'”':'';
+    $('#officeIntent').style.display=INTENT?'':'none';
+    $('#officeIntent').innerHTML='<small>🌙 Your intention from your last Examen</small>“'+esc(INTENT)+'”';
+  }
 
   // Scripture extras: next verse, whole chapter
   const keyOf=r=>r.toLowerCase().replace('–','-').replace(/^psalms/,'psalm');
@@ -905,12 +942,170 @@
   // Backup & export (downloads the sample entries)
   const strip=h=>{const d=document.createElement('div');d.innerHTML=h.replace(/<br>/g,'\n').replace(/<\/div>/g,'\n');return d.textContent.replace(/\n{2,}/g,'\n').trim()};
   function download(name,text,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;document.body.appendChild(a);a.click();a.remove();toast('✓ Downloaded '+name)}
-  $('#expJson').onclick=()=>download('journal-backup.json',JSON.stringify(ENTRIES.map(e=>({type:e[0],title:e[1],summary:e[2],when:e[3],sentToNotion:!!e[4],detail:strip(e[5])})),null,2),'application/json');
+  $('#expJson').onclick=()=>download('journal-backup.json',JSON.stringify(sb?DBROWS:ENTRIES.map(e=>({type:e[0],title:e[1],summary:e[2],when:e[3],sentToNotion:!!e[4],detail:strip(e[5])})),null,2),'application/json');
   $('#expMd').onclick=()=>download('journal-backup.md',ENTRIES.map(e=>`## ${e[1]}\n_${e[0]} · ${e[3]}_\n\n${strip(e[5])}\n`).join('\n'),'text/markdown');
 
-  // ===== Sign-in (Supabase Auth; falls back to demo mode until config.js is filled in) =====
-  const CFG=window.JOURNAL_CONFIG||{};
-  const sb=(CFG.url&&CFG.anonKey&&window.supabase)?window.supabase.createClient(CFG.url,CFG.anonKey):null;
+  // ===== Data layer (Supabase) =====
+  let DBROWS=[];
+  const snip=(t,n=70)=>t.length>n?t.slice(0,n).trim()+'…':t;
+  const nl=t=>esc(t).replace(/\n/g,'<br>');
+  const day0=d=>{const x=new Date(d);x.setHours(0,0,0,0);return x};
+  const sameDay=(a,b)=>day0(a).getTime()===day0(b).getTime();
+  const fmtT=d=>d.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'}).toLowerCase();
+  function whenLabel(d){
+    const diff=Math.round((day0(new Date())-day0(d))/864e5);
+    if(diff===0)return 'Today · '+fmtT(d);if(diff===1)return 'Yesterday · '+fmtT(d);
+    if(diff>1&&diff<7)return d.toLocaleDateString([],{weekday:'short'})+' · '+fmtT(d);
+    return d.toLocaleDateString([],{month:'short',day:'numeric'});
+  }
+  const shortDay=d=>{const diff=Math.round((day0(d)-day0(new Date()))/864e5);return Math.abs(diff)<7?d.toLocaleDateString([],{weekday:'short'}):d.toLocaleDateString([],{month:'short',day:'numeric'})};
+  const durLabel=m=>m<60?m+' min':m%60?Math.floor(m/60)+' hr '+(m%60)+' min':(m/60)+(m===60?' hour':' hours');
+  function timeRange(b){
+    if(!b.time)return '';const [h,m]=b.time.split(':').map(Number);
+    const s0=new Date(2000,0,1,h,m),e0=new Date(s0.getTime()+(+b.dur||0)*6e4);
+    return fmtT(s0)+'–'+fmtT(e0);
+  }
+  const meetingDate=b=>b.date?new Date(b.date+'T'+(b.time||'12:00')):null;
+  const safeLink=u=>/^https?:\/\//i.test(u)?`<a href="${esc(u)}" target="_blank" rel="noopener" style="color:var(--accent)">${esc(u)}</a>`:esc(u);
+  function rowToEntry(r){
+    const b=r.body||{},d=new Date(r.created_at),T=(k,v)=>v?kv(k,v):'';
+    let when=whenLabel(d),html='';
+    if(r.type==='thought')html=T('Category',esc(b.category))+T('Mood',esc(b.mood))+T('Thought',nl(b.text))+T('Tags',esc(b.tags));
+    if(r.type==='note')html=T('Folder',esc(b.folder))+T('Note',nl(b.text))+T('Link',b.link?safeLink(b.link):'');
+    if(r.type==='meeting'){
+      const md=meetingDate(b);if(md)when=whenLabel(md);
+      html=T('When',md?esc(md.toLocaleDateString([],{weekday:'short',month:'short',day:'numeric'})+(b.time?' · '+timeRange(b)+' ('+durLabel(+b.dur)+')':'')):'')+T('Type',esc(b.type))+T('People',esc((b.people||[]).join(', ')))+T('Notes',nl(b.text))+
+        T('Action items',(b.actions||[]).map(a=>(a.done?'☑ ':'☐ ')+esc(a.t)).join('<br>'))+T('Follow up by',b.followUp?esc(shortDay(new Date(b.followUp+'T00:00:00'))):'');
+    }
+    if(r.type==='scripture')html=T('Notes',nl(b.text))+T('Tags',esc(b.tags));
+    if(r.type==='office')html=T('Readings',esc([b.psalmRef,b.proverbRef,b.ntRef].filter(Boolean).join(' · ')))+T('Psalm',nl(b.psalm))+T('Proverb',nl(b.proverb))+T('New Testament',nl(b.nt))+T('Praying for',nl(b.praying))+T('Intention',nl(b.intention));
+    if(r.type==='examen')html=T('Gratitude',nl(b.gratitude))+T('Emotions',esc([b.emotions,b.emotionsNote].filter(Boolean).join(' — ')))+T('Prayer',nl(b.prayer))+T('Tomorrow',nl(b.tomorrow));
+    if(!html)html='<div class="kv"><span>No details.</span></div>';
+    return [r.type,esc(r.title||'Untitled'),esc(r.summary||''),when,r.pending?2:(r.sent_to_notion?1:0),html,r.id,r.created_at,b];
+  }
+  const allRows=()=>DBROWS.concat(sb?loadQ().map((r,i)=>({...r,id:'q'+i,pending:true,sent_to_notion:false})):[]);
+  function dueInfo(s){
+    if(!s)return {label:'No date',st:'soon'};
+    const d=new Date(s+'T00:00:00'),diff=Math.round((d-day0(new Date()))/864e5);
+    return diff<0?{label:'Due '+shortDay(d),st:'over'}:diff===0?{label:'Due today',st:'now'}:{label:'Due '+shortDay(d),st:'soon'};
+  }
+  function deriveAll(){
+    const rows=allRows(),now=new Date(),by=t=>rows.filter(r=>r.type===t);
+    // reading plan advances by days finished
+    const off=by('office'),last=Math.max(0,...off.map(r=>+(r.body||{}).day||0));
+    doneToday=off.some(r=>sameDay(new Date(r.created_at),now)&&(+(r.body||{}).day||0)===last&&last>0);
+    PLAN_DAY=Math.max(1,doneToday?last:last+1);
+    // intention from the most recent Examen
+    const ex=by('examen').filter(r=>(r.body||{}).tomorrow).sort((a,b)=>new Date(b.created_at)-new Date(a.created_at))[0];
+    INTENT=ex?ex.body.tomorrow:'';
+    // follow-ups + people come from meetings
+    FOLLOW=[];const map={};
+    by('meeting').sort((a,b)=>new Date(a.created_at)-new Date(b.created_at)).forEach(r=>{
+      const b=r.body||{},md=meetingDate(b)||new Date(r.created_at);
+      (b.people||[]).forEach(n=>{const p=map[n]=map[n]||{n,about:'',m:[],lastD:0};p.m.push((r.title||'Meeting')+' · '+md.toLocaleDateString([],{month:'short',day:'numeric'}));if(md>p.lastD)p.lastD=md});
+      (b.actions||[]).forEach((a,i)=>{if(!a.t)return;const di=dueInfo(b.followUp);FOLLOW.push({t:a.t,who:b.people||[],from:r.title||'Meeting',due:di.label,st:di.st,done:!!a.done,rowId:r.id,idx:i})});
+    });
+    PEOPLE=Object.values(map).map(p=>({...p,m:p.m.reverse(),last:shortDay(p.lastD)})).sort((a,b)=>b.lastD-a.lastD);
+    // week at a glance
+    const dow=(now.getDay()+6)%7,has=(t,dt)=>rows.some(r=>r.type===t&&sameDay(new Date(r.created_at),dt));
+    const mk=t=>Array.from({length:7},(_,i)=>{const dt=day0(now);dt.setDate(dt.getDate()-dow+i);if(dt>day0(now))return -1;return has(t,dt)?1:(sameDay(dt,now)?'t':0)});
+    const run=t=>{let n=0;const dt=day0(now);if(!has(t,dt))dt.setDate(dt.getDate()-1);while(has(t,dt)){n++;dt.setDate(dt.getDate()-1)}return n};
+    WEEK={office:mk('office'),examen:mk('examen'),runs:[run('office'),run('examen')]};
+  }
+  function renderAll(){
+    renderPlan();renderLists();renderLog();renderFollow();renderPeopleField();renderWeek();renderIntent();renderSync();
+    $('#bkInfo').textContent='Download a copy of everything: '+ENTRIES.length+' entr'+(ENTRIES.length===1?'y':'ies')+(sb?'.':' (sample data).');
+  }
+  function rebuild(){
+    if(sb){deriveAll();ENTRIES=allRows().sort((a,b)=>new Date(b.created_at)-new Date(a.created_at)).map(rowToEntry)}
+    renderAll();
+  }
+  async function loadRows(){
+    const {data,error}=await sb.from('entries').select('*').order('created_at',{ascending:false}).limit(2000);
+    if(error){toast('Couldn’t load your entries: '+error.message);return}
+    DBROWS=data;rebuild();
+  }
+  async function flushQueue(){
+    if(!sb||isOffline())return 0;
+    const q=loadQ();let n=0;
+    while(q.length){const {error}=await sb.from('entries').insert(q[0]);if(error)break;q.shift();saveQ(q);n++}
+    if(n)await loadRows();else rebuild();
+    return n;
+  }
+  async function saveRow(type,title,summary,body){
+    const row={type,title,summary,body,created_at:new Date().toISOString()};
+    if(!sb){DBROWS.unshift({...row,id:'demo'+Date.now(),sent_to_notion:false});ENTRIES.unshift(rowToEntry(DBROWS[0]));renderAll();return 'saved'}
+    const queue=()=>{const q=loadQ();q.push(row);saveQ(q);rebuild();return 'queued'};
+    if(isOffline())return queue();
+    const {data,error}=await sb.from('entries').insert({type,title,summary,body}).select().single();
+    if(error)return queue();
+    DBROWS.unshift(data);rebuild();return 'saved';
+  }
+  async function persistFollow(f){
+    const r=DBROWS.find(x=>x.id===f.rowId);
+    if(!r){toast('Still waiting to save. Try again in a moment.');rebuild();return}
+    const body={...r.body,actions:r.body.actions.map((a,i)=>i===f.idx?{...a,done:f.done}:a)};
+    const {error}=await sb.from('entries').update({body}).eq('id',r.id);
+    if(error){toast('Couldn’t update that: '+error.message);rebuild();return}
+    r.body=body;rebuild();
+  }
+  async function delEntry(id){
+    if(!sb){toast('Mockup: this would delete');return}
+    if(!id){return}
+    if(id.startsWith('q')){const q=loadQ();q.splice(+id.slice(1),1);saveQ(q);rebuild();return}
+    if(!confirm('Delete this entry? This can’t be undone.'))return;
+    const {error}=await sb.from('entries').delete().eq('id',id);
+    if(error){toast('Couldn’t delete: '+error.message);return}
+    DBROWS=DBROWS.filter(r=>r.id!==id);rebuild();toast('Entry deleted');
+  }
+
+  // ===== Forms → entries =====
+  const LABEL={thought:'Thought',note:'Note',meeting:'Meeting',scripture:'Scripture note',office:'Morning Office',examen:'Examen'};
+  const F=(pg,k)=>{const el=$('#'+pg+'-new [data-f="'+k+'"]');return el?el.value.trim():''};
+  const chipVal=(pg,k)=>{const g=$('#'+pg+'-new [data-f="'+k+'"]'),c=g&&g.querySelector('.chip.on');return c?c.textContent:''};
+  const COLLECT={
+    thought(){const text=F('thought','text');if(!text)return null;const category=chipVal('thought','category');
+      return {title:F('thought','title')||snip(text,50),summary:[category,snip(text)].filter(Boolean).join(' · '),body:{category,mood:chipVal('thought','mood'),text,tags:F('thought','tags'),pushNotion:$('#t1').checked}}},
+    note(){const text=F('note','text'),title=F('note','title');if(!text&&!title)return null;
+      return {title:title||snip(text,50),summary:[F('note','folder'),snip(text,50)].filter(Boolean).join(' · '),body:{folder:F('note','folder'),text,link:F('note','link'),pushNotion:$('#n1').checked}}},
+    meeting(){const title=F('meeting','title');if(!title)return null;
+      const people=picked.slice(),actions=$$('#actions > div').map(d=>({t:d.querySelector('input:not([type=checkbox])').value.trim(),done:d.querySelector('input[type=checkbox]').checked})).filter(a=>a.t);
+      const body={date:$('#mDate').value,time:$('#mTime').value,dur:+$('#mDur').value,type:F('meeting','type'),people,text:F('meeting','text'),actions,followUp:F('meeting','followUp'),pushNotion:$('#m1').checked};
+      return {title,summary:[timeRange(body),durLabel(body.dur),people.length+' '+(people.length===1?'person':'people'),actions.length+' action item'+(actions.length===1?'':'s')].filter(Boolean).join(' · '),body}},
+    scripture(){const text=$('#scrText').value.trim(),title=F('scripture','title');if(!text&&!title)return null;
+      const v=(text.match(/^📖/gm)||[]).length;
+      return {title:title||snip(text.replace(/^📖\s*/,'').split('\n')[0],50),summary:v?v+' verse'+(v>1?'s':'')+' · ESV':snip(text),body:{text,tags:$('#scrTags').value.trim(),pushNotion:$('#s1c').checked}}},
+    office(){const t=$$('#office-new textarea').map(x=>x.value.trim()),pl=planFor(PLAN_DAY);
+      return {title:'Morning Office — Day '+PLAN_DAY,summary:pl.psalm+' · '+pl.proverb+' · '+pl.nt,body:{day:PLAN_DAY,psalmRef:pl.psalm,proverbRef:pl.proverb,ntRef:pl.nt,psalm:t[0],proverb:t[1],nt:t[2],praying:t[3],intention:t[4],pushNotion:$('#o1').checked}}},
+    examen(){const t=$$('#examen-new textarea').map(x=>x.value.trim()),emo=$$('#examen-new .emo .chip.on').map(c=>c.textContent).join(', ');
+      return {title:'Examen — '+new Date().toLocaleDateString([],{weekday:'long'}),summary:snip(t[0]||t[2]||t[3]||emo||'Evening reflection'),body:{gratitude:t[0],emotions:emo,emotionsNote:t[1],prayer:t[2],tomorrow:t[3],pushNotion:$('#x1').checked}}}
+  };
+  function resetForm(type){
+    const pg=$('#'+type+'-new');
+    pg.querySelectorAll('textarea').forEach(t=>t.value='');
+    pg.querySelectorAll('input:not([type=checkbox]):not([type=date]):not([type=time])').forEach(i=>i.value='');
+    pg.querySelectorAll('.emo .chip.on').forEach(c=>c.classList.remove('on'));
+    if(type==='meeting'){picked.length=0;renderPeopleField();$('#actions').innerHTML='<div style="display:flex;gap:8px;margin-bottom:8px"><input type="checkbox" style="width:auto"><input placeholder="Follow-up…"></div>';pg.querySelector('[data-f=followUp]').value=''}
+    if(type==='scripture'){$('#verseTools').innerHTML='';$('#lookupStatus').textContent='';$('#chapterPanel').classList.remove('open')}
+  }
+  let saving=false;
+  async function submitForm(type){
+    if(saving)return;
+    const c=COLLECT[type]();
+    if(!c){toast('Add a little something first');return}
+    saving=true;
+    try{
+      const st=await saveRow(type,c.title,c.summary,c.body);
+      resetForm(type);
+      toast(st==='queued'?QUEUED_MSG:'✓ '+LABEL[type]+' saved');
+      go(type);
+    }finally{saving=false}
+  }
+  window.addEventListener('online',()=>{flushQueue();renderSync()});
+  window.addEventListener('offline',renderSync);
+
+  // ===== Sign-in (Supabase Auth; demo mode until config.js is filled in) =====
+  async function enterApp(){show('app');await loadRows();await flushQueue()}
   async function doLogin(e){
     e.preventDefault();
     if(!sb){show('app');return}
@@ -918,16 +1113,20 @@
     const {error}=await sb.auth.signInWithPassword({email:$('#u').value.trim(),password:$('#p').value});
     btn.disabled=false;
     if(error){msg.textContent='That email or password didn’t work.';return}
-    $('#p').value='';show('app');
+    $('#p').value='';await enterApp();
   }
-  async function signOut(){if(sb)await sb.auth.signOut();show('login')}
+  function clearData(){DBROWS=[];rebuild();go('home')}
+  async function signOut(){if(sb)await sb.auth.signOut();clearData();show('login')}
   (async function initAuth(){
-    if(!sb){$('#demoNote').textContent='DEMO MODE — sign-in is not connected yet; sample data only, nothing is saved or sent to Notion';return}
+    renderAll();
+    if(!sb){$('#demoNote').textContent='DEMO MODE — sign-in is not connected yet; sample data only, nothing is saved';return}
     $('#u').value='';$('#p').value='';
     $('#demoNote').textContent='Private journal';
+    $$('.notion-st').forEach(n=>{n.textContent='○ Not connected yet';n.style.color='var(--muted)'});
+    $('#notionNote').style.display='';
     const {data}=await sb.auth.getSession();
-    if(data.session)show('app');
-    sb.auth.onAuthStateChange((_ev,sess)=>{if(!sess)show('login')});
+    if(data.session)await enterApp();
+    sb.auth.onAuthStateChange((_ev,sess)=>{if(!sess){clearData();show('login')}});
   })();
 </script>
 </body>

@@ -2,7 +2,7 @@
 
 A private, phone-first journal: thoughts, notes, meetings, scripture notes, a morning Office with a daily reading plan, and an evening Examen. Entries can be pushed to Notion.
 
-**Status:** interface mockup with sample data. Sign-in is real once connected to Supabase (below); saving entries and the Notion push come next.
+**Status:** sign-in and saving are live on Supabase. Every form saves to your private `entries` table, and your lists, People, follow-ups, reading plan and week view are built from what you've saved. Not built yet: Notion push, live ESV lookup (only a few sample verses work), and voice transcription.
 
 ## Turn on real sign-in
 
@@ -15,3 +15,7 @@ A private, phone-first journal: thoughts, notes, meetings, scripture notes, a mo
 The URL and anon key are public by design; the database rules only let your signed-in user read or write. Keep the `service_role` key, Notion token and ESV API key out of this repo (they will live in Supabase Edge Function secrets).
 
 Until `config.js` is filled in, the page runs in demo mode (any password works, sample data only).
+
+## How saving works
+
+Entries are rows in `public.entries` (`type`, `title`, `summary`, and a `body` JSON with the form's fields). If you're offline, entries queue on the device and save automatically when you're back online.
