@@ -1,0 +1,934 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Daily Journal — Mockup</title>
+<style>
+  :root,html[data-theme="night"]{
+    color-scheme:dark;
+    --bg:#14161d; --card:#242836; --ink:#efeee8; --muted:#9a9faa; --line:#3a4054;
+    --accent:#d8b45f; --accent-ink:#1b1710; --accent-soft:#3a3626; --sage:#7fc4a0; --sage-soft:#26382f; --gold:#d8b45f; --field:#2e3345;
+    --hero-a:#262b45; --hero-b:#3a4070; --hero-ink:#eceaf5; --hero-btn:#d8b45f; --hero-btn-ink:#1b1710;
+    --hero2-a:#7a4a2a; --hero2-b:#b87a3e;
+    --radius:16px; --radius-sm:10px; --pill:99px; --shadow:rgba(0,0,0,.45);
+    --serif:Georgia,"Iowan Old Style",serif; --head:Georgia,"Iowan Old Style",serif; --head-w:500; --head-ls:0;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    --tc-thought:#d8b45f; --tc-note:#7fa8dc; --tc-meeting:#7fc4a0; --tc-scripture:#b79be0; --tc-office:#e8955a; --tc-examen:#9aa4e8;
+  }
+  html[data-theme="day"]{
+    color-scheme:light;
+    --bg:#f4f2ec; --card:#fff; --ink:#1d2030; --muted:#6c7185; --line:#e3e0d6;
+    --accent:#946d12; --accent-ink:#fff; --accent-soft:#f4ebd3; --sage:#2f7d5c; --sage-soft:#e0f0e8; --gold:#b88a1e; --field:#fff;
+    --hero-a:#262b45; --hero-b:#3a4070; --hero-ink:#eceaf5; --hero-btn:#d8b45f; --hero-btn-ink:#1b1710;
+    --hero2-a:#b0662f; --hero2-b:#da9a4c;
+    --shadow:rgba(40,40,60,.10);
+    --tc-thought:#946d12; --tc-note:#3e6fb0; --tc-meeting:#2f7d5c; --tc-scripture:#7a56b8; --tc-office:#c2662a; --tc-examen:#4b57b8;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.5}
+  h1,h2,h3{font-family:var(--head);font-weight:var(--head-w);letter-spacing:var(--head-ls);margin:0}
+  button{font:inherit;cursor:pointer}
+  .banner{background:var(--ink);color:var(--bg);text-align:center;font-size:12px;padding:6px 12px;letter-spacing:.04em;display:flex;justify-content:center;align-items:center;gap:6px 18px;flex-wrap:wrap}
+  .sw{display:inline-flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:center}
+  .sw button{border:1px solid color-mix(in srgb,var(--bg) 40%,transparent);background:transparent;color:var(--bg);border-radius:99px;padding:2px 11px;font-size:12px}
+  .sw button.on{background:var(--bg);color:var(--ink);font-weight:700}
+  .view{display:none}.view.active{display:block}
+
+  /* Login */
+  .login{min-height:calc(100vh - 30px);display:grid;place-items:center;padding:24px}
+  .login-card{width:100%;max-width:380px;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:36px 30px;text-align:center;box-shadow:0 10px 40px var(--shadow)}
+  .login-card .mark{width:54px;height:54px;border-radius:50%;background:var(--accent-soft);display:grid;place-items:center;margin:0 auto 14px;font-size:24px}
+  .login-card p{color:var(--muted);margin:6px 0 22px;font-size:14px}
+  label{display:block;text-align:left;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:14px 0 6px}
+  input,textarea,select{width:100%;font:inherit;color:var(--ink);background:var(--field);border:1px solid var(--line);border-radius:var(--radius-sm);padding:11px 13px}
+  input:focus,textarea:focus,select:focus{outline:2px solid var(--accent-soft);border-color:var(--accent)}
+  textarea{min-height:140px;resize:vertical;font-family:var(--serif);font-size:17px;line-height:1.6}
+  .btn{background:var(--accent);color:var(--accent-ink);border:0;border-radius:var(--radius-sm);padding:12px 20px;font-weight:600}
+  .btn.block{width:100%;margin-top:22px}
+  .btn.ghost{background:transparent;color:var(--accent);border:1px solid var(--line)}
+  .btn.sage{background:var(--sage)}
+  .hint{font-size:12px;color:var(--muted);margin-top:14px}
+
+  /* App shell */
+  .shell{display:grid;grid-template-columns:230px 1fr;min-height:calc(100vh - 30px)}
+  nav{background:var(--card);border-right:1px solid var(--line);padding:24px 14px;position:sticky;top:0;height:calc(100vh - 30px)}
+  nav h2{font-size:20px;padding:0 10px 18px}
+  nav a{display:flex;gap:10px;align-items:center;padding:10px 12px;border-radius:10px;color:var(--ink);text-decoration:none;font-size:15px;cursor:pointer;margin-bottom:2px}
+  nav a:hover{background:var(--bg)}
+  .lbl-short,nav a.morebtn,.moresheet{display:none}
+  nav a.on{background:var(--accent-soft);color:var(--accent);font-weight:600}
+  nav .sep{height:1px;background:var(--line);margin:14px 6px}
+  nav .foot{position:absolute;bottom:20px;left:14px;right:14px;font-size:12px;color:var(--muted)}
+  main{padding:34px 40px;max-width:860px;width:100%;min-width:0}
+  .page{display:none}.page.active{display:block}
+  .eyebrow{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+  main h1{font-size:34px;margin:4px 0 6px}
+  .sub{color:var(--muted);margin:0 0 26px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:22px;margin-bottom:18px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+  .tile{background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:var(--radius);padding:18px;text-align:left;transition:.15s}
+  .tile:hover{border-color:var(--accent);transform:translateY(-2px)}
+  .tile .ic{font-size:22px}.tile b{display:block;font-family:var(--serif);font-size:18px;font-weight:500;margin-top:6px}
+  .tile span{font-size:13px;color:var(--muted)}
+  .examen-card{background:linear-gradient(135deg,var(--hero-a),var(--hero-b));color:var(--hero-ink);border:0;display:flex;gap:18px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+  .examen-card h3{font-size:22px}.examen-card p{margin:4px 0 0;color:var(--hero-ink);opacity:.8;font-size:14px}
+  .examen-card .btn{background:var(--hero-btn);color:var(--hero-btn-ink)}
+  .examen-card.hero2{background:linear-gradient(135deg,var(--hero2-a),var(--hero2-b));color:#fff}
+  .examen-card.hero2 p{color:#fff}
+  .entry{display:flex;gap:14px;padding:14px 0;border-bottom:1px solid var(--line)}
+  .entry:last-child{border:0}
+  .tag{font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;padding:3px 9px;border-radius:var(--pill);height:fit-content;white-space:nowrap}
+  .t-thought{background:color-mix(in srgb,var(--tc-thought) 15%,var(--card));color:var(--tc-thought)}
+  .t-note{background:color-mix(in srgb,var(--tc-note) 15%,var(--card));color:var(--tc-note)}
+  .t-meeting{background:color-mix(in srgb,var(--tc-meeting) 15%,var(--card));color:var(--tc-meeting)}
+  .t-examen{background:color-mix(in srgb,var(--tc-examen) 15%,var(--card));color:var(--tc-examen)}
+  .entry h4{margin:0;font-weight:600;font-size:15px}.entry p{margin:2px 0 0;color:var(--muted);font-size:14px}
+  .entry .when{margin-left:auto;font-size:12px;color:var(--muted);white-space:nowrap}
+  .sync{font-size:12px;display:inline-flex;gap:5px;align-items:center;color:var(--sage)}
+  .sync.pending{color:var(--gold)}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .toggle{display:flex;align-items:center;gap:10px;margin-top:18px;padding:12px 14px;background:var(--bg);border-radius:10px;font-size:14px}
+  .toggle input{width:auto}
+  .chips{display:flex;gap:8px;flex-wrap:wrap}
+  .chip{border:1px solid var(--line);background:var(--field);border-radius:var(--pill);padding:6px 14px;font-size:13px;color:var(--ink)}
+  .chip.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+  .actions{display:flex;gap:10px;justify-content:flex-end;margin-top:20px;flex-wrap:wrap}
+  .actions.split{justify-content:space-between}
+
+  /* Examen */
+  .steps{display:flex;gap:8px;margin:6px 0 26px}
+  .dot{flex:1;height:5px;border-radius:9px;background:var(--line)}.dot.done{background:var(--gold)}
+  .xstep{display:none}.xstep.active{display:block}
+  .xstep .num{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);font-weight:700}
+  .xstep h2{font-size:30px;margin:4px 0 8px}
+  .xstep .prompt{color:var(--muted);font-family:var(--serif);font-style:italic;font-size:17px;margin:0 0 16px}
+  .verse{border-left:3px solid var(--gold);padding:6px 14px;margin:0 0 18px;color:var(--muted);font-family:var(--serif);font-size:15px}
+  .emo{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+
+  /* Voice recorder */
+  .rec{display:flex;align-items:center;gap:12px;margin-top:8px;padding:8px 12px;background:var(--bg);border-radius:10px;font-size:13px;color:var(--muted);flex-wrap:wrap}
+  .recbtn{background:var(--field);border:1px solid var(--line);border-radius:var(--pill);padding:6px 14px;color:var(--ink);font-size:13px}
+  .recbtn:hover{border-color:var(--accent)}
+  .rec.live .recbtn{background:#b4452f;color:#fff;border-color:#b4452f}
+  .bars{display:none;gap:3px;align-items:center;height:18px}
+  .rec.live .bars{display:flex}
+  .bars i{width:3px;background:#b4452f;border-radius:2px;height:6px;animation:bar .7s ease-in-out infinite}
+  .bars i:nth-child(2n){animation-delay:.15s}.bars i:nth-child(3n){animation-delay:.3s}
+  @keyframes bar{50%{height:18px}}
+  .rtime{font-variant-numeric:tabular-nums;min-width:34px}
+  .audio-chip{background:var(--sage-soft);color:var(--sage);border-radius:99px;padding:3px 10px;font-size:12px;font-weight:600}
+
+  /* Scripture */
+  .t-scripture{background:color-mix(in srgb,var(--tc-scripture) 15%,var(--card));color:var(--tc-scripture)}
+  .t-office{background:color-mix(in srgb,var(--tc-office) 15%,var(--card));color:var(--tc-office)}
+  .esv{font-size:11px;font-weight:700;letter-spacing:.06em;background:color-mix(in srgb,var(--tc-scripture) 15%,var(--card));color:var(--tc-scripture);border-radius:6px;padding:2px 7px;vertical-align:middle}
+  .lookup-status{font-size:13px;color:var(--sage);min-height:20px;margin-top:8px}
+  .try{margin-top:10px;font-size:13px;color:var(--muted)}
+  .try button{border:0;background:var(--accent-soft);color:var(--accent);border-radius:6px;padding:2px 8px;margin:0 3px;font-size:13px}
+  #scrText{min-height:260px}
+
+  .pagehead{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:6px}
+  .pagehead .sub{margin-bottom:0}
+  .empty{color:var(--muted);text-align:center;padding:24px 0;font-size:14px}
+
+  .entry{cursor:pointer;border-radius:12px;transition:background .15s}
+  .entry:hover{background:color-mix(in srgb,var(--accent) 6%,transparent)}
+  .emain{flex:1;min-width:0}
+  .esub{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .detail{display:none;margin-top:12px;font-size:14px;cursor:auto}
+  .entry.open{background:var(--field);margin:6px -14px;padding:16px 14px;border:1px solid var(--line);box-shadow:0 6px 24px var(--shadow)}
+  .entry.open .detail{display:block}
+  .entry.open .esub{white-space:normal;color:var(--ink)}
+  .kv{display:grid;grid-template-columns:110px 1fr;gap:10px;padding:7px 0;border-top:1px solid var(--line)}
+  .kv b{font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);padding-top:2px}
+  .kv span{color:var(--ink)}
+  .vtext{font-family:var(--serif);border-left:3px solid var(--tc-scripture);padding:4px 14px;margin-bottom:8px;line-height:1.6}
+  .eactions{display:flex;gap:8px;margin-top:12px}
+  .mini{white-space:nowrap;border:1px solid var(--line);background:var(--field);border-radius:8px;padding:5px 12px;font-size:12px;color:var(--ink)}
+  .mini:hover{border-color:var(--accent)}
+  .plan .reads{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin:10px 0 16px}
+  .plan .reads div{background:var(--bg);border-radius:12px;padding:12px 14px}
+  .plan .reads span{display:block;font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+  .plan .reads b{font-family:var(--serif);font-weight:500;font-size:20px}
+  .plan .prog span{font-size:13px;color:var(--muted)}
+  .bar{height:6px;background:var(--line);border-radius:9px;margin-top:6px;overflow:hidden}
+  .bar i{display:block;height:100%;background:var(--gold)}
+  @media(max-width:760px){.kv{grid-template-columns:1fr;gap:2px}.entry.open{margin:6px -8px}}
+
+  .toast{position:fixed;bottom:24px;left:50%;transform:translate(-50%,20px);background:var(--ink);color:var(--bg);padding:12px 20px;border-radius:99px;font-size:14px;opacity:0;pointer-events:none;transition:.25s;z-index:9}
+  .toast.show{opacity:1;transform:translate(-50%,0)}
+
+  .db{display:flex;align-items:center;gap:12px;padding:14px 0;border-bottom:1px solid var(--line)}
+  .db:last-child{border:0}
+  .db .ic{font-size:20px;width:36px;height:36px;display:grid;place-items:center;background:var(--bg);border-radius:9px}
+  .db .meta{flex:1}.db .meta b{display:block;font-size:15px}.db .meta span{font-size:12px;color:var(--muted)}
+  .ok{color:var(--sage);font-size:13px;font-weight:600}
+
+  @media(max-width:760px){
+    .shell{grid-template-columns:1fr}
+    nav{position:fixed;top:auto;bottom:0;left:0;right:0;height:auto;z-index:5;border-right:0;border-top:1px solid var(--line);padding:6px;display:flex;justify-content:space-around}
+    nav h2,nav .sep,nav .foot,nav a .lbl-long,nav a.extra{display:none}
+    nav a{flex-direction:column;gap:2px;font-size:11px;padding:6px 10px;margin:0;flex:1;min-width:0;text-align:center}
+    nav a .lbl-short{display:inline}
+    nav a.morebtn{display:flex}
+    .moresheet{display:none;position:fixed;left:12px;right:12px;bottom:74px;z-index:6;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:0 10px 40px var(--shadow);padding:8px}
+    .moresheet.open{display:block}
+    .moresheet button{display:flex;gap:12px;align-items:center;width:100%;background:none;border:0;color:var(--ink);padding:12px;border-radius:var(--radius-sm);font-size:15px;text-align:left}
+    .moresheet button:hover{background:var(--accent-soft)}
+    main{padding:22px 16px 90px}
+    main h1{font-size:28px}
+    .row2{grid-template-columns:1fr}
+  }
+
+  /* ===== Ideas batch ===== */
+  .fab{position:fixed;right:24px;bottom:24px;width:58px;height:58px;border-radius:50%;border:0;background:var(--accent);color:var(--accent-ink);font-size:32px;line-height:1;box-shadow:0 8px 24px var(--shadow);z-index:7}
+  .fab:hover{transform:scale(1.06)}
+  .modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:20;align-items:center;justify-content:center;padding:16px}
+  .modal.open{display:flex}
+  .modalcard{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:20px;width:100%;max-width:520px;box-shadow:0 20px 60px var(--shadow)}
+  .syncchip{display:inline-flex;gap:6px;align-items:center;border:1px solid var(--line);background:var(--field);color:var(--sage);border-radius:99px;padding:4px 11px;font-size:12px;margin-bottom:8px}
+  .syncchip.off{color:var(--gold)}
+  .week{display:grid;grid-template-columns:96px 1fr;gap:12px 10px;align-items:center;margin-top:12px}
+  .week .wl{font-size:14px}
+  .wk{display:flex;gap:6px}
+  .wd{flex:1;max-width:38px;text-align:center;font-size:10px;color:var(--muted)}
+  .wd i{display:block;width:22px;height:22px;border-radius:50%;margin:0 auto 3px;border:2px solid var(--line)}
+  .wd.done i{background:var(--gold);border-color:var(--gold)}
+  .wd.today i{border-color:var(--accent);border-style:dashed}
+  .wd.future i{opacity:.35}
+  .fu{display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-top:1px solid var(--line);text-transform:none;letter-spacing:0;font-size:15px;color:var(--ink);margin:0}
+  .fu input{width:auto;margin-top:4px}
+  .fu .ft{font-size:15px}.fu .fm{font-size:12px;color:var(--muted)}
+  .fu.done .ft{text-decoration:line-through;color:var(--muted)}
+  .due{margin-left:auto;font-size:11px;border-radius:99px;padding:2px 9px;white-space:nowrap;background:var(--bg);color:var(--muted)}
+  .due.over{background:color-mix(in srgb,var(--gold) 20%,var(--card));color:var(--gold)}
+  .due.now{background:var(--accent-soft);color:var(--accent)}
+  .people-field{display:flex;flex-wrap:wrap;gap:6px;align-items:center;background:var(--field);border:1px solid var(--line);border-radius:var(--radius-sm);padding:6px 8px}
+  .people-field>span{display:contents}
+  .people-field input{border:0;flex:1;min-width:130px;width:auto;background:transparent;padding:6px}
+  .people-field input:focus{outline:none}
+  .pchip{background:var(--accent-soft);color:var(--accent);border-radius:99px;padding:3px 6px 3px 12px;font-size:13px;display:inline-flex;gap:4px;align-items:center}
+  .pchip button{background:none;border:0;color:inherit;padding:0 4px;font-size:14px}
+  .suggest{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;font-size:12px;color:var(--muted);align-items:center}
+  .suggest button{border:1px solid var(--line);background:var(--field);color:var(--ink);border-radius:99px;padding:4px 12px;font-size:13px}
+  .suggest button:hover{border-color:var(--accent)}
+  .verse-tools{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+  .mini[disabled]{opacity:.4;cursor:not-allowed}
+  .chapter-panel{display:none;margin-top:12px;border:1px solid var(--line);border-radius:var(--radius-sm);padding:14px;background:var(--field)}
+  .chapter-panel.open{display:block}
+  .chap-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+  .skel{height:10px;border-radius:6px;background:var(--line);margin:9px 0;width:94%}.skel.s{width:68%}
+  .hl{font-family:var(--serif);border-left:3px solid var(--tc-scripture);padding-left:12px;margin:12px 0;line-height:1.6}
+  .hl sup{color:var(--tc-scripture);font-weight:700;margin-right:4px}
+  .intent-card{border-left:3px solid var(--gold);background:var(--field);border-radius:0 var(--radius-sm) var(--radius-sm) 0;padding:12px 14px;margin:0 0 14px;font-family:var(--serif)}
+  .intent-card small{display:block;font-family:var(--sans);font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+  #homeIntent{margin-top:4px;font-style:italic}
+  .setrow{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--line)}
+  .setrow input[type=time]{width:150px}
+  .sw2{display:flex;gap:10px;align-items:center;text-transform:none;letter-spacing:0;font-size:15px;color:var(--ink);margin:0}
+  .sw2 input{width:auto}
+  @media(max-width:760px){.fab{bottom:84px;right:16px}.modal{align-items:flex-end}.modalcard{border-radius:var(--radius) var(--radius) 0 0}.week{grid-template-columns:78px 1fr}}
+</style>
+</head>
+<body>
+<div class="banner"><span id="demoNote">MOCKUP ONLY — not live, nothing is saved or sent to Notion</span>
+  <span class="sw" id="modeSw"><button data-th="day">☀️ Day</button><button data-th="night">🌙 Night</button></span></div>
+
+<!-- LOGIN -->
+<section class="view active" id="login">
+  <div class="login">
+    <div class="login-card">
+      <div class="mark">🕯️</div>
+      <h1>Welcome back</h1>
+      <p>A quiet place for your thoughts, notes, meetings, and daily examen.</p>
+      <form onsubmit="doLogin(event)">
+        <label for="u">Email</label>
+        <input id="u" type="email" value="jt@example.com" autocomplete="username">
+        <label for="p">Password</label>
+        <input id="p" type="password" value="••••••••••" autocomplete="current-password">
+        <button class="btn block" id="loginBtn">Sign in</button>
+        <div class="hint" id="loginMsg" style="color:var(--gold);min-height:18px"></div>
+      </form>
+      <div class="hint">Private — single user. Session stays signed in on this device for 30 days.</div>
+    </div>
+  </div>
+</section>
+
+<!-- APP -->
+<section class="view" id="app">
+ <div class="shell">
+  <nav>
+    <h2>🕯️ Journal</h2>
+    <a class="on" data-p="home"><span>🏠</span><span>Today</span></a>
+    <a class="extra" data-p="thought"><span>💭</span><span>Thought</span></a>
+    <a class="extra" data-p="note"><span>📝</span><span>Note</span></a>
+    <a class="extra" data-p="meeting"><span>🤝</span><span>Meeting</span></a>
+    <a class="extra" data-p="scripture"><span>📖</span><span>Scripture</span></a>
+    <a class="extra" data-p="people"><span>👥</span><span>People</span></a>
+    <div class="sep"></div>
+    <a data-p="office"><span>☀️</span><span class="lbl-long">Morning Office</span><span class="lbl-short">Office</span></a>
+    <a data-p="examen"><span>🌙</span><span>Examen</span></a>
+    <div class="sep"></div>
+    <a data-p="log"><span>📚</span><span>All entries</span></a>
+    <a class="extra" data-p="notion"><span>⚙️</span><span>Settings</span></a>
+    <a class="morebtn" id="moreBtn"><span>⋯</span><span>More</span></a>
+    <div class="foot"><button class="syncchip" id="syncChip"></button><br>Signed in as JT · <a style="display:inline;padding:0;color:var(--accent)" onclick="signOut()">Sign out</a></div>
+  </nav>
+
+  <main>
+    <!-- HOME -->
+    <div class="page active" id="home">
+      <div class="eyebrow" id="today"></div>
+      <h1 id="greet">Good evening, JT.</h1>
+      <p class="sub">What's on your mind? Pick a form to capture it.</p>
+      <div class="grid" style="margin-bottom:22px">
+        <button class="tile" onclick="go('thought-new')"><div class="ic">💭</div><b>Thought</b><span>Personal or work</span></button>
+        <button class="tile" onclick="go('note-new')"><div class="ic">📝</div><b>Note</b><span>Random, quick</span></button>
+        <button class="tile" onclick="go('meeting-new')"><div class="ic">🤝</div><b>Meeting</b><span>People & next steps</span></button>
+        <button class="tile" onclick="go('scripture-new')"><div class="ic">📖</div><b>Scripture note</b><span>Verses auto-fill (ESV)</span></button>
+      </div>
+      <div class="card examen-card hero2" style="margin-bottom:12px">
+        <div><h3>☀️ Morning Office</h3><p id="homeReading">Start the day with Scripture and prayer. About 10 minutes.</p><p id="homeIntent"></p></div>
+        <button class="btn" onclick="go('office-new')">Begin</button>
+      </div>
+      <div class="card examen-card">
+        <div><h3>🌙 Tonight's Examen</h3><p>Five quiet steps to look back on your day with God. About 10 minutes.</p></div>
+        <button class="btn" onclick="go('examen-new')">Begin</button>
+      </div>
+      <div class="card" id="weekCard"></div>
+      <div class="card" id="followCard"></div>
+      <div class="card">
+        <h3 style="margin-bottom:6px">Today so far</h3>
+        <div id="todayList"></div>
+      </div>
+    </div>
+
+    <!-- THOUGHT -->
+    <div class="page" id="thought-new">
+      <div class="eyebrow">New entry</div><h1>💭 Thought</h1>
+      <p class="sub">Get it out of your head. Sort it later.</p>
+      <div class="card">
+        <label style="margin-top:0">Category</label>
+        <div class="chips" data-single><button class="chip on">Personal</button><button class="chip">Work</button><button class="chip">Faith</button><button class="chip">Family</button></div>
+        <label>Title (optional)</label><input placeholder="A short label…">
+        <label>What are you thinking?</label><textarea placeholder="Write freely…"></textarea>
+        <label>Mood</label>
+        <div class="chips" data-single><button class="chip">😌 Peaceful</button><button class="chip">😊 Joyful</button><button class="chip">😟 Anxious</button><button class="chip">😔 Heavy</button><button class="chip">🔥 Energized</button></div>
+        <label class="notion-lbl">Tags</label><input placeholder="e.g. vision, prayer, idea">
+        <div class="toggle"><input type="checkbox" checked id="t1"><label for="t1" style="margin:0;text-transform:none;letter-spacing:0;font-size:14px;color:var(--ink)">Push to Notion → <b>Thoughts</b> database</label></div>
+        <div class="actions"><button class="btn ghost" onclick="go('home')">Cancel</button><button class="btn" onclick="saved('Thought saved & sent to Notion')">Save</button></div>
+      </div>
+    </div>
+
+    <!-- NOTE -->
+    <div class="page" id="note-new">
+      <div class="eyebrow">New entry</div><h1>📝 Note</h1>
+      <p class="sub">Quick capture — links, ideas, reminders, anything.</p>
+      <div class="card">
+        <label style="margin-top:0">Title</label><input placeholder="What's this note about?">
+        <label>Note</label><textarea placeholder="Jot it down…" style="min-height:110px"></textarea>
+        <div class="row2">
+          <div><label>Folder</label><select><option>Inbox</option><option>Reading list</option><option>Ideas</option><option>Podcast</option><option>Merch store</option></select></div>
+          <div><label>Link (optional)</label><input placeholder="https://"></div>
+        </div>
+        <div class="toggle"><input type="checkbox" checked id="n1"><label for="n1" style="margin:0;text-transform:none;letter-spacing:0;font-size:14px;color:var(--ink)">Push to Notion → <b>Notes</b> database</label></div>
+        <div class="actions"><button class="btn ghost" onclick="go('home')">Cancel</button><button class="btn" onclick="saved('Note saved & sent to Notion')">Save</button></div>
+      </div>
+    </div>
+
+    <!-- MEETING -->
+    <div class="page" id="meeting-new">
+      <div class="eyebrow">New entry</div><h1>🤝 Meeting</h1>
+      <p class="sub">Log who you met, what was said, and what happens next.</p>
+      <div class="card">
+        <label style="margin-top:0">Meeting title</label><input placeholder="e.g. Coffee with Sam">
+        <div class="row2">
+          <div><label>Date</label><input type="date" id="mDate"></div>
+          <div><label>Start time</label><input type="time" id="mTime" value="14:30"></div>
+        </div>
+        <div class="row2">
+          <div><label>Duration</label>
+            <select id="mDur"><option value="15">15 min</option><option value="30">30 min</option><option value="45" selected>45 min</option><option value="60">1 hour</option><option value="90">1 hr 30 min</option><option value="120">2 hours</option><option value="180">3 hours</option></select>
+            <div class="hint" style="margin-top:6px" id="mEnd"></div></div>
+          <div><label>Type</label><select><option>1-on-1</option><option>Team</option><option>Partner / church</option><option>Training</option><option>Phone call</option></select></div>
+        </div>
+        <label>People</label>
+        <div class="people-field" id="peopleField"><span id="peopleChips"></span><input id="peopleInput" placeholder="Type a name…" autocomplete="off"></div>
+        <div class="suggest" id="peopleSuggest"></div>
+        <label>Notes</label><textarea style="min-height:120px" placeholder="Key points, stories, prayer requests…"></textarea>
+        <label>Action items</label>
+        <div id="actions">
+          <div style="display:flex;gap:8px;margin-bottom:8px"><input type="checkbox" style="width:auto"><input placeholder="Follow-up…"></div>
+        </div>
+        <button class="btn ghost" style="margin-top:4px" onclick="addAction()">+ Add action item</button>
+        <label>Follow up by</label><input type="date">
+        <div class="toggle"><input type="checkbox" checked id="m1"><label for="m1" style="margin:0;text-transform:none;letter-spacing:0;font-size:14px;color:var(--ink)">Push to Notion → <b>Meetings</b> database</label></div>
+        <div class="actions"><button class="btn ghost" onclick="go('home')">Cancel</button><button class="btn" onclick="saved('Meeting logged & sent to Notion')">Save</button></div>
+      </div>
+    </div>
+
+    <!-- SCRIPTURE NOTES -->
+    <div class="page" id="scripture-new">
+      <div class="eyebrow">New entry</div><h1>📖 Scripture note <span class="esv">ESV</span></h1>
+      <p class="sub">Type a verse reference, press Enter, and the passage appears.</p>
+      <div class="card">
+        <label style="margin-top:0">Title</label><input placeholder="e.g. Sermon on anxiety, Reading in Philippians">
+        <label>Notes</label>
+        <textarea id="scrText" placeholder="Write your notes… On a new line type a reference like John 3:16 and press Enter."></textarea>
+        <div class="lookup-status" id="lookupStatus"></div>
+        <div class="verse-tools" id="verseTools"></div>
+        <div class="chapter-panel" id="chapterPanel"></div>
+        <div class="try">Try it:
+          <button onclick="tryRef('John 3:16')">John 3:16</button>
+          <button onclick="tryRef('Psalm 23:1-3')">Psalm 23:1-3</button>
+          <button onclick="tryRef('Romans 8:28')">Romans 8:28</button>
+          <button onclick="tryRef('Philippians 4:6-7')">Philippians 4:6-7</button>
+        </div>
+        <label>Tags</label><input id="scrTags" placeholder="e.g. anxiety, sermon, prayer">
+        <div class="toggle"><input type="checkbox" checked id="s1c"><label for="s1c" style="margin:0;text-transform:none;letter-spacing:0;font-size:14px;color:var(--ink)">Push to Notion → <b>Scripture Notes</b> database</label></div>
+        <div class="actions"><button class="btn ghost" onclick="go('home')">Cancel</button><button class="btn" onclick="saved('Scripture note saved & sent to Notion')">Save</button></div>
+      </div>
+      <p class="hint">Mockup uses a few sample verses. The real build looks up any passage from the ESV API (api.esv.org) and shows “(ESV)” on each quote.</p>
+    </div>
+
+    <!-- MORNING OFFICE -->
+    <div class="page" id="office-new">
+      <div class="eyebrow">Daily Office · Morning · <span id="planDayLbl"></span></div>
+      <div class="steps dots"></div>
+      <div class="card">
+        <div class="xstep active">
+          <div class="num">Step 1 of 6</div><h2>Opening</h2>
+          <p class="prompt">Take a slow breath and quiet your mind. Invite God into this day.</p>
+          <div class="intent-card" id="officeIntent"></div>
+          <p style="color:var(--muted);font-size:14px">Pause. Offer this day to God, then continue when you're ready.</p>
+        </div>
+        <div class="xstep">
+          <div class="num">Step 2 of 6 · Psalm</div><h2 class="refbadge" data-ref="psalm"></h2>
+          <p class="prompt">Read today's psalm slowly, aloud if you can. What word or phrase stands out?</p>
+          <textarea placeholder="A word or phrase that stood out…" style="min-height:90px"></textarea>
+        </div>
+        <div class="xstep">
+          <div class="num">Step 3 of 6 · Proverb</div><h2 class="refbadge" data-ref="proverb"></h2>
+          <p class="prompt">Read today's chapter of Proverbs. What wisdom is it offering you today?</p>
+          <textarea placeholder="What is God saying to me here?" style="min-height:90px"></textarea>
+        </div>
+        <div class="xstep">
+          <div class="num">Step 4 of 6 · New Testament</div><h2 class="refbadge" data-ref="nt"></h2>
+          <p class="prompt">Read today's chapter. How does it invite you to live today?</p>
+          <textarea placeholder="What will I carry into today?" style="min-height:90px"></textarea>
+        </div>
+        <div class="xstep">
+          <div class="num">Step 5 of 6</div><h2>Prayers</h2>
+          <p class="prompt">Pray for others and yourself.</p>
+          <label style="margin-top:0">Praying for today</label>
+          <textarea placeholder="People, meetings, needs…" style="min-height:100px"></textarea>
+        </div>
+        <div class="xstep">
+          <div class="num">Step 6 of 6</div><h2>Closing</h2>
+          <p class="prompt">Pray the Lord's Prayer. What one intention are you offering to God for today?</p>
+          <textarea placeholder="Today I offer…" style="min-height:80px"></textarea>
+          <div class="toggle"><input type="checkbox" checked id="o1"><label for="o1" style="margin:0;text-transform:none;letter-spacing:0;font-size:14px;color:var(--ink)">Push to Notion → <b>Daily Office</b> database</label></div>
+        </div>
+        <div class="actions split"><button class="btn ghost flow-back" onclick="flowStep('office',-1)">Back</button><button class="btn flow-next" onclick="flowStep('office',1)">Next</button></div>
+      </div>
+    </div>
+
+    <!-- EXAMEN -->
+    <div class="page" id="examen-new">
+      <div class="eyebrow">Daily Examen</div>
+      <div class="steps dots"></div>
+
+      <div class="card">
+        <div class="xstep active">
+          <div class="num">Step 1 of 5</div><h2>Become aware of God's presence</h2>
+          <p class="prompt">Take a slow breath. You are not alone in this moment.</p>
+          <p style="color:var(--muted);font-size:14px">Sit still for a minute. When you're ready, continue.</p>
+        </div>
+        <div class="xstep">
+          <div class="num">Step 2 of 5</div><h2>Review the day with gratitude</h2>
+          <p class="prompt">What gifts did you receive today — big or small?</p>
+          <textarea placeholder="I'm grateful for…"></textarea>
+        </div>
+        <div class="xstep">
+          <div class="num">Step 3 of 5</div><h2>Pay attention to your emotions</h2>
+          <p class="prompt">Where did you feel joy, peace, stress, or sadness today?</p>
+          <div class="emo chips"><button class="chip">Joy</button><button class="chip">Peace</button><button class="chip">Gratitude</button><button class="chip">Stress</button><button class="chip">Frustration</button><button class="chip">Sadness</button><button class="chip">Fear</button><button class="chip">Weariness</button></div>
+          <textarea placeholder="What was behind those feelings?" style="min-height:100px"></textarea>
+        </div>
+        <div class="xstep">
+          <div class="num">Step 4 of 5</div><h2>Choose one thing to pray from</h2>
+          <p class="prompt">What moment stands out? Pray over it — thanks, repentance, or request.</p>
+          <textarea placeholder="Lord, about this moment…"></textarea>
+        </div>
+        <div class="xstep">
+          <div class="num">Step 5 of 5</div><h2>Look toward tomorrow</h2>
+          <p class="prompt">Name one intention for tomorrow. It will greet you in tomorrow morning's Office.</p>
+          <textarea placeholder="Tomorrow I'm carrying…" style="min-height:100px"></textarea>
+          <div class="toggle"><input type="checkbox" checked id="x1"><label for="x1" style="margin:0;text-transform:none;letter-spacing:0;font-size:14px;color:var(--ink)">Push to Notion → <b>Examen</b> database</label></div>
+        </div>
+        <div class="actions split"><button class="btn ghost flow-back" onclick="flowStep('examen',-1)">Back</button><button class="btn sage flow-next" onclick="flowStep('examen',1)">Next</button></div>
+      </div>
+    </div>
+
+    <!-- LIST PAGES (rendered by script) -->
+    <div class="page" id="thought"></div><div class="page" id="note"></div><div class="page" id="meeting"></div>
+    <div class="page" id="scripture"></div><div class="page" id="people"></div><div class="page" id="office"></div><div class="page" id="examen"></div>
+
+    <!-- LOG -->
+    <div class="page" id="log">
+      <div class="eyebrow">Archive</div><h1>📚 All entries</h1>
+      <p class="sub">Search and filter everything you've captured.</p>
+      <div class="card">
+        <input id="logSearch" placeholder="🔍 Search entries…" style="margin-bottom:12px">
+        <div class="chips" data-single style="margin-bottom:8px"><button class="chip on" data-t="all">All</button><button class="chip" data-t="thought">Thoughts</button><button class="chip" data-t="note">Notes</button><button class="chip" data-t="meeting">Meetings</button><button class="chip" data-t="scripture">Scripture</button><button class="chip" data-t="office">Office</button><button class="chip" data-t="examen">Examen</button></div>
+        <div id="logList"></div>
+      </div>
+    </div>
+
+    <!-- NOTION -->
+    <div class="page" id="notion">
+      <div class="eyebrow">Settings</div><h1>⚙️ Settings</h1>
+      <p class="sub">Reminders, backup, sync and your Notion connection.</p>
+      <div class="card">
+        <h3 style="margin-bottom:2px">🔔 Reminders</h3>
+        <div class="setrow"><label class="sw2"><input type="checkbox" checked> ☀️ Morning Office</label><input type="time" value="06:30"></div>
+        <div class="setrow"><label class="sw2"><input type="checkbox" checked> 🌙 Evening Examen</label><input type="time" value="21:00"></div>
+        <div class="setrow"><label class="sw2"><input type="checkbox" checked> 📋 Follow-ups digest</label><input type="time" value="08:00"></div>
+        <label>Days</label>
+        <div class="chips"><button class="chip on">Mon</button><button class="chip on">Tue</button><button class="chip on">Wed</button><button class="chip on">Thu</button><button class="chip on">Fri</button><button class="chip">Sat</button><button class="chip">Sun</button></div>
+        <p class="hint">Gentle nudges only, no streak-shaming. Reminders arrive as phone notifications once the app is added to your home screen.</p>
+      </div>
+      <div class="card">
+        <h3 style="margin-bottom:2px">💾 Backup &amp; export</h3>
+        <p class="hint" style="margin-top:4px">Last backup: <b>Today, 3:00 am</b> · 17 sample entries</p>
+        <div class="actions" style="justify-content:flex-start;margin-top:10px"><button class="btn" id="expJson">Download all (JSON)</button><button class="btn ghost" id="expMd">Download as Markdown</button></div>
+        <div class="toggle"><input type="checkbox" checked id="bk1"><label for="bk1" style="margin:0;text-transform:none;letter-spacing:0;font-size:14px;color:var(--ink)">Remind me to back up every Sunday</label></div>
+      </div>
+      <div class="card">
+        <h3 style="margin-bottom:2px">📶 Offline &amp; sync</h3>
+        <div class="toggle" style="margin-top:10px"><input type="checkbox" id="offToggle"><label for="offToggle" style="margin:0;text-transform:none;letter-spacing:0;font-size:14px;color:var(--ink)">Simulate being offline</label></div>
+        <p class="hint">Offline, every entry saves on this device first and waits. It goes to Notion automatically when you're back online, so nothing is lost.</p>
+        <div id="queueMsg" class="hint"></div>
+      </div>
+      <div class="card">
+        <h3 style="margin-bottom:2px">🔗 Notion connection</h3>
+        <p class="hint" style="margin:4px 0 6px">Each entry type pushes to its own Notion database.</p>
+        <div class="db"><div class="ic">💭</div><div class="meta"><b>Thoughts</b><span>Title · Category · Mood · Tags · Body · Date</span></div><span class="ok">● Connected</span></div>
+        <div class="db"><div class="ic">📝</div><div class="meta"><b>Notes</b><span>Title · Folder · Link · Body · Date</span></div><span class="ok">● Connected</span></div>
+        <div class="db"><div class="ic">🤝</div><div class="meta"><b>Meetings</b><span>Title · Type · People · Notes · Actions · Follow-up</span></div><span class="ok">● Connected</span></div>
+        <div class="db"><div class="ic">📖</div><div class="meta"><b>Scripture Notes</b><span>Title · Passages · Notes with ESV text · Tags · Date</span></div><span class="ok">● Connected</span></div>
+        <div class="db"><div class="ic">☀️</div><div class="meta"><b>Daily Office</b><span>Day · Psalm · Proverb · NT chapter · Reflections · Intention</span></div><span class="ok">● Connected</span></div>
+        <div class="db"><div class="ic">👥</div><div class="meta"><b>People</b><span>Name · Meetings · Last met · Open follow-ups</span></div><span class="ok">● Connected</span></div>
+        <div class="db"><div class="ic">🌙</div><div class="meta"><b>Examen</b><span>Date · Gratitude · Emotions · Prayer · Tomorrow</span></div><span class="ok">● Connected</span></div>
+      </div>
+      <div class="card">
+        <h3 style="margin-bottom:8px">Sync behavior</h3>
+        <div class="toggle" style="margin-top:0"><input type="radio" name="s" checked id="s1"><label for="s1" style="margin:0;text-transform:none;letter-spacing:0;font-size:14px;color:var(--ink)">Ask each time (checkbox on every form)</label></div>
+        <div class="toggle"><input type="radio" name="s" id="s2"><label for="s2" style="margin:0;text-transform:none;letter-spacing:0;font-size:14px;color:var(--ink)">Always push automatically</label></div>
+        <div class="toggle"><input type="radio" name="s" id="s3"><label for="s3" style="margin:0;text-transform:none;letter-spacing:0;font-size:14px;color:var(--ink)">Keep local; push manually from All entries</label></div>
+      </div>
+    </div>
+  </main>
+ </div>
+ <button class="fab" id="fab" aria-label="Quick capture" title="Quick capture">+</button>
+ <div class="modal" id="qcModal"><div class="modalcard">
+  <div class="pagehead"><h3>⚡ Quick capture</h3><button class="mini" id="qcClose">Close</button></div>
+  <p class="hint" style="margin:4px 0 10px">Recording starts automatically. Say it, then tap stop.</p>
+  <textarea id="qcText" placeholder="Speak or type…" style="min-height:110px"></textarea>
+  <label>Save as</label>
+  <div class="chips" data-single><button class="chip on">Note</button><button class="chip">Thought</button><button class="chip">Scripture</button></div>
+  <div class="actions"><button class="btn ghost" id="qcCancel">Cancel</button><button class="btn" id="qcSave">Save</button></div>
+ </div></div>
+</section>
+
+<div class="moresheet" id="moreSheet"></div>
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="config.js"></script>
+<script>
+  const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+  function show(id){$$('.view').forEach(v=>v.classList.toggle('active',v.id===id));window.scrollTo(0,0)}
+  let cur='home';
+  const base=p=>p.replace(/-new$/,'');
+  function go(p){
+    cur=p;
+    $$('.page').forEach(x=>x.classList.toggle('active',x.id===p));
+    $$('nav a[data-p]').forEach(a=>a.classList.toggle('on',a.dataset.p===base(p)));
+    if(flows[base(p)]&&p.endsWith('-new')){flows[base(p)].i=0;flowRender(base(p))}
+    $('#fab').style.display=p.endsWith('-new')?'none':'';
+    window.scrollTo(0,0);
+  }
+  $$('nav a[data-p]').forEach(a=>a.onclick=()=>go(a.dataset.p));
+  $('#today').textContent=new Date().toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'});
+
+  function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('show');setTimeout(()=>e.classList.remove('show'),2200)}
+  // Offline queue (mockup): entries save on-device and wait when offline
+  let offline=false,pending=0;
+  function notify(msg){
+    if(offline){pending++;renderSync();toast('✓ Saved on this device · will send to Notion when you’re back online')}
+    else toast(msg);
+  }
+  function renderSync(){
+    const t=offline?`◌ Offline · ${pending} waiting`:'● Online · all synced';
+    const c=$('#syncChip');c.textContent=t;c.classList.toggle('off',offline);
+    const m=$('#moreSync');if(m)m.textContent='📶 '+t;
+    $('#offToggle').checked=offline;
+    $('#queueMsg').textContent=offline?(pending?pending+' entries saved on this device, waiting to send to Notion.':'Nothing waiting yet. New entries will queue here.'):'Everything is synced to Notion.';
+  }
+  function setOffline(v){
+    const was=pending;offline=v;
+    if(!v&&was){pending=0;toast('✓ Back online · sent '+was+(was>1?' entries':' entry')+' to Notion')}
+    renderSync();
+  }
+  function saved(t){notify('✓ '+t+' (mockup)');const back=base(cur);setTimeout(()=>go(back),900)}
+
+  document.addEventListener('click',e=>{
+    const c=e.target.closest('.chip');if(!c)return;
+    const g=c.parentElement;
+    if(g.hasAttribute('data-single'))g.querySelectorAll('.chip').forEach(x=>x.classList.remove('on'));
+    c.classList.toggle('on',g.hasAttribute('data-single')?true:!c.classList.contains('on'));
+  });
+
+  function addAction(){
+    const d=document.createElement('div');d.style.cssText='display:flex;gap:8px;margin-bottom:8px';
+    d.innerHTML='<input type="checkbox" style="width:auto"><input placeholder="Follow-up…">';
+    $('#actions').appendChild(d);
+  }
+
+  // Step-by-step flows (Morning Office, Examen)
+  const flows={office:{i:0,done:'☀️ Morning Office saved & sent to Notion (mockup). Have a good day.'},examen:{i:0,done:'🌙 Examen saved & sent to Notion (mockup). Rest well.'}};
+  const fsteps=p=>$$('#'+p+'-new .xstep');
+  function flowRender(p){
+    const i=flows[p].i,s=fsteps(p),pg=$('#'+p+'-new');
+    pg.querySelector('.dots').innerHTML=s.map((_,k)=>`<div class="dot ${k<=i?'done':''}"></div>`).join('');
+    s.forEach((x,k)=>x.classList.toggle('active',k===i));
+    pg.querySelector('.flow-back').style.visibility=i===0?'hidden':'visible';
+    pg.querySelector('.flow-next').textContent=i===s.length-1?'Finish & save':'Next';
+  }
+  function flowStep(p,d){
+    const f=flows[p],n=fsteps(p).length;
+    if(d>0&&f.i===n-1){notify(f.done);setTimeout(()=>go(p),1400);return}
+    f.i=Math.max(0,Math.min(n-1,f.i+d));flowRender(p);
+  }
+  Object.keys(flows).forEach(flowRender);
+
+  // Per-section list pages with a "New …" button
+  const SECTIONS={
+    thought:{icon:'💭',title:'Thoughts',sub:'Everything on your mind, personal and work.',btn:'New Thought',tag:'t-thought',label:'Thought'},
+    note:{icon:'📝',title:'Notes',sub:'Quick captures, links and ideas.',btn:'New Note',tag:'t-note',label:'Note'},
+    meeting:{icon:'🤝',title:'Meetings',sub:'Who you met, how long, and what comes next.',btn:'New Meeting',tag:'t-meeting',label:'Meeting'},
+    scripture:{icon:'📖',title:'Scripture Notes',sub:'Notes with passages pulled from the ESV.',btn:'New Scripture Note',tag:'t-scripture',label:'Scripture'},
+    office:{icon:'☀️',title:'Morning Office',sub:'Your morning times in the Word and prayer.',btn:'Begin Morning Office',tag:'t-office',label:'Office'},
+    examen:{icon:'🌙',title:'Daily Examen',sub:'Looking back on each day with God.',btn:'Begin Examen',tag:'t-examen',label:'Examen'}
+  };
+  // Reading plan: one psalm, one proverb, one New Testament chapter a day, in order
+  const NT=[['Matthew',28],['Mark',16],['Luke',24],['John',21],['Acts',28],['Romans',16],['1 Corinthians',16],['2 Corinthians',13],['Galatians',6],['Ephesians',6],['Philippians',4],['Colossians',4],['1 Thessalonians',5],['2 Thessalonians',3],['1 Timothy',6],['2 Timothy',4],['Titus',3],['Philemon',1],['Hebrews',13],['James',5],['1 Peter',5],['2 Peter',3],['1 John',5],['2 John',1],['3 John',1],['Jude',1],['Revelation',22]];
+  const NT_CH=NT.flatMap(([b,n])=>Array.from({length:n},(_,i)=>b+' '+(i+1)));
+  const PLAN_DAY=23;
+  const planFor=d=>({psalm:'Psalm '+(((d-1)%150)+1),proverb:'Proverbs '+(((d-1)%31)+1),nt:NT_CH[(d-1)%NT_CH.length]});
+  const today=planFor(PLAN_DAY),tmrw=planFor(PLAN_DAY+1);
+  $$('.refbadge').forEach(b=>{b.textContent=today[b.dataset.ref]});
+  $('#planDayLbl').textContent='Day '+PLAN_DAY;
+  $('#homeReading').textContent='Day '+PLAN_DAY+' · '+today.psalm+' · '+today.proverb+' · '+today.nt;
+  const hr=new Date().getHours();
+  $('#greet').textContent=(hr<12?'Good morning':hr<18?'Good afternoon':'Good evening')+', JT.';
+
+  // Entries: [type, title, summary, when, sentToNotion, expanded detail]
+  const kv=(k,v)=>`<div class="kv"><b>${k}</b><span>${v}</span></div>`;
+  const ENTRIES=[
+    ['meeting','Launch Global team sync','2:30–3:15 pm · 45 min · 3 people · 2 action items','Today · 2:30 pm',1,
+      kv('When','Fri, Oct 23 · 2:30–3:15 pm (45 min)')+kv('Type','Team')+kv('People','Maria, Dan, Priya')+kv('Notes','Reviewed fall training schedule. Maria will lead the new-cohort orientation. We need a clearer follow-up process for partner churches.')+kv('Action items','☐ Send updated schedule to the team<br>☐ Draft follow-up email template')+kv('Follow up by','Fri, Oct 30')],
+    ['scripture','Philippians 4 reflection','2 verses · ESV','Today · 12:10 pm',1,
+      '<div class="vtext"><b>📖 Philippians 4:6–7</b><br>“do not be anxious about anything, but in everything by prayer and supplication with thanksgiving let your requests be made known to God. And the peace of God, which surpasses all understanding, will guard your hearts and your minds in Christ Jesus.” (ESV)</div>'+kv('Notes','Paul says everything, not just the big things. Practice: turn each worry into a specific request before lunch.')+kv('Tags','anxiety, prayer')],
+    ['thought','Training idea for new missions cohort','Work · 🎧 voice · Start with story, not strategy…','Today · 11:05 am',1,
+      kv('Category','Work')+kv('Mood','🔥 Energized')+kv('Thought','Start the first session with stories of ordinary people who said yes, not with strategy. Strategy lands better once people feel the why. Maybe each trainee brings one story from their own life.')+kv('Tags','training, vision')+'<div class="kv"><b>Audio</b><span><span class="audio-chip">🎧 0:48 recording</span></span></div>'],
+    ['note','Book to read: The Common Rule','Reading list','Today · 8:40 am',0,
+      kv('Folder','Reading list')+kv('Note','Recommended by Sam. Habits for a purposeful life: practical rhythms for work, rest and prayer.')+kv('Link','https://example.com/the-common-rule')],
+    ['examen','Examen — Thursday','Grateful for a good conversation with Sam…','Yesterday · 9:40 pm',1,
+      kv('Gratitude','A good conversation with Sam, and a quiet lunch.')+kv('Emotions','Peace, Weariness')+kv('Prayer','The moment I snapped at the end of the meeting. Lord, forgive me and soften me.')+kv('Tomorrow','Patience with the team.')],
+    ['office','Morning Office — Day 22','Psalm 22 · Proverbs 22 · Matthew 22','Yesterday · 6:50 am',1,
+      kv('Readings','Psalm 22 · Proverbs 22 · Matthew 22')+kv('Psalm','The cry of the forsaken, and the turn toward praise.')+kv('Proverb','A good name is more desirable than great riches.')+kv('New Testament','The greatest commandment: love God, love your neighbor.')+kv('Praying for','Team, Sam’s trip, patience')+kv('Intention','Listen more than I speak.')],
+    ['examen','Examen — Wednesday','Noticed stress before the call, peace after…','Wed · 9:15 pm',1,
+      kv('Gratitude','Sunshine, a finished project.')+kv('Emotions','Stress, then peace')+kv('Prayer','Thankful for peace after the hard call.')+kv('Tomorrow','Start the day slower.')],
+    ['office','Morning Office — Day 21','Psalm 21 · Proverbs 21 · Matthew 21','Wed · 6:40 am',1,
+      kv('Readings','Psalm 21 · Proverbs 21 · Matthew 21')+kv('Psalm','The king rejoices in God’s strength.')+kv('Proverb','Plans of the diligent lead to abundance.')+kv('New Testament','Jesus enters Jerusalem and clears the temple.')+kv('Intention','Pray before I plan.')],
+    ['note','Merch store: hoodie colorways','Merch store · https://…','Tue · 3:20 pm',1,
+      kv('Folder','Merch store')+kv('Note','Shortlist: sand, forest green, charcoal. Check printer minimums before ordering.')],
+    ['examen','Examen — Tuesday','Tired but thankful for a full day…','Tue · 9:30 pm',1,
+      kv('Gratitude','A full day, good food.')+kv('Emotions','Gratitude, Weariness')+kv('Prayer','Rest and trust.')+kv('Tomorrow','Early morning.')],
+    ['office','Morning Office — Day 20','Psalm 20 · Proverbs 20 · Matthew 20','Tue · 6:35 am',1,
+      kv('Readings','Psalm 20 · Proverbs 20 · Matthew 20')+kv('Psalm','Some trust in chariots; we trust in God’s name.')+kv('Intention','Rest in who God is, not what I do.')],
+    ['thought','On rest and rhythm','Personal · I keep skipping the Sabbath…','Mon · 7:10 pm',1,
+      kv('Category','Personal')+kv('Mood','😔 Heavy')+kv('Thought','I keep skipping the Sabbath because there is always one more thing. I want to plan the day in advance, and tell someone, so it is not only willpower.')+kv('Tags','rest, rhythm')],
+    ['meeting','Coffee with Sam','Mon · 9:00–10:00 am · 1 hr · follow up on trip','Mon · 9:00 am',1,
+      kv('When','Mon, Oct 19 · 9:00–10:00 am (1 hr)')+kv('Type','1-on-1')+kv('People','Sam')+kv('Notes','Sam is considering the spring trip. Wants to understand costs and time off work. Asked for prayer around the decision.')+kv('Action items','☑ Send trip budget sheet<br>☐ Check in after he prays about it')],
+    ['scripture','Sermon notes: Trusting in uncertainty','3 verses · ESV','Sun · 12:30 pm',1,
+      '<div class="vtext"><b>📖 Proverbs 3:5–6</b><br>“Trust in the LORD with all your heart, and do not lean on your own understanding. In all your ways acknowledge him, and he will make straight your paths.” (ESV)</div>'+kv('Notes','Three points: trust is a daily choice, understanding is limited, God directs paths as we acknowledge him.')],
+    ['thought','What I want the podcast to feel like','Work · Unhurried, honest, hopeful…','Last week',1,
+      kv('Category','Work')+kv('Thought','Unhurried, honest and hopeful. Real stories, no polish for polish’s sake. Short intro, long listening.')+kv('Tags','podcast')],
+    ['note','Questions for next training','Inbox','Last week',1,
+      kv('Folder','Inbox')+kv('Note','What does a good week look like for a missionary? How do we measure faithfulness, not just numbers?')],
+    ['meeting','Missions partner call','Last Thu · 4:00–4:30 pm · 30 min · 1 action item','Last week',1,
+      kv('When','Last Thu · 4:00–4:30 pm (30 min)')+kv('Type','Partner / church')+kv('People','Pastor Luis')+kv('Notes','Discussed hosting a short-term team in spring.')+kv('Action items','☐ Send host guide')]
+  ];
+  const tagOf=e=>SECTIONS[e[0]];
+  const entryHTML=e=>{const s=tagOf(e);
+    return `<div class="entry"><span class="tag ${s.tag}">${s.label}</span><div class="emain"><h4>${e[1]}</h4><p class="esub">${e[2]}</p>
+      <div class="detail">${e[5]}<div class="eactions"><button class="mini">Edit</button><button class="mini">${e[4]?'Re-send to Notion':'Send to Notion'}</button><button class="mini">Delete</button></div></div></div>
+      <div class="when">${e[3].replace(' · ','<br>')}<br><span class="sync ${e[4]?'':'pending'}">${e[4]?'✓ Notion':'● Not sent'}</span></div></div>`};
+  const listHTML=(rows,empty)=>rows.length?rows.map(entryHTML).join(''):`<div class="empty">${empty||'Nothing here yet.'}</div>`;
+  $('#todayList').innerHTML=listHTML(ENTRIES.filter(e=>e[3].startsWith('Today')));
+  Object.entries(SECTIONS).forEach(([k,s])=>{
+    const plan=k!=='office'?'':`<div class="card plan">
+        <div class="eyebrow">Today's reading · Day ${PLAN_DAY}</div>
+        <div class="reads"><div><span>Psalm</span><b>${today.psalm}</b></div><div><span>Proverb</span><b>${today.proverb}</b></div><div><span>New Testament</span><b>${today.nt}</b></div></div>
+        <div class="prog"><span>New Testament · ${PLAN_DAY} of ${NT_CH.length} chapters</span><div class="bar"><i style="width:${(PLAN_DAY/NT_CH.length*100).toFixed(1)}%"></i></div></div>
+        <div class="hint">Tomorrow: ${tmrw.psalm} · ${tmrw.proverb} · ${tmrw.nt}. The plan moves forward each day you finish it, starting in Matthew 1.</div></div>`;
+    $('#'+k).innerHTML=`<div class="eyebrow">${s.title}</div>
+      <div class="pagehead"><h1>${s.icon} ${s.title}</h1><button class="btn" onclick="go('${k}-new')">+ ${s.btn}</button></div>
+      <p class="sub" style="margin-top:6px">${s.sub}</p>${plan}
+      <div class="card">${listHTML(ENTRIES.filter(e=>e[0]===k))}</div>`;
+  });
+
+  // All entries: search + type filter
+  let logType='all';
+  function renderLog(){
+    const q=$('#logSearch').value.toLowerCase();
+    $('#logList').innerHTML=listHTML(ENTRIES.filter(e=>(logType==='all'||e[0]===logType)&&(e[1]+' '+e[2]+' '+e[5]).toLowerCase().includes(q)),'No matching entries.');
+  }
+  $('#logSearch').oninput=renderLog;
+  $$('#log .chip').forEach(c=>c.addEventListener('click',()=>{logType=c.dataset.t;renderLog()}));
+  renderLog();
+
+  // Day/Night mode
+  function setTheme(t){
+    document.documentElement.dataset.theme=t;
+    $$('#modeSw button').forEach(b=>b.classList.toggle('on',b.dataset.th===t));
+    try{localStorage.setItem('jr-theme',t)}catch(e){}
+  }
+  $$('#modeSw button').forEach(b=>b.onclick=()=>setTheme(b.dataset.th));
+  // Phone: extra destinations live in a "More" sheet
+  $('#moreSheet').innerHTML=$$('nav a.extra').map(a=>`<button data-p="${a.dataset.p}">${a.firstElementChild.textContent} ${a.lastElementChild.textContent}</button>`).join('');
+  $('#moreBtn').onclick=e=>{e.stopPropagation();$('#moreSheet').classList.toggle('open')};
+  $('#moreSheet').onclick=e=>{const b=e.target.closest('button');if(!b)return;if(b.id==='moreSync'){setOffline(!offline);return}go(b.dataset.p);$('#moreSheet').classList.remove('open')};
+  $('#moreSheet').insertAdjacentHTML('beforeend','<button id="moreSync"></button>');
+  document.addEventListener('click',()=>$('#moreSheet').classList.remove('open'));
+  let t0='night';try{t0=localStorage.getItem('jr-theme')||t0}catch(e){}
+  setTheme(t0);
+
+  // Expand an entry on click; collapse when clicking elsewhere
+  document.addEventListener('click',e=>{
+    if(e.target.closest('.mini')){toast('Mockup: this would '+e.target.textContent.toLowerCase());return}
+    const en=e.target.closest('.entry');
+    $$('.entry.open').forEach(x=>{if(x!==en)x.classList.remove('open')});
+    if(en&&!e.target.closest('.detail'))en.classList.toggle('open');
+  });
+
+  $$('.page[id$="-new"] .btn.ghost').forEach(b=>{if(b.textContent==='Cancel')b.onclick=()=>go(base(b.closest('.page').id))});
+
+  // Voice recorder on every textarea (mockup: simulated transcription)
+  const samples=['Just thinking out loud here, I want to remember to follow up with the team about next steps before Friday.','The main thing that stood out to me was how much of this comes down to simply being present with people.','Lord, thank you for today. Help me to slow down and listen more than I speak.'];
+  let sIdx=0;
+  $$('textarea').forEach(ta=>{
+    const r=document.createElement('div');r.className='rec';
+    r.innerHTML='<button type="button" class="recbtn">🎙 Record</button><span class="rtime"></span><span class="bars"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="rmsg">Audio is transcribed into the box above</span>';
+    ta.after(r);
+    let t=0,iv=null;const btn=r.querySelector('.recbtn'),tm=r.querySelector('.rtime'),msg=r.querySelector('.rmsg');
+    const fmt=s=>Math.floor(s/60)+':'+String(s%60).padStart(2,'0');
+    btn.onclick=()=>{
+      if(!iv){t=0;r.classList.add('live');btn.textContent='⏹ Stop';msg.textContent='Listening…';tm.textContent='0:00';
+        iv=setInterval(()=>{t++;tm.textContent=fmt(t)},1000)}
+      else{clearInterval(iv);iv=null;r.classList.remove('live');btn.textContent='🎙 Record';msg.textContent='Transcribing…';
+        setTimeout(()=>{ta.value+=(ta.value&&!ta.value.endsWith('\n')?'\n':'')+samples[sIdx++%samples.length];
+          msg.innerHTML='<span class="audio-chip">🎧 '+fmt(Math.max(t,1))+' audio attached</span> transcribed ✓';},1200)}
+    };
+  });
+
+  // Meeting end time
+  function mEnd(){
+    const t=$('#mTime').value;if(!t){$('#mEnd').textContent='';return}
+    const [h,m]=t.split(':').map(Number),e=h*60+m+Number($('#mDur').value);
+    const hh=Math.floor(e/60)%24,mm=e%60,ap=hh>=12?'pm':'am';
+    $('#mEnd').textContent='Ends at '+((hh%12)||12)+':'+String(mm).padStart(2,'0')+' '+ap;
+  }
+  $('#mTime').oninput=$('#mDur').onchange=mEnd;mEnd();
+  $('#mDate').valueAsDate=new Date();
+
+  // Scripture lookup (mockup: sample verses; real build calls the ESV API)
+  const ESV={
+    'john 3:16':'For God so loved the world, that he gave his only Son, that whoever believes in him should not perish but have eternal life.',
+    'psalm 23:1-3':'The LORD is my shepherd; I shall not want. He makes me lie down in green pastures. He leads me beside still waters. He restores my soul. He leads me in paths of righteousness for his name’s sake.',
+    'romans 8:28':'And we know that for those who love God all things work together for good, for those who are called according to his purpose.',
+    'philippians 4:6-7':'do not be anxious about anything, but in everything by prayer and supplication with thanksgiving let your requests be made known to God. And the peace of God, which surpasses all understanding, will guard your hearts and your minds in Christ Jesus.',
+    'proverbs 3:5-6':'Trust in the LORD with all your heart, and do not lean on your own understanding. In all your ways acknowledge him, and he will make straight your paths.'
+  };
+  const REF=/^((?:[1-3]\s?)?[A-Za-z]+(?:\s(?:of\s)?[A-Za-z]+)?)\s+(\d+)(?::(\d+)(?:\s?[-–]\s?(\d+))?)?$/;
+  function lookup(line){
+    const m=line.trim().match(REF);if(!m)return null;
+    const ref=m[1].replace(/\b\w/g,c=>c.toUpperCase())+' '+m[2]+(m[3]?':'+m[3]+(m[4]?'–'+m[4]:''):'');
+    const key=ref.toLowerCase().replace('–','-').replace(/^psalms/,'psalm');
+    return {ref,text:ESV[key]||'[ESV text for '+ref+' loads here from the API]'};
+  }
+  const scr=$('#scrText');
+  scr.addEventListener('keydown',e=>{
+    if(e.key!=='Enter'||e.shiftKey)return;
+    const pos=scr.selectionStart,before=scr.value.slice(0,pos),start=before.lastIndexOf('\n')+1;
+    const hit=lookup(before.slice(start));if(!hit)return;
+    e.preventDefault();
+    const ins='📖 '+hit.ref+'\n“'+hit.text+'” (ESV)\n\n';
+    scr.value=before.slice(0,start)+ins+scr.value.slice(pos);
+    scr.selectionStart=scr.selectionEnd=start+ins.length;
+    showVerseTools(hit);
+  });
+  function tryRef(r){
+    scr.focus();scr.value+=(scr.value&&!scr.value.endsWith('\n')?'\n':'')+r;
+    scr.dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',cancelable:true}));
+  }
+
+  // ===== Ideas batch =====
+  // Sync chip + settings toggle
+  $('#syncChip').onclick=()=>setOffline(!offline);
+  $('#offToggle').onchange=e=>setOffline(e.target.checked);
+  renderSync();
+
+  // Quick capture (floating +)
+  const qc=$('#qcModal'),qcRec=$('#qcModal .rec');
+  function qcStopIfLive(){if(qcRec.classList.contains('live'))qcRec.querySelector('.recbtn').click()}
+  function openQC(){$('#qcText').value='';qc.classList.add('open');if(!qcRec.classList.contains('live'))qcRec.querySelector('.recbtn').click()}
+  function closeQC(){qcStopIfLive();qc.classList.remove('open')}
+  $('#fab').onclick=openQC;
+  $('#qcClose').onclick=$('#qcCancel').onclick=closeQC;
+  qc.addEventListener('click',e=>{if(e.target===qc)closeQC()});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&qc.classList.contains('open'))closeQC()});
+  $('#qcSave').onclick=()=>{const k=qc.querySelector('.chip.on').textContent;closeQC();notify('✓ Saved as a '+k.toLowerCase()+' (mockup)')};
+
+  // Follow-ups + people
+  const FOLLOW=[
+    {t:'Send updated schedule to the team',who:['Maria','Dan','Priya'],from:'Launch Global team sync',due:'Due today',st:'now',done:false},
+    {t:'Check in after he prays about the trip',who:['Sam'],from:'Coffee with Sam',due:'Due Wed',st:'over',done:false},
+    {t:'Draft follow-up email template',who:['Maria'],from:'Launch Global team sync',due:'Due Mon',st:'soon',done:false},
+    {t:'Send host guide',who:['Pastor Luis'],from:'Missions partner call',due:'Due next Thu',st:'soon',done:false}
+  ];
+  const PEOPLE=[
+    {n:'Sam',about:'Friend · weighing the spring trip',m:['Coffee with Sam · Mon, Oct 19','Lunch · Oct 5','Coffee · Sep 14'],last:'Mon'},
+    {n:'Maria',about:'Team lead',m:['Launch Global team sync · Today','Team sync · Oct 16','Planning call · Oct 9'],last:'Today'},
+    {n:'Dan',about:'Team',m:['Launch Global team sync · Today','Team sync · Oct 16'],last:'Today'},
+    {n:'Priya',about:'Team · new',m:['Launch Global team sync · Today'],last:'Today'},
+    {n:'Pastor Luis',about:'Partner church',m:['Missions partner call · Last Thu','Church visit · Sep 22'],last:'Last week'}
+  ];
+  const rank={over:0,now:1,soon:2};
+  function renderFollow(){
+    const rows=FOLLOW.slice().sort((a,b)=>(a.done-b.done)||rank[a.st]-rank[b.st]);
+    const open=FOLLOW.filter(f=>!f.done).length;
+    $('#followCard').innerHTML=`<div class="pagehead"><h3>📋 Follow-ups</h3><span class="hint" style="margin:0">${open?open+' open':'All caught up 🎉'}</span></div>`+
+      rows.map(f=>`<label class="fu ${f.done?'done':''}"><input type="checkbox" data-fu="${FOLLOW.indexOf(f)}" ${f.done?'checked':''}><div><div class="ft">${f.t}</div><div class="fm">From ${f.from} · with ${f.who.join(', ')}</div></div><span class="due ${f.done?'':f.st}">${f.done?'Done':f.due}</span></label>`).join('');
+    renderPeople();
+  }
+  $('#followCard').addEventListener('change',e=>{const i=e.target.dataset.fu;if(i!==undefined){FOLLOW[i].done=e.target.checked;renderFollow()}});
+  function renderPeople(){
+    const rows=PEOPLE.map(p=>{
+      const items=FOLLOW.filter(f=>!f.done&&f.who.includes(p.n));
+      return `<div class="entry"><span class="tag t-meeting">Person</span><div class="emain"><h4>${p.n}</h4><p class="esub">${p.m.length} meeting${p.m.length>1?'s':''} · last ${p.last} · ${items.length?items.length+' open item'+(items.length>1?'s':''):'nothing open'}</p>
+        <div class="detail">${kv('About',p.about)}${kv('Meetings',p.m.join('<br>'))}${kv('Open items',items.length?items.map(i=>'☐ '+i.t).join('<br>'):'None 🎉')}
+        <div class="eactions"><button class="mini">New meeting</button><button class="mini">Edit</button></div></div></div><div class="when">Last met<br>${p.last}</div></div>`}).join('');
+    $('#people').innerHTML=`<div class="eyebrow">People</div>
+      <div class="pagehead"><h1>👥 People</h1><button class="btn" onclick="go('meeting-new')">+ New Meeting</button></div>
+      <p class="sub" style="margin-top:6px">Everyone you've met with, their meetings and anything still open.</p>
+      <div class="card">${rows}</div><p class="hint">The real build can sync this with the People database in your Missions Pipeline in Notion.</p>`;
+  }
+  renderFollow();
+
+  // People field on the meeting form (suggests people you've met before)
+  const picked=[];
+  function renderPeopleField(){
+    $('#peopleChips').innerHTML=picked.map((n,i)=>`<span class="pchip">${n}<button type="button" data-rm="${i}">×</button></span>`).join('');
+    const q=$('#peopleInput').value.trim().toLowerCase();
+    const opts=PEOPLE.filter(p=>!picked.includes(p.n)&&(!q||p.n.toLowerCase().includes(q)));
+    const exact=PEOPLE.some(p=>p.n.toLowerCase()===q)||picked.map(x=>x.toLowerCase()).includes(q);
+    $('#peopleSuggest').innerHTML=(q?'':'Met before: ')+opts.map(p=>`<button type="button" data-add="${p.n}">${p.n} <span style="color:var(--muted)">· met ${p.m.length}×</span></button>`).join('')+(q&&!exact?`<button type="button" data-add="${$('#peopleInput').value.trim()}">＋ Add “${$('#peopleInput').value.trim()}” as new</button>`:'');
+  }
+  function addPerson(n){n=n.trim();if(n&&!picked.includes(n))picked.push(n);$('#peopleInput').value='';renderPeopleField()}
+  $('#peopleSuggest').onclick=e=>{const b=e.target.closest('[data-add]');if(b)addPerson(b.dataset.add)};
+  $('#peopleField').onclick=e=>{const b=e.target.closest('[data-rm]');if(b){picked.splice(b.dataset.rm,1);renderPeopleField()}else $('#peopleInput').focus()};
+  $('#peopleInput').oninput=renderPeopleField;
+  $('#peopleInput').onkeydown=e=>{
+    if(e.key==='Enter'||e.key===','){e.preventDefault();const q=$('#peopleInput').value.trim();const m=PEOPLE.find(p=>p.n.toLowerCase()===q.toLowerCase());if(q)addPerson(m?m.n:q)}
+    if(e.key==='Backspace'&&!$('#peopleInput').value&&picked.length){picked.pop();renderPeopleField()}
+  };
+  renderPeopleField();
+
+  // Week at a glance (no guilt: missed days are just empty)
+  (function(){
+    const days=['M','T','W','T','F','S','S'];
+    const rows=[['☀️ Office',[0,1,1,1,'t',-1,-1]],['🌙 Examen',[0,1,1,1,'t',-1,-1]]];
+    const run=a=>{let n=0;for(let i=3;i>=0;i--){if(a[i]===1)n++;else break}return n};
+    $('#weekCard').innerHTML=`<div class="pagehead"><h3>This week</h3><span class="hint" style="margin:0">☀️ ${run(rows[0][1])} days running · 🌙 ${run(rows[1][1])} days running</span></div><div class="week">`+
+      rows.map(([l,a])=>`<div class="wl">${l}</div><div class="wk">${a.map((v,i)=>`<div class="wd ${v===1?'done':v==='t'?'today':v===-1?'future':''}"><i></i>${days[i]}</div>`).join('')}</div>`).join('')+'</div>';
+  })();
+
+  // Examen intention carries into the Morning Office
+  const INTENT='Patience with the team.';
+  $('#homeIntent').textContent='From last night: “'+INTENT+'”';
+  $('#officeIntent').innerHTML='<small>🌙 Your intention from last night’s Examen</small>“'+INTENT+'”';
+
+  // Scripture extras: next verse, whole chapter
+  const keyOf=r=>r.toLowerCase().replace('–','-').replace(/^psalms/,'psalm');
+  const NEXT={
+    'john 3:16':{ref:'John 3:17',text:'For God did not send his Son into the world to condemn the world, but in order that the world might be saved through him.'},
+    'psalm 23:1-3':{ref:'Psalm 23:4',text:'Even though I walk through the valley of the shadow of death, I will fear no evil, for you are with me; your rod and your staff, they comfort me.'},
+    'romans 8:28':{ref:'Romans 8:29',text:'For those whom he foreknew he also predestined to be conformed to the image of his Son, in order that he might be the firstborn among many brothers.'},
+    'philippians 4:6-7':{ref:'Philippians 4:8',text:'Finally, brothers, whatever is true, whatever is honorable, whatever is just, whatever is pure, whatever is lovely, whatever is commendable, if there is any excellence, if there is anything worthy of praise, think about these things.'},
+    'proverbs 3:5-6':{ref:'Proverbs 3:7',text:'Be not wise in your own eyes; fear the LORD, and turn away from evil.'}
+  };
+  let lastHit=null;
+  function showVerseTools(hit){
+    lastHit=hit;const nx=NEXT[keyOf(hit.ref)];
+    $('#lookupStatus').textContent='✓ '+hit.ref+' added from the ESV';
+    $('#verseTools').innerHTML=`<button type="button" class="mini" data-vt="next" ${nx?'':'disabled'}>＋ Next verse</button><button type="button" class="mini" data-vt="chap">📖 Whole chapter</button>`;
+  }
+  $('#verseTools').onclick=e=>{
+    const b=e.target.closest('[data-vt]');if(!b||!lastHit)return;
+    if(b.dataset.vt==='next'){
+      const nx=NEXT[keyOf(lastHit.ref)];if(!nx)return;
+      scr.value+=(scr.value&&!scr.value.endsWith('\n')?'\n':'')+'📖 '+nx.ref+'\n“'+nx.text+'” (ESV)\n\n';
+      showVerseTools(nx);
+    }
+    if(b.dataset.vt==='chap'){
+      const name=lastHit.ref.replace(/:.*$/,''),v=(lastHit.ref.match(/:(\d+)/)||[])[1]||'';
+      $('#chapterPanel').innerHTML=`<div class="chap-h"><b>${name} · ESV</b><button type="button" class="mini" data-vt="close">Close</button></div><div class="skel"></div><div class="skel s"></div><p class="hl"><sup>${v}</sup>${lastHit.text}</p><div class="skel"></div><div class="skel s"></div><p class="hint" style="margin:6px 0 0">The full chapter loads from the ESV API in the real build.</p>`;
+      $('#chapterPanel').classList.add('open');
+    }
+  };
+  $('#chapterPanel').onclick=e=>{if(e.target.closest('[data-vt="close"]'))$('#chapterPanel').classList.remove('open')};
+  // Backup & export (downloads the sample entries)
+  const strip=h=>{const d=document.createElement('div');d.innerHTML=h.replace(/<br>/g,'\n').replace(/<\/div>/g,'\n');return d.textContent.replace(/\n{2,}/g,'\n').trim()};
+  function download(name,text,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;document.body.appendChild(a);a.click();a.remove();toast('✓ Downloaded '+name)}
+  $('#expJson').onclick=()=>download('journal-backup.json',JSON.stringify(ENTRIES.map(e=>({type:e[0],title:e[1],summary:e[2],when:e[3],sentToNotion:!!e[4],detail:strip(e[5])})),null,2),'application/json');
+  $('#expMd').onclick=()=>download('journal-backup.md',ENTRIES.map(e=>`## ${e[1]}\n_${e[0]} · ${e[3]}_\n\n${strip(e[5])}\n`).join('\n'),'text/markdown');
+
+  // ===== Sign-in (Supabase Auth; falls back to demo mode until config.js is filled in) =====
+  const CFG=window.JOURNAL_CONFIG||{};
+  const sb=(CFG.url&&CFG.anonKey&&window.supabase)?window.supabase.createClient(CFG.url,CFG.anonKey):null;
+  async function doLogin(e){
+    e.preventDefault();
+    if(!sb){show('app');return}
+    const btn=$('#loginBtn'),msg=$('#loginMsg');btn.disabled=true;msg.textContent='';
+    const {error}=await sb.auth.signInWithPassword({email:$('#u').value.trim(),password:$('#p').value});
+    btn.disabled=false;
+    if(error){msg.textContent='That email or password didn’t work.';return}
+    $('#p').value='';show('app');
+  }
+  async function signOut(){if(sb)await sb.auth.signOut();show('login')}
+  (async function initAuth(){
+    if(!sb){$('#demoNote').textContent='DEMO MODE — sign-in is not connected yet; sample data only, nothing is saved or sent to Notion';return}
+    $('#u').value='';$('#p').value='';
+    $('#demoNote').textContent='Private journal';
+    const {data}=await sb.auth.getSession();
+    if(data.session)show('app');
+    sb.auth.onAuthStateChange((_ev,sess)=>{if(!sess)show('login')});
+  })();
+</script>
+</body>
+</html>
