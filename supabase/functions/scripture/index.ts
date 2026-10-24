@@ -6,15 +6,17 @@
 const BASES = ["https://rest.api.bible/v1", "https://api.scripture.api.bible/v1"];
 let base = BASES[0];
 const WANTED = ["CSB", "NIV", "NLT"];
-// Optional: set these secrets to skip auto-detection (Edge Functions → Secrets): BIBLE_ID_CSB, BIBLE_ID_NIV, BIBLE_ID_NLT
+// Bible IDs (public, from your API.Bible dashboard). You can override any of them with secrets BIBLE_ID_CSB, BIBLE_ID_NIV, BIBLE_ID_NLT.
 const ENV_IDS: Record<string, string | undefined> = {
-  CSB: Deno.env.get("BIBLE_ID_CSB"), NIV: Deno.env.get("BIBLE_ID_NIV"), NLT: Deno.env.get("BIBLE_ID_NLT"),
+  CSB: Deno.env.get("BIBLE_ID_CSB") || "a556c5305ee15c3f-01",
+  NIV: Deno.env.get("BIBLE_ID_NIV") || "78a9f6124f344018-01",
+  NLT: Deno.env.get("BIBLE_ID_NLT") || "d6e14a625393b4da-01",
 };
 const cors = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
-const json = (o: unknown) => new Response(JSON.stringify(o), { headers: { ...cors, "Content-Type": "application/json" } });
+const json = (o: Record<string, unknown>) => new Response(JSON.stringify({ fn: "scripture", ...o }), { headers: { ...cors, "Content-Type": "application/json" } });
 
 // id, display name, extra aliases
 const BOOKS: [string, string, string[]][] = [

@@ -845,6 +845,7 @@
     if(isOffline())return {ok:false,error:'You’re offline. Verse lookups need a connection.'};
     const {data,error}=await sb.functions.invoke('scripture',{body:{...body,bibleId:BIBLE_IDS[body.translation]}});
     if(error||!data)return {ok:false,error:'Bible lookup isn’t set up yet: the “scripture” function isn’t deployed or can’t be reached.'};
+    if(data.fn!=='scripture')return {ok:false,error:'The “scripture” function in Supabase has the wrong code in it (it answered “'+(data.error||'unknown')+'”). Paste the scripture code in again and deploy.'};
     if(data.ok&&data.bibleId){BIBLE_IDS[body.translation]=data.bibleId;try{localStorage.setItem('jr-bibleids',JSON.stringify(BIBLE_IDS))}catch(e){}}
     if(data.ok)LCACHE[k]=data;
     return data;
@@ -1281,6 +1282,7 @@
     st.textContent='Checking…';
     const {data,error}=await sb.functions.invoke('scripture',{body:{action:'bibles'}});
     if(error||!data){st.textContent='Couldn’t reach the “scripture” function. It may not be deployed yet.';return}
+    if(data.fn!=='scripture'){st.textContent='The “scripture” function in Supabase has the wrong code in it (it answered “'+(data.error||'unknown')+'”). Open it in Supabase, replace everything with the code from the scripture folder, and deploy.';return}
     if(!data.ok){st.textContent=data.error;return}
     Object.entries(data.bibles).forEach(([k,v])=>{BIBLE_IDS[k]=v.id});try{localStorage.setItem('jr-bibleids',JSON.stringify(BIBLE_IDS))}catch(e){}
     const got=Object.keys(data.bibles);
