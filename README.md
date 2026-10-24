@@ -19,3 +19,14 @@ Until `config.js` is filled in, the page runs in demo mode (any password works, 
 ## How saving works
 
 Entries are rows in `public.entries` (`type`, `title`, `summary`, and a `body` JSON with the form's fields). If you're offline, entries queue on the device and save automatically when you're back online.
+
+## Notion push
+
+Entries with "Push to Notion" ticked are sent to the **Daily Journal** page in Notion (one database per entry type) by the `notion-push` Edge Function in [`supabase/functions/notion-push`](supabase/functions/notion-push/index.ts).
+
+1. Create a Notion internal integration (notion.so/profile/integrations) and copy its secret.
+2. In Notion, open **Daily Journal** → ••• → **Connections** → add the integration.
+3. Supabase → **Edge Functions → Secrets:** add `NOTION_TOKEN` with the secret.
+4. Supabase → **Edge Functions → Deploy a new function → Via Editor:** name it `notion-push`, paste `index.ts`, deploy (leave "Verify JWT" on).
+
+Settings → Notion shows "Connected" once it works. Re-sending an entry replaces its earlier Notion page.

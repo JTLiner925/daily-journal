@@ -1,0 +1,133 @@
+// Supabase Edge Function: pushes one journal entry to its Notion database.
+// Secret needed (Edge Functions → Secrets): NOTION_TOKEN
+// The caller must be signed in; the entry is read with the caller's own session (Row Level Security applies).
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
+
+// Notion databases under "Daily Journal" (database IDs, not secrets)
+const DBS: Record<string, string> = {
+  thought: "e322fc66-4ba1-47c3-91ab-46a93b74a2bf",
+  note: "ccf56525-5dd9-472a-99cd-eb1262ff083d",
+  meeting: "ed6d9e4f-1111-460e-8af0-191321fad09d",
+  scripture: "c8ac314c-db63-43d7-9467-298b2e289f5e",
+  office: "d637a6bd-4d9a-4fe3-a130-e82b82a85939",
+  examen: "69c63a5f-75fe-4bb7-848d-5cecc4f2650c",
+};
+const TZ = "America/Chicago";
+const NOTION = "https://api.notion.com/v1";
+const cors = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
+const json = (o: unknown) => new Response(JSON.stringify(o), { headers: { ...cors, "Content-Type": "application/json" } });
+const nh = () => ({
+  Authorization: `Bearer ${Deno.env.get("NOTION_TOKEN")}`,
+  "Notion-Version": "2022-06-28",
+  "Content-Type": "application/json",
+});
+
+// ---- Notion value helpers ----
+const chunks = (t: string, n = 2000) => { const a: string[] = []; for (let i = 0; i < t.length; i += n) a.push(t.slice(i, i + n)); return a.slice(0, 100); };
+const rt = (t = "") => chunks(String(t)).map((c) => ({ type: "text", text: { content: c } }));
+const paras = (t = "") => String(t).split(/\n+/).filter((s) => s.trim()).map((s) => ({ object: "block", type: "paragraph", paragraph: { rich_text: rt(s) } }));
+const head = (t: string) => ({ object: "block", type: "heading_3", heading_3: { rich_text: rt(t) } });
+const todo = (t: string, done: boolean) => ({ object: "block", type: "to_do", to_do: { rich_text: rt(t), checked: !!done } });
+const clean = (s: string) => String(s).trim().replace(/,/g, " ");
+const sel = (n?: string) => ({ select: n ? { name: clean(n) } : null });
+const multi = (s: unknown) => ({
+  multi_select: (Array.isArray(s) ? s : String(s || "").split(",")).map((x) => clean(String(x))).filter(Boolean).map((name) => ({ name })),
+});
+const title = (t = "Untitled") => ({ title: rt(t || "Untitled") });
+const text = (t = "") => ({ rich_text: rt(t) });
+const when = (iso: string) => ({ date: { start: iso } });
+const addMin = (date: string, time: string, mins: number) => {
+  const [y, m, d] = date.split("-").map(Number), [h, mi] = time.split(":").map(Number);
+  return new Date(Date.UTC(y, m - 1, d, h, mi + mins)).toISOString().slice(0, 19);
+};
+
+function build(r: any) {
+  const b = r.body || {};
+  const base = { "Journal ID": text(r.id) };
+  switch (r.type) {
+    case "thought":
+      return { props: { Title: title(r.title), Date: when(r.created_at), Category: sel(b.category), Mood: sel(b.mood), Tags: multi(b.tags), ...base }, kids: paras(b.text) };
+    case "note":
+      return { props: { Title: title(r.title), Date: when(r.created_at), Folder: sel(b.folder), Link: { url: /^https?:\/\//i.test(b.link || "") ? b.link : null }, ...base }, kids: paras(b.text) };
+    case "meeting": {
+      const acts = (b.actions || []) as { t: string; done: boolean }[];
+      const start = b.date && b.time ? `${b.date}T${b.time}:00` : null;
+      const date = start
+        ? { date: { start, end: b.dur ? addMin(b.date, b.time, +b.dur) : undefined, time_zone: TZ } }
+        : { date: { start: b.date || r.created_at } };
+      return {
+        props: { Title: title(r.title), When: date, "Duration (min)": { number: b.dur ? +b.dur : null }, Type: sel(b.type), People: multi(b.people || []), "Follow up by": { date: b.followUp ? { start: b.followUp } : null }, "Open action items": { number: acts.filter((a) => !a.done).length }, ...base },
+        kids: [...paras(b.text), ...(acts.length ? [head("Action items"), ...acts.map((a) => todo(a.t, a.done))] : [])],
+      };
+    }
+    case "scripture": {
+      const lines = String(b.text || "").split("\n");
+      const passages = lines.filter((l) => l.startsWith("📖")).map((l) => l.replace(/^📖\s*/, "")).join("; ");
+      return { props: { Title: title(r.title), Date: when(r.created_at), Passages: text(passages), Tags: multi(b.tags), ...base }, kids: paras(b.text) };
+    }
+    case "office":
+      return {
+        props: { Title: title(r.title), Date: when(r.created_at), Day: { number: b.day ?? null }, Psalm: text(b.psalmRef), Proverb: text(b.proverbRef), "New Testament": text(b.ntRef), Intention: text(b.intention), ...base },
+        kids: [
+          ...(b.psalm ? [head(`${b.psalmRef || "Psalm"}`), ...paras(b.psalm)] : []),
+          ...(b.proverb ? [head(`${b.proverbRef || "Proverb"}`), ...paras(b.proverb)] : []),
+          ...(b.nt ? [head(`${b.ntRef || "New Testament"}`), ...paras(b.nt)] : []),
+          ...(b.praying ? [head("Praying for"), ...paras(b.praying)] : []),
+          ...(b.intention ? [head("Intention"), ...paras(b.intention)] : []),
+        ],
+      };
+    case "examen":
+      return {
+        props: { Title: title(r.title), Date: when(r.created_at), Emotions: multi(b.emotions), Tomorrow: text(b.tomorrow), ...base },
+        kids: [
+          ...(b.gratitude ? [head("Gratitude"), ...paras(b.gratitude)] : []),
+          ...(b.emotionsNote ? [head("Emotions"), ...paras(b.emotionsNote)] : []),
+          ...(b.prayer ? [head("Prayer"), ...paras(b.prayer)] : []),
+          ...(b.tomorrow ? [head("Tomorrow"), ...paras(b.tomorrow)] : []),
+        ],
+      };
+  }
+  return { props: { Title: title(r.title), ...base }, kids: [] };
+}
+
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
+  try {
+    if (!Deno.env.get("NOTION_TOKEN")) return json({ ok: false, error: "NOTION_TOKEN secret is not set" });
+    const { id, action } = await req.json();
+
+    if (action === "status") {
+      const me = await fetch(`${NOTION}/users/me`, { headers: nh() });
+      if (!me.ok) return json({ ok: false, error: "Notion rejected the token" });
+      const db = await fetch(`${NOTION}/databases/${DBS.thought}`, { headers: nh() });
+      return json(db.ok ? { ok: true } : { ok: false, error: "The integration can't see the Daily Journal page. In Notion: open it → ••• → Connections → add your integration." });
+    }
+
+    const supa = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!, {
+      global: { headers: { Authorization: req.headers.get("Authorization") || "" } },
+    });
+    const { data: row, error } = await supa.from("entries").select("*").eq("id", id).single();
+    if (error || !row) return json({ ok: false, error: "Entry not found" });
+    const dbId = DBS[row.type];
+    if (!dbId) return json({ ok: false, error: `No Notion database for type ${row.type}` });
+
+    // re-sending replaces the earlier Notion page instead of duplicating it
+    if (row.body?.notionPageId && row.body.notionPageId !== "sent") {
+      await fetch(`${NOTION}/pages/${row.body.notionPageId}`, { method: "PATCH", headers: nh(), body: JSON.stringify({ archived: true }) });
+    }
+    const { props, kids } = build(row);
+    const res = await fetch(`${NOTION}/pages`, {
+      method: "POST", headers: nh(),
+      body: JSON.stringify({ parent: { database_id: dbId }, properties: props, children: kids.slice(0, 100) }),
+    });
+    const out = await res.json();
+    if (!res.ok) return json({ ok: false, error: out.message || "Notion error" });
+    await supa.from("entries").update({ sent_to_notion: true, body: { ...row.body, notionPageId: out.id } }).eq("id", id);
+    return json({ ok: true, url: out.url });
+  } catch (e) {
+    return json({ ok: false, error: String(e) });
+  }
+});

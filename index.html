@@ -520,7 +520,6 @@
         <div class="db"><div class="ic">🤝</div><div class="meta"><b>Meetings</b><span>Title · Type · People · Notes · Actions · Follow-up</span></div><span class="ok notion-st">● Connected</span></div>
         <div class="db"><div class="ic">📖</div><div class="meta"><b>Scripture Notes</b><span>Title · Passages · Notes with ESV text · Tags · Date</span></div><span class="ok notion-st">● Connected</span></div>
         <div class="db"><div class="ic">☀️</div><div class="meta"><b>Daily Office</b><span>Day · Psalm · Proverb · NT chapter · Reflections · Intention</span></div><span class="ok notion-st">● Connected</span></div>
-        <div class="db"><div class="ic">👥</div><div class="meta"><b>People</b><span>Name · Meetings · Last met · Open follow-ups</span></div><span class="ok notion-st">● Connected</span></div>
         <div class="db"><div class="ic">🌙</div><div class="meta"><b>Examen</b><span>Date · Gratitude · Emotions · Prayer · Tomorrow</span></div><span class="ok notion-st">● Connected</span></div>
       </div>
       <div class="card">
@@ -694,7 +693,7 @@
   const tagOf=e=>SECTIONS[e[0]];
   const entryHTML=e=>{const s=tagOf(e);
     return `<div class="entry"><span class="tag ${s.tag}">${s.label}</span><div class="emain"><h4>${e[1]}</h4><p class="esub">${e[2]}</p>
-      <div class="detail">${e[5]}<div class="eactions"><button class="mini">Edit</button><button class="mini">${e[4]===1?'Re-send to Notion':'Send to Notion'}</button><button class="mini" data-del="${e[6]||''}">Delete</button></div></div></div>
+      <div class="detail">${e[5]}<div class="eactions"><button class="mini">Edit</button><button class="mini" data-send="${e[6]||''}">${e[4]===1?'Re-send to Notion':'Send to Notion'}</button><button class="mini" data-del="${e[6]||''}">Delete</button></div></div></div>
       <div class="when">${e[3].replace(' · ','<br>')}<br><span class="sync ${e[4]===1?'':'pending'}">${e[4]===2?'◌ Waiting to save':e[4]===1?'✓ Notion':'● Not sent'}</span></div></div>`};
   const listHTML=(rows,empty)=>rows.length?rows.map(entryHTML).join(''):`<div class="empty">${empty||'Nothing here yet.'}</div>`;
   function renderLists(){
@@ -743,6 +742,7 @@
     const mb=e.target.closest('.mini');
     if(mb){
       if(mb.dataset.del!==undefined){delEntry(mb.dataset.del);return}
+      if(mb.dataset.send){pushEntry(mb.dataset.send);return}
       toast(sb?'That’s coming soon.':'Mockup: this would '+mb.textContent.toLowerCase());return}
     const en=e.target.closest('.entry');
     $$('.entry.open').forEach(x=>{if(x!==en)x.classList.remove('open')});
@@ -1028,8 +1028,10 @@
   async function flushQueue(){
     if(!sb||isOffline())return 0;
     const q=loadQ();let n=0;
-    while(q.length){const {error}=await sb.from('entries').insert(q[0]);if(error)break;q.shift();saveQ(q);n++}
+    const fresh=[];
+    while(q.length){const {data,error}=await sb.from('entries').insert(q[0]).select().single();if(error)break;if(data&&data.body&&data.body.pushNotion)fresh.push(data.id);q.shift();saveQ(q);n++}
     if(n)await loadRows();else rebuild();
+    if(notionReady)for(const id of fresh)await pushEntry(id,true);
     return n;
   }
   async function saveRow(type,title,summary,body){
@@ -1039,7 +1041,29 @@
     if(isOffline())return queue();
     const {data,error}=await sb.from('entries').insert({type,title,summary,body}).select().single();
     if(error)return queue();
-    DBROWS.unshift(data);rebuild();return 'saved';
+    DBROWS.unshift(data);rebuild();
+    if(body&&body.pushNotion&&notionReady)pushEntry(data.id,true);
+    return 'saved';
+  }
+  // ===== Notion push (Supabase Edge Function "notion-push") =====
+  let notionReady=false;
+  async function pushEntry(id,quiet){
+    if(!sb||!id||id.startsWith('q')||id.startsWith('demo'))return false;
+    const {data,error}=await sb.functions.invoke('notion-push',{body:{id}});
+    if(!error&&data&&data.ok){
+      const r=DBROWS.find(x=>x.id===id);if(r)r.sent_to_notion=true;
+      rebuild();if(!quiet)toast('✓ Sent to Notion');return true;
+    }
+    const msg=(data&&data.error)||(error&&error.message)||'unknown error';
+    toast(quiet?'Saved. It didn’t reach Notion yet, so you can re-send it from the entry.':'Couldn’t send to Notion: '+msg);
+    return false;
+  }
+  async function checkNotion(){
+    let why='';
+    try{const {data,error}=await sb.functions.invoke('notion-push',{body:{action:'status'}});notionReady=!error&&!!(data&&data.ok);why=(data&&data.error)||(error&&'the notion-push function isn’t deployed yet')||''}catch(e){notionReady=false;why='the notion-push function isn’t reachable'}
+    $$('.notion-st').forEach(n=>{n.textContent=notionReady?'● Connected':'○ Not connected yet';n.style.color=notionReady?'':'var(--muted)'});
+    const note=$('#notionNote');note.style.display=notionReady?'none':'';
+    if(!notionReady)note.textContent='Notion isn’t connected yet'+(why?' ('+why+')':'')+'. Your “Push to Notion” choice on each form is saved with the entry and used once it is.';
   }
   async function persistFollow(f){
     const r=DBROWS.find(x=>x.id===f.rowId);
@@ -1105,7 +1129,7 @@
   window.addEventListener('offline',renderSync);
 
   // ===== Sign-in (Supabase Auth; demo mode until config.js is filled in) =====
-  async function enterApp(){show('app');await loadRows();await flushQueue()}
+  async function enterApp(){show('app');await loadRows();await checkNotion();await flushQueue()}
   async function doLogin(e){
     e.preventDefault();
     if(!sb){show('app');return}
