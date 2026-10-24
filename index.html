@@ -512,6 +512,11 @@
         <div id="queueMsg" class="hint"></div>
       </div>
       <div class="card">
+        <h3 style="margin-bottom:2px">🧹 Clear my data</h3>
+        <p class="hint" style="margin:4px 0 10px">Deletes every entry you've saved here, plus your voice recordings. It can't be undone. Copies already sent to Notion are not touched.</p>
+        <button class="btn ghost" id="wipeBtn" style="color:var(--gold)">Delete all my entries…</button>
+      </div>
+      <div class="card">
         <h3 style="margin-bottom:2px">🔗 Notion connection</h3>
         <p class="hint" style="margin:4px 0 6px">Each entry type pushes to its own Notion database.</p>
         <p class="hint" id="notionNote" style="display:none;color:var(--gold)">Notion isn’t connected yet. Your “Push to Notion” choice on each form is saved with the entry and will be used once it is.</p>
@@ -1006,20 +1011,8 @@
     // Chrome-style browsers can record and dictate together; Safari can't (dictation takes the mic away).
     const dual=canRec&&SR&&MediaRecorder.isTypeSupported&&MediaRecorder.isTypeSupported('audio/webm');
     const fmt=s=>Math.floor(s/60)+':'+String(s%60).padStart(2,'0');
-    msg.textContent=!canRec?'Recording isn’t supported in this browser.':dual?'Records audio and transcribes as you talk':'Records audio'+(SR?'. Use Dictate to type by voice.':'');
+    msg.textContent=!canRec?'Recording isn’t supported in this browser.':dual?'Records audio and transcribes as you talk':'Records audio';
     r._busy=Promise.resolve();
-    // Dictate-only button (text, no audio)
-    let dictOnly=null,dictBtn=null;
-    if(SR){
-      dictBtn=document.createElement('button');dictBtn.type='button';dictBtn.className='recbtn';dictBtn.textContent='⌨️ Dictate';
-      btn.after(dictBtn);dictOnly=makeDictation(ta,msg);
-      msg.onDictStopped=()=>{dictBtn.textContent='⌨️ Dictate';r.classList.remove('live')};
-      dictBtn.onclick=()=>{
-        if(dictOnly.active){dictOnly.stop();dictBtn.textContent='⌨️ Dictate';r.classList.remove('live');if(dictOnly.got)msg.textContent='Transcribed ✓';return}
-        dictOnly.start();dictBtn.textContent='⏹ Stop dictating';msg.textContent='Listening… say what’s on your mind';r.classList.add('live');
-      };
-      r._stopDict=()=>{if(dictOnly.active){dictOnly.stop();dictBtn.textContent='⌨️ Dictate';r.classList.remove('live')}};
-    }
     if(!canRec){btn.disabled=true;return}
     let stream,mr,chunks=[],t=0,iv=null,live=false,dict=null;
     function stop(){
@@ -1030,7 +1023,6 @@
     r._stop=stop;
     btn.onclick=async()=>{
       if(live){stop();return}
-      if(dictOnly&&dictOnly.active)r._stopDict();
       try{stream=await navigator.mediaDevices.getUserMedia({audio:true})}
       catch(e){msg.textContent='Microphone blocked. Allow it in your browser’s site settings.';return}
       mr=new MediaRecorder(stream);chunks=[];
@@ -1193,6 +1185,21 @@
     if(error){toast('Couldn’t update that: '+error.message);rebuild();return}
     r.body=body;rebuild();
   }
+  async function wipeAll(){
+    if(!sb){toast('Mockup: this would delete everything');return}
+    const typed=prompt('This permanently deletes ALL your journal entries and voice recordings.\n\nType DELETE to confirm.');
+    if(typed!=='DELETE'){toast('Cancelled. Nothing was deleted.');return}
+    const files=new Set();
+    DBROWS.forEach(r=>((r.body&&r.body.audio)||[]).forEach(a=>files.add(a.path)));
+    try{const {data}=await sb.storage.from('audio').list(CURRENT_UID,{limit:1000});(data||[]).forEach(f=>files.add(CURRENT_UID+'/'+f.name))}catch(e){}
+    const {error}=await sb.from('entries').delete().eq('user_id',CURRENT_UID);
+    if(error){toast('Couldn’t delete: '+error.message);return}
+    const list=[...files];
+    for(let i=0;i<list.length;i+=100)await sb.storage.from('audio').remove(list.slice(i,i+100));
+    saveQ([]);DBROWS=[];rebuild();go('home');
+    toast('✓ Everything was deleted');
+  }
+  $('#wipeBtn').onclick=wipeAll;
   async function delEntry(id){
     if(!sb){toast('Mockup: this would delete');return}
     if(!id){return}
