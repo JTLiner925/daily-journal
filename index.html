@@ -3,7 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Daily Journal — Mockup</title>
+<title>Daily Journal</title>
+<link rel="icon" type="image/svg+xml" href="icon.svg">
+<link rel="icon" type="image/png" sizes="64x64" href="favicon.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#14161d">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Journal">
 <style>
   :root,html[data-theme="night"]{
     color-scheme:dark;
@@ -239,7 +246,7 @@
 <section class="view active" id="login">
   <div class="login">
     <div class="login-card">
-      <div class="mark">🕯️</div>
+      <img src="icon.svg" alt="" width="72" height="72" style="display:block;margin:0 auto 14px">
       <h1>Welcome back</h1>
       <p>A quiet place for your thoughts, notes, meetings, and daily examen.</p>
       <form onsubmit="doLogin(event)">
@@ -259,7 +266,7 @@
 <section class="view" id="app">
  <div class="shell">
   <nav>
-    <h2>🕯️ Journal</h2>
+    <h2><img src="icon.svg" alt="" width="26" height="26" style="vertical-align:-6px;margin-right:6px">Journal</h2>
     <a class="on" data-p="home"><span>🏠</span><span>Today</span></a>
     <a class="extra" data-p="thought"><span>💭</span><span>Thought</span></a>
     <a class="extra" data-p="note"><span>📝</span><span>Note</span></a>
