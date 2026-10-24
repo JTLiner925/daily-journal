@@ -1284,7 +1284,11 @@
     if(!data.ok){st.textContent=data.error;return}
     Object.entries(data.bibles).forEach(([k,v])=>{BIBLE_IDS[k]=v.id});try{localStorage.setItem('jr-bibleids',JSON.stringify(BIBLE_IDS))}catch(e){}
     const got=Object.keys(data.bibles);
-    st.textContent=(got.length?'✓ Connected: '+got.join(', ')+'.':'Connected, but none of CSB, NIV or NLT were found.')+(data.missing.length?' Not enabled on your account: '+data.missing.join(', ')+'.':'');
+    let msg=got.length?'✓ Connected: '+got.join(', ')+'.':'Connected to API.Bible, but none of CSB, NIV or NLT were found.';
+    if(data.missing.length)msg+=' Not found: '+data.missing.join(', ')+'.';
+    const errs=Object.entries(data.errors||{});if(errs.length)msg+=' Problems: '+errs.map(([k,v])=>k+' — '+v).join(' · ');
+    if(!got.length&&(data.sample||[]).length)msg+=' Bibles your key can see include: '+data.sample.slice(0,8).map(b=>(b.abbreviation||b.name)+' ('+b.id+')').join(', ')+'.';
+    st.textContent=msg;
   };
   async function delEntry(id){
     if(!sb){toast('Mockup: this would delete');return}

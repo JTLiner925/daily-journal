@@ -3,8 +3,13 @@
 // Keep "Verify JWT" ON so only your signed-in journal can use your monthly call allowance.
 // Verse text is returned to the page and is NOT stored by this function.
 
-const BASE = "https://rest.api.bible/v1";
+const BASES = ["https://rest.api.bible/v1", "https://api.scripture.api.bible/v1"];
+let base = BASES[0];
 const WANTED = ["CSB", "NIV", "NLT"];
+// Optional: set these secrets to skip auto-detection (Edge Functions → Secrets): BIBLE_ID_CSB, BIBLE_ID_NIV, BIBLE_ID_NLT
+const ENV_IDS: Record<string, string | undefined> = {
+  CSB: Deno.env.get("BIBLE_ID_CSB"), NIV: Deno.env.get("BIBLE_ID_NIV"), NLT: Deno.env.get("BIBLE_ID_NLT"),
+};
 const cors = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -73,29 +78,52 @@ function passageId(r: Ref) {
 async function api(path: string) {
   const key = Deno.env.get("BIBLE_API_KEY");
   if (!key) throw new Error("The BIBLE_API_KEY secret isn't set in Supabase.");
-  const res = await fetch(BASE + path, { headers: { "api-key": key } });
-  const body = await res.json().catch(() => ({}));
-  if (res.status === 401 || res.status === 403) throw new Error("API.Bible rejected the key, or this Bible isn't enabled for your account.");
+  let res: Response | null = null, body: any = {};
+  for (const b of [base, ...BASES.filter((x) => x !== base)]) {
+    try { res = await fetch(b + path, { headers: { "api-key": key } }); } catch (_) { continue; }
+    body = await res.json().catch(() => ({}));
+    if (res.status === 401 || res.status === 403) { if (b !== BASES[BASES.length - 1]) continue; }
+    base = b;
+    break;
+  }
+  if (!res) throw new Error("Couldn't reach API.Bible.");
+  if (res.status === 401) throw new Error("API.Bible rejected the key (401). Check that BIBLE_API_KEY is the key from your API.Bible app.");
+  if (res.status === 403) throw new Error("API.Bible says this Bible isn't available to your key (403). Make sure it's added to your app.");
   if (res.status === 429) throw new Error("You've reached your API.Bible request limit for now.");
-  if (!res.ok) throw new Error(body.message || `API.Bible error ${res.status}`);
+  if (!res.ok) throw new Error(`${body.message || "API.Bible error"} (${res.status})`);
   return body;
 }
-let cachedBibles: Record<string, { id: string; name: string }> | null = null;
+type Found = { id: string; name: string; abbreviation?: string };
+let cachedBibles: Record<string, Found> | null = null;
+let sample: Found[] = [];
+const errors: Record<string, string> = {};
 async function bibles() {
   if (cachedBibles) return cachedBibles;
-  const out: Record<string, { id: string; name: string }> = {};
-  const list = (await api("/bibles?language=eng")).data || [];
-  for (const b of list) {
-    const abbr = String(b.abbreviationLocal || b.abbreviation || "").toUpperCase();
-    const name = String(b.name || "");
-    const hit = WANTED.find((w) => abbr === w) || (/christian standard bible/i.test(name) ? "CSB" : null);
-    if (hit && !out[hit]) out[hit] = { id: b.id, name };
+  const out: Record<string, Found> = {};
+  // 1) IDs you set as secrets are checked directly
+  for (const w of WANTED) {
+    const id = ENV_IDS[w];
+    if (!id) continue;
+    try { const d = (await api(`/bibles/${id}`)).data || {}; out[w] = { id, name: d.name || w, abbreviation: d.abbreviation }; }
+    catch (e) { errors[w] = e instanceof Error ? e.message : String(e); }
+  }
+  // 2) everything else is found by name or abbreviation
+  if (WANTED.some((w) => !out[w] && !errors[w])) {
+    const list = (await api("/bibles?language=eng")).data || [];
+    sample = list.slice(0, 12).map((b: any) => ({ id: b.id, name: b.name, abbreviation: b.abbreviation }));
+    for (const b of list) {
+      const abbr = String(b.abbreviationLocal || b.abbreviation || "").toUpperCase();
+      const name = String(b.name || "");
+      const hit = WANTED.find((w) => abbr === w || abbr.startsWith(w + " ")) || (/christian standard bible/i.test(name) ? "CSB" : null);
+      if (hit && !out[hit]) out[hit] = { id: b.id, name, abbreviation: b.abbreviation };
+    }
   }
   cachedBibles = out;
   return out;
 }
-async function bibleId(translation: string, given?: string) {
-  if (given) return given;
+async function bibleId(translation: string) {
+  const env = ENV_IDS[translation];
+  if (env) return env;
   const found = (await bibles())[translation];
   if (!found) throw new Error(`${translation} isn't enabled on your API.Bible account yet.`);
   return found.id;
@@ -104,7 +132,7 @@ const clean = (t: string) => String(t || "").replace(/¶/g, " ").replace(/\s*\n\
 const keep = (t: string) => String(t || "").replace(/¶/g, "").replace(/[ \t]+\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
 
 async function fetchRef(translation: string, ref: Ref, given?: string, verseNumbers = false) {
-  const id = await bibleId(translation, given);
+  const id = ENV_IDS[translation] || given || await bibleId(translation);
   const q = `content-type=text&include-notes=false&include-titles=false&include-chapter-numbers=false&include-verse-numbers=${verseNumbers}&include-verse-spans=false&fums-version=3`;
   const path = ref.v1 ? `/bibles/${id}/passages/${passageId(ref)}?${q}` : `/bibles/${id}/chapters/${passageId(ref)}?${q.replace("include-titles=false", "include-titles=true")}`;
   const r = await api(path);
@@ -122,7 +150,7 @@ Deno.serve(async (req) => {
     const { action, translation = "CSB", ref, bibleId: given } = await req.json();
     if (action === "bibles") {
       const found = await bibles();
-      return json({ ok: true, bibles: found, missing: WANTED.filter((w) => !found[w]) });
+      return json({ ok: true, bibles: found, missing: WANTED.filter((w) => !found[w]), errors, sample });
     }
     if (!WANTED.includes(translation)) throw new Error("Unknown translation.");
     if (action === "passage") return json(await fetchRef(translation, parseRef(String(ref)), given));
