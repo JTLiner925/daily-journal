@@ -2,7 +2,7 @@
 
 A private, phone-first journal: thoughts, notes, meetings, scripture notes, a morning Office with a daily reading plan, and an evening Examen. Entries can be pushed to Notion.
 
-**Status:** sign-in and saving are live on Supabase. Every form saves to your private `entries` table, and your lists, People, follow-ups, reading plan and week view are built from what you've saved. Not built yet: live ESV lookup (only a few sample verses work).
+**Status:** sign-in and saving are live on Supabase. Every form saves to your private `entries` table, and your lists, People, follow-ups, reading plan and week view are built from what you've saved. Bible lookups (CSB, NIV, NLT) go through API.Bible.
 
 ## Turn on real sign-in
 
@@ -38,3 +38,14 @@ Every text box has a **Record** button. It records audio (saved privately to Sup
 One-time setup: run [`supabase/audio.sql`](supabase/audio.sql) in the Supabase SQL Editor to create the private `audio` bucket.
 
 Notes: recording needs the microphone permission and HTTPS (GitHub Pages is HTTPS); audio is only saved while online; Notion gets the transcript text, not the audio file.
+
+## Bible lookups (CSB, NIV, NLT)
+
+Scripture notes look up any reference (type `John 3:16` and press Enter) through the `scripture` Edge Function in [`supabase/functions/scripture`](supabase/functions/scripture/index.ts), using API.Bible. Pick the translation above the notes box; after a lookup you can add the next verse, open the whole chapter, or add the same passage in another translation.
+
+1. Create an API.Bible account and an app; enable CSB, NIV and NLT; copy the API key.
+2. Supabase → **Edge Functions → Secrets:** add `BIBLE_API_KEY`.
+3. Supabase → **Edge Functions → Deploy a new function → Via Editor:** name it `scripture`, paste `index.ts`, deploy (leave "Verify JWT" on).
+4. In the app: **Settings → Bible text → Check connection**.
+
+Verse text is not stored by the function. The app shows each translation's copyright line and reports views to API.Bible's FUMS as their terms require. The free plan allows 5,000 calls a month; repeats within a visit are cached in the page.
