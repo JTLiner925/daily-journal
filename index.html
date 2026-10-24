@@ -223,6 +223,15 @@
   .fl{display:inline-block;min-width:.7em;text-align:center;font-weight:600;color:var(--accent);letter-spacing:.02em}.fl.hid{color:var(--muted);font-weight:400}
   .good{color:var(--sage)}.miss{color:#d86a6a;text-decoration:underline}
   .mtabs{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
+  .mhead{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:8px 0 4px}
+  .mtitle{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.mtitle b{font-family:var(--serif);font-size:22px;font-weight:500}
+  .msels{display:flex;gap:6px;flex:none}.msels select{width:auto;padding:6px 8px;font-size:13px}
+  .mtool{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:6px 0 10px}.mtool .rs{font-size:14px;font-weight:600}
+  .btn.sm{padding:8px 14px;font-size:14px}
+  .msplit{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:14px;height:calc(100vh - 330px);min-height:340px}
+  .mpane{overflow:auto;min-height:0;border:1px solid var(--line);border-radius:var(--radius-sm);padding:12px 16px;background:var(--field)}
+  .mpane .mex{margin:0}.mpane.bankp{background:var(--card)}.mpane .bank{border:0;padding:0;margin:0}
+  @media(max-width:900px){.msplit{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr) minmax(0,1fr);height:calc(100dvh - 400px);min-height:380px}.mex{font-size:18px;line-height:2}.mtitle b{font-size:18px}}
 
   .toast{position:fixed;bottom:24px;left:50%;transform:translate(-50%,20px);background:var(--ink);color:var(--bg);padding:12px 20px;border-radius:99px;font-size:14px;opacity:0;pointer-events:none;transition:.25s;z-index:9}
   .toast.show{opacity:1;transform:translate(-50%,0)}
@@ -693,7 +702,7 @@
     $$('.page').forEach(x=>x.classList.toggle('active',x.id===p));
     $$('nav a[data-p]').forEach(a=>a.classList.toggle('on',a.dataset.p===base(p)));
     if(flows[base(p)]&&p.endsWith('-new')){flows[base(p)].i=0;flowRender(base(p))}
-    $('#fab').style.display=(p.endsWith('-new')||p==='bible')?'none':'';
+    $('#fab').style.display=(p.endsWith('-new')||p==='bible'||p==='memory')?'none':'';
     if(p!=='office-new'&&typeof parkReader==='function')parkReader();
     if(p==='bible'&&typeof bibleOpen==='function')bibleOpen();
     if(p==='memory'&&typeof renderMemory==='function')renderMemory();
@@ -1463,7 +1472,7 @@
     let pool=shuffleA(idx,r);
     if(S.level==='beginner'||S.level==='intermediate'){const easy=i=>STOP.has(normW(S.tokens[i].w))||S.tokens[i].w.length<4;pool.sort((x,y)=>(easy(x)?1:0)-(easy(y)?1:0))}
     S.blanks=pool.slice(0,cnt).sort((x,y)=>x-y);
-    S.bank=shuffleA(S.blanks.map((i,k)=>({id:k,word:S.tokens[i].w})),r);
+    S.bank=S.blanks.map((i,k)=>({id:k,word:S.tokens[i].w})).sort((a,b)=>normW(a.word).localeCompare(normW(b.word))||a.id-b.id);
     S.fill={};S.active=S.blanks[0];
   }
   async function recordProgress(){
@@ -1507,45 +1516,58 @@
   }
   function renderStudy(){
     const S=MS,row=S.row;
-    let h=`<button class="mini" data-m="back">‹ Back to my passages</button><div class="pagehead" style="margin-top:10px"><h1 style="font-size:28px">${esc(row.ref)}</h1><span class="hint">${esc(row.translation)}${S.review?' · review':''}</span></div>`;
+    let h='<button class="mini" data-m="back">‹ My passages</button>';
+    h+=`<div class="mhead"><div class="mtitle"><b>${esc(row.ref)}</b> <span class="hint">${esc(row.translation)}${S.review?' · review':''}</span></div><div class="msels"><select data-m="modesel" aria-label="Study style"><option value="words" ${S.mode==='words'?'selected':''}>Missing words</option><option value="letters" ${S.mode==='letters'?'selected':''}>First letters</option></select><select data-m="levelsel" aria-label="Level">${LEVELS.map(l=>`<option value="${l[0]}" ${S.level===l[0]?'selected':''}>${l[1]}</option>`).join('')}</select></div></div>`;
     if(S.loading)return h+'<p class="hint">Loading the passage…</p>';
     if(S.error)return h+`<p class="hint" style="color:var(--gold)">${esc(S.error)}</p>`;
-    h+='<div class="mtabs"><button class="chip '+(S.mode==='words'?'on':'')+'" data-m="mode" data-v="words">Missing words</button><button class="chip '+(S.mode==='letters'?'on':'')+'" data-m="mode" data-v="letters">First letters</button></div>';
-    h+='<div class="mtabs">'+LEVELS.map(l=>`<button class="chip ${S.level===l[0]?'on':''}" data-m="level" data-v="${l[0]}">${l[1]}</button>`).join('')+'</div>';
-    h+=`<div class="hint">${S.mode==='words'?({beginner:'About a quarter of the words are missing.',intermediate:'About half of the words are missing.',expert:'About three quarters of the words are missing.',pro:'Every word is missing. Rebuild the whole passage from the word bank.'})[S.level]:({beginner:'Every word shows its first letter, with all the punctuation.',intermediate:'Every other word shows its first letter.',expert:'Only the first word of each phrase shows its letter.',pro:'Only the punctuation is shown. Everything else is up to you.'})[S.level]}</div>`;
+    const hint=S.mode==='words'?({beginner:'About a quarter of the words are missing.',intermediate:'About half of the words are missing.',expert:'About three quarters of the words are missing.',pro:'Every word is missing. Rebuild the passage from the word bank.'})[S.level]:({beginner:'Every word shows its first letter, with all the punctuation.',intermediate:'Every other word shows its first letter.',expert:'Only the first word of each phrase shows its letter.',pro:'Only the punctuation is shown. The rest is up to you.'})[S.level];
+    const next=S.level!=='pro'?`<button class="btn ghost sm" data-m="level" data-v="${LEVELS[LV[S.level]+1][0]}">Next level ›</button>`:'';
+    let msg='';
+    if(S.result){
+      if(S.mode==='words')msg=S.result.ok===S.result.total?`<span class="rs good">✓ All ${S.result.total} correct!</span>`:`<span class="rs hint">${S.result.ok} of ${S.result.total} correct</span>`;
+      else msg=`<span class="rs ${S.result.ok/S.result.total>=.95?'good':'hint'}">${S.result.ok} of ${S.result.total} words (${Math.round(S.result.ok/S.result.total*100)}%)</span>`;
+    }
+    h+=`<div class="hint" style="margin:4px 0 2px">${hint}</div><div class="mtool">`;
+    h+=S.mode==='words'
+      ?`<button class="btn sm" data-m="check">Check</button><button class="btn ghost sm" data-m="reset">Start over</button><button class="btn ghost sm" data-m="reshuffle">Different words</button>${next}${msg}`
+      :`<button class="btn sm" data-m="checkL">Check</button><button class="btn ghost sm" data-m="reveal">${S.reveal?'Hide passage':'Show passage'}</button>${next}${msg}`;
+    h+='</div><div class="msplit">';
     if(S.mode==='words'){
-      h+='<div class="mex">'+S.tokens.map((t,i)=>{
+      h+='<div class="mpane"><div class="mex">'+S.tokens.map((t,i)=>{
         if(!S.blanks.includes(i))return esc(t.pre+t.w+t.post);
         const f=S.fill[i],w=f===undefined?'':S.bank.find(b=>b.id===f).word;
         let cls=i===S.active?' active':'';
         if(S.checked&&f!==undefined)cls+=normW(w)===normW(t.w)?' ok':' bad';
         return esc(t.pre)+`<button class="blank${cls}" data-b="${i}" style="min-width:${Math.max(3,t.w.length)}ch">${esc(w)||'&nbsp;'}</button>`+esc(t.post);
-      }).join(' ')+'</div>';
-      h+='<div class="bank">'+S.bank.map(b=>`<button class="bw" data-w="${b.id}" ${Object.values(S.fill).includes(b.id)?'disabled':''}>${esc(b.word)}</button>`).join('')+'</div>';
-      h+='<div class="mbtns"><button class="btn" data-m="check">Check</button><button class="btn ghost" data-m="reset">Start over</button><button class="btn ghost" data-m="reshuffle">Different words</button>'+(S.level!=='pro'?`<button class="btn ghost" data-m="level" data-v="${LEVELS[LV[S.level]+1][0]}">Next level ›</button>`:'')+'</div>';
-      if(S.result)h+=`<p class="${S.result.ok===S.result.total?'good':'hint'}" style="font-weight:600">${S.result.ok===S.result.total?'✓ All '+S.result.total+' correct!':S.result.ok+' of '+S.result.total+' correct. Fix the red ones or place the rest.'}</p>`;
+      }).join(' ')+'</div></div>';
+      h+='<div class="mpane bankp"><div class="bank">'+S.bank.map(b=>`<button class="bw" data-w="${b.id}" ${Object.values(S.fill).includes(b.id)?'disabled':''}>${esc(b.word)}</button>`).join('')+'</div></div>';
     }else{
-      h+=`<div class="mex">${lettersHTML(S)}</div>`;
-      h+=`<textarea id="mTyped" placeholder="Say it in your head, then type it from memory…" style="min-height:120px">${esc(S.typed)}</textarea>`;
-      h+='<div class="mbtns"><button class="btn" data-m="checkL">Check</button><button class="btn ghost" data-m="reveal">'+(S.reveal?'Hide the passage':'Show the passage')+'</button>'+(S.level!=='pro'?`<button class="btn ghost" data-m="level" data-v="${LEVELS[LV[S.level]+1][0]}">Next level ›</button>`:'')+'</div>';
-      if(S.reveal)h+=`<div class="mex" style="font-size:18px">${esc(S.text)}</div>`;
-      if(S.result){
-        const tw=S.tokens;let k=0;
-        h+=`<p class="${S.result.ok/S.result.total>=.95?'good':'hint'}" style="font-weight:600">${S.result.ok} of ${S.result.total} words right (${Math.round(S.result.ok/S.result.total*100)}%)</p><div class="mex" style="font-size:18px">`+tw.map(t=>{if(!t.w)return esc(t.pre+t.post);const ok=S.result.hit.has(k++);return esc(t.pre)+`<span class="${ok?'good':'miss'}">${esc(t.w)}</span>`+esc(t.post)}).join(' ')+'</div>';
-      }
+      h+=`<div class="mpane"><div class="mex">${lettersHTML(S)}</div></div>`;
+      h+=`<div class="mpane bankp"><textarea id="mTyped" placeholder="Say it in your head, then type it from memory…" style="min-height:140px">${esc(S.typed)}</textarea>`;
+      if(S.reveal)h+=`<div class="mex" style="font-size:17px;margin-top:10px">${esc(S.text)}</div>`;
+      if(S.result){let k=0;h+='<div class="mex" style="font-size:17px;margin-top:10px">'+S.tokens.map(t=>{if(!t.w)return esc(t.pre+t.post);const ok=S.result.hit.has(k++);return esc(t.pre)+`<span class="${ok?'good':'miss'}">${esc(t.w)}</span>`+esc(t.post)}).join(' ')+'</div>'}
+      h+='</div>';
     }
-    h+=`<div class="hint" style="font-size:12px">${esc(S.copyright||'')}</div>`;
+    h+='</div>';
+    h+=`<div class="hint" style="font-size:12px;margin-top:6px">${esc(S.copyright||'')}</div>`;
     if(S.review){
-      h+='<div class="mbtns" style="margin-top:14px"><button class="btn" data-m="recalled">✓ I recalled it</button><button class="btn ghost" data-m="needwork">Needs more work</button></div>';
+      h+='<div class="mbtns" style="margin-top:10px"><button class="btn" data-m="recalled">✓ I recalled it</button><button class="btn ghost" data-m="needwork">Needs more work</button></div>';
     }else if(row.status==='learning'){
-      h+=`<div class="toggle" style="margin-top:16px"><input type="checkbox" id="mDone"><label for="mDone" style="margin:0;text-transform:none;letter-spacing:0;font-size:14px;color:var(--ink)">I’ve memorized this passage</label><select id="mDoneInt" style="width:auto;margin-left:auto;padding:6px 10px">${intOptions(30)}</select></div>`;
+      h+=`<div class="toggle" style="margin-top:12px"><input type="checkbox" id="mDone"><label for="mDone" style="margin:0;text-transform:none;letter-spacing:0;font-size:14px;color:var(--ink)">I’ve memorized this passage</label><select id="mDoneInt" style="width:auto;margin-left:auto;padding:6px 10px">${intOptions(30)}</select></div>`;
     }
     return h;
   }
   function renderMemory(){
     const pg=$('#memory');if(!pg)return;
     if(!sb){pg.innerHTML='<div class="eyebrow">Hide it in your heart</div><h1>🧠 Memorize</h1><p class="sub">Sign in to the real app to memorize Scripture.</p>';return}
-    if(MS){pg.innerHTML=renderStudy();return}
+    if(MS){
+      const saved=MS.resetScroll?[]:[...pg.querySelectorAll('.mpane')].map(x=>x.scrollTop);MS.resetScroll=false;
+      pg.innerHTML=renderStudy();
+      const panes=[...pg.querySelectorAll('.mpane')];panes.forEach((x,i)=>{if(saved[i])x.scrollTop=saved[i]});
+      const ab=pg.querySelector('.blank.active');
+      if(ab){const pane=ab.closest('.mpane'),a=ab.getBoundingClientRect(),b=pane.getBoundingClientRect();if(a.top<b.top+8||a.bottom>b.bottom-8)pane.scrollTop+=(a.top-b.top)-pane.clientHeight/3}
+      return;
+    }
     const prog=r=>Object.entries(r.progress||{}).map(([m,l])=>`<span class="mbadge">${m==='words'?'Missing words':'First letters'}: ${(LEVELS.find(x=>x[0]===l)||[0,l])[1]}</span>`).join('');
     const learning=MEMP.filter(p=>p.status==='learning'),done=MEMP.filter(p=>p.status==='memorized').sort((a,b)=>String(a.next_review).localeCompare(String(b.next_review)));
     let h='<div class="eyebrow">Hide it in your heart</div><h1>🧠 Memorize</h1><p class="sub">Study a passage two ways, then keep it fresh with reviews.</p>';
@@ -1574,11 +1596,11 @@
     if(a==='unmemo')setMemorized(id,false);
     if(a==='back'){MS=null;renderMemory()}
     if(!MS)return;
-    if(a==='mode'){MS.mode=b.dataset.v;buildExercise();renderMemory()}
-    if(a==='level'){MS.level=b.dataset.v;buildExercise();renderMemory()}
+    if(a==='mode'){MS.mode=b.dataset.v;MS.resetScroll=true;buildExercise();renderMemory()}
+    if(a==='level'){MS.level=b.dataset.v;MS.resetScroll=true;buildExercise();renderMemory()}
     if(a==='check')checkWords();if(a==='checkL')checkLetters();
-    if(a==='reset'){MS.fill={};MS.active=MS.blanks[0];MS.checked=false;MS.result=null;renderMemory()}
-    if(a==='reshuffle'){MS.seed++;buildExercise();renderMemory()}
+    if(a==='reset'){MS.fill={};MS.active=MS.blanks[0];MS.checked=false;MS.result=null;MS.resetScroll=true;renderMemory()}
+    if(a==='reshuffle'){MS.seed++;MS.resetScroll=true;buildExercise();renderMemory()}
     if(a==='reveal'){MS.reveal=!MS.reveal;renderMemory()}
     if(a==='recalled'){const ok=await memUpdate(MS.id,{last_reviewed:new Date().toISOString(),next_review:addDays(MS.row.interval_days)});if(ok){toast('✓ Nice. Next review in '+intLabel(MS.row.interval_days).toLowerCase().replace('every ','')+'.');MS=null;renderMemory();renderMemDue()}}
     if(a==='needwork'){const ok=await memUpdate(MS.id,{next_review:addDays(3)});if(ok){toast('Okay. I’ll bring it back in 3 days.');MS=null;renderMemory();renderMemDue()}}
@@ -1586,6 +1608,8 @@
   $('#memory').addEventListener('change',e=>{
     const t=e.target,a=t.dataset&&t.dataset.m;
     if(a==='memo'&&t.checked){const sel=document.querySelector(`select[data-m="interval"][data-id="${t.dataset.id}"]`);setMemorized(t.dataset.id,true,+(sel?sel.value:30))}
+    if(a==='modesel'&&MS){MS.mode=t.value;MS.resetScroll=true;buildExercise();renderMemory();return}
+    if(a==='levelsel'&&MS){MS.level=t.value;MS.resetScroll=true;buildExercise();renderMemory();return}
     if(a==='interval'){const p=MEMP.find(x=>x.id===t.dataset.id);if(!p)return;const days=+t.value,patch={interval_days:days};if(p.status==='memorized'&&p.last_reviewed)patch.next_review=ymd(new Date(new Date(p.last_reviewed).getTime()+days*864e5));memUpdate(p.id,patch).then(()=>{renderMemory();renderMemDue()})}
     if(t.id==='mDone'&&t.checked)setMemorized(MS.id,true,+$('#mDoneInt').value).then(()=>{MS=null;renderMemory()});
   });
