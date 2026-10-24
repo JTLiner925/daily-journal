@@ -960,25 +960,41 @@
   }
   // Free in-browser dictation (Web Speech API). Writes into the text box as you talk.
   function makeDictation(ta,msg){
-    let sr=null,on=false,base0='',got=false;
+    let sr=null,on=false,base0='',got=false,quick=0,t0=0;
+    const say=t=>{if(on)msg.textContent=t};
     const begin=()=>{
-      const s0=new SR();sr=s0;s0.continuous=true;s0.interimResults=true;s0.lang='en-US';
+      const s0=new SR();sr=s0;s0.continuous=true;s0.interimResults=true;s0.lang='en-US';t0=Date.now();
+      s0.onstart=()=>say('Listening… start talking');
+      s0.onspeechstart=()=>say('Hearing you…');
       s0.onresult=e=>{
         let fin='',interim='';
         for(let i=0;i<e.results.length;i++){const tx=e.results[i][0].transcript;if(e.results[i].isFinal)fin+=tx.trim()+' ';else interim+=tx}
-        const say=(fin+interim).trim();if(say)got=true;
-        ta.value=base0+(base0&&say&&!base0.endsWith('\n')?'\n':'')+say;
+        const words=(fin+interim).trim();if(words){got=true;say('Transcribing…')}
+        ta.value=base0+(base0&&words&&!base0.endsWith('\n')?'\n':'')+words;
       };
       s0.onerror=e=>{
-        if(['not-allowed','service-not-allowed','language-not-supported'].includes(e.error)){
-          sr=null;on=false;msg.textContent='Dictation isn’t available here. In Safari, turn on Dictation (Mac: System Settings → Keyboard; iPhone: Settings → General → Keyboard → Enable Dictation).';
-        }
+        const why={
+          'not-allowed':'The browser blocked speech recognition. Allow the microphone for this site (lock icon in the address bar), then try again.',
+          'service-not-allowed':'Speech recognition is turned off for this browser or device.',
+          'language-not-supported':'English speech recognition isn’t available here.',
+          'network':'Couldn’t reach the browser’s speech service. It needs an internet connection, and some browsers (like Brave) block it.',
+          'audio-capture':'No microphone was found. Check which microphone your computer is using.',
+          'no-speech':'I didn’t hear anything. Try again a little closer to the microphone.'
+        }[e.error];
+        if(e.error==='aborted')return;
+        if(why){say(why);if(e.error!=='no-speech'){sr=null;on=false;if(typeof msg.onDictStopped==='function')msg.onDictStopped()}}
+        else say('Dictation error: '+e.error);
       };
-      s0.onend=()=>{if(on&&sr===s0){base0=ta.value;try{begin()}catch(e){}}};
-      try{s0.start()}catch(e){sr=null}
+      s0.onend=()=>{
+        if(!(on&&sr===s0))return;
+        quick=Date.now()-t0<1500?quick+1:0;
+        if(quick>=4){on=false;sr=null;msg.textContent='Dictation keeps stopping on its own. Try again, or check the microphone and site permissions.';if(typeof msg.onDictStopped==='function')msg.onDictStopped();return}
+        base0=ta.value;try{begin()}catch(e){}
+      };
+      try{s0.start()}catch(e){sr=null;say('Couldn’t start dictation: '+e.message)}
     };
     return {
-      start(){on=true;got=false;base0=ta.value;begin()},
+      start(){on=true;got=false;quick=0;base0=ta.value;msg.textContent='Starting dictation…';begin()},
       stop(){on=false;if(sr){const s0=sr;sr=null;try{s0.stop()}catch(e){}}},
       get got(){return got},
       get active(){return on}
@@ -997,6 +1013,7 @@
     if(SR){
       dictBtn=document.createElement('button');dictBtn.type='button';dictBtn.className='recbtn';dictBtn.textContent='⌨️ Dictate';
       btn.after(dictBtn);dictOnly=makeDictation(ta,msg);
+      msg.onDictStopped=()=>{dictBtn.textContent='⌨️ Dictate';r.classList.remove('live')};
       dictBtn.onclick=()=>{
         if(dictOnly.active){dictOnly.stop();dictBtn.textContent='⌨️ Dictate';r.classList.remove('live');if(dictOnly.got)msg.textContent='Transcribed ✓';return}
         dictOnly.start();dictBtn.textContent='⏹ Stop dictating';msg.textContent='Listening… say what’s on your mind';r.classList.add('live');
