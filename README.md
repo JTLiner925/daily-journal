@@ -60,7 +60,7 @@ After changing `supabase/functions/scripture/index.ts`, paste it into the `scrip
 
 ## Daily Office passages
 
-Each day's psalm, proverb and New Testament chapter show their full text (in the version you pick at the top of the Office) so you can read without leaving the Office. Each passage has an "Open in the Bible reader" link.
+Each day's psalm, proverb and New Testament chapter open in the full Bible reader inside the Office (version picker at the top): select verses, highlight, write notes, compare CSB/NIV/NLT, link verses, share or copy, and turn headings and footnotes on or off. "Open in the full Bible reader" jumps to the Bible page for search and navigation.
 
 ## Scripture memory
 

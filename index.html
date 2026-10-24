@@ -198,6 +198,10 @@
   .plink{background:none;border:0;color:var(--accent);padding:0;font-weight:600;text-decoration:underline;cursor:pointer}
 
 
+  .otools{display:flex;gap:14px;flex-wrap:wrap;align-items:center;margin:6px 0 8px}.otools[hidden]{display:none}
+  #bReader.compact .bible-wrap{grid-template-columns:minmax(0,1fr)!important}
+  #bReader.compact .bpanel{position:static!important;max-height:none!important}
+  #bReader.compact #bText{font-size:18px}
   .fnline{white-space:pre-wrap;font-size:13px;color:var(--muted);line-height:1.9;font-family:var(--sans);margin:0}.fnline b{color:var(--ink)}
   .otext{margin:8px 0 12px}.otbox{max-height:380px;overflow:auto;border:1px solid var(--line);border-radius:var(--radius-sm);background:var(--field);padding:12px 16px;font-family:var(--serif);font-size:17px;line-height:1.85}
   .otbox .bp{margin:0 0 .8em}
@@ -456,6 +460,8 @@
         </div>
         <div class="hint" id="bWarn" style="color:var(--gold);margin-top:8px"></div>
       </div>
+      <div id="bReader">
+      <div class="otools" hidden><label class="bchk"><input type="checkbox" id="oHeads" checked> Headings</label><label class="bchk"><input type="checkbox" id="oNotes"> Footnotes</label><button type="button" class="plink" id="oOpenBible">Open in the full Bible reader</button></div>
       <div class="bible-wrap">
         <div class="card bread">
           <div class="vbar" id="bBar" hidden>
@@ -472,6 +478,7 @@
           <div class="hint" id="bCopy" style="font-size:12px;margin-top:14px"></div>
         </div>
         <aside class="card bpanel" id="bPanel"></aside>
+      </div>
       </div>
     </div>
 
@@ -687,6 +694,7 @@
     $$('nav a[data-p]').forEach(a=>a.classList.toggle('on',a.dataset.p===base(p)));
     if(flows[base(p)]&&p.endsWith('-new')){flows[base(p)].i=0;flowRender(base(p))}
     $('#fab').style.display=(p.endsWith('-new')||p==='bible')?'none':'';
+    if(p!=='office-new'&&typeof parkReader==='function')parkReader();
     if(p==='bible'&&typeof bibleOpen==='function')bibleOpen();
     if(p==='memory'&&typeof renderMemory==='function')renderMemory();
     window.scrollTo(0,0);
@@ -1164,7 +1172,7 @@
     if(m.error||l.error)STUDY_OK=false;else{(m.data||[]).forEach(r=>HL[r.ref]=r.color);LINKS=l.data||[]}
     renderWarn();
   }
-  function bibleOpen(){if(!bibleStarted){bibleStarted=true;syncSelects();loadChapter()}}
+  function bibleOpen(){if(!bibleStarted){bibleStarted=true;syncSelects();loadChapter()}else{syncSelects();$('#bHeads').checked=R.heads;$('#bNotes').checked=R.notes}}
   async function loadChapter(keepSel){
     saveRead();syncSelects();
     if(!keepSel)R.sel.clear();
@@ -1214,7 +1222,7 @@
       if(prev)while(c.firstChild)prev.appendChild(c.firstChild);c.remove();
     });
     const home=()=>{if(panel.parentElement!==wrap)wrap.appendChild(panel);panel.classList.remove('inline')};
-    if(window.innerWidth>=1100||!R.sel.size||!R.data){home();return}
+    if((window.innerWidth>=1100&&!$('#bReader').classList.contains('compact'))||!R.sel.size||!R.data){home();return}
     const els=[...document.querySelectorAll('#bText .vs.sel, #bText .vn.sel')],last=els[els.length-1],para=last&&last.closest('p.bp');
     if(!para){home();return}
     // the panel goes right after the last selected verse; the rest of that paragraph continues below it
@@ -1370,20 +1378,30 @@
   const OT={1:'psalm',2:'proverb',3:'nt'};
   const chapIdOf=name=>{const m=/^(.*)\s(\d+)$/.exec(name||'');if(!m)return null;const nm=m[1]==='Psalm'?'Psalms':m[1];const b=BK.find(x=>x[1]===nm);return b?b[0]+'.'+m[2]:null};
   const otBlocks=d=>d.blocks.map(b=>b.k==='h'?`<h4 class="bh">${esc(b.t)}</h4>`:`<p class="bp ${/^q\d$/.test(b.s)?esc(b.s):''}">`+b.runs.map(r=>r.n?`<sup class="vn">${esc(r.n)}</sup>`:r.t!==undefined?esc(r.t):'').join('')+'</p>').join('');
-  async function loadOfficeText(i){
-    const key=OT[i];if(!key)return;
-    const el=document.querySelector(`[data-ot="${key}"]`);if(!el)return;
-    $('#oTrans').value=R.trans;
-    if(!sb){el.innerHTML='<p class="hint">Sign in to the real app to read today’s passage here.</p>';return}
-    const id=chapIdOf(today[key]);if(!id){el.innerHTML='';return}
-    const sig=R.trans+id;if(el.dataset.sig===sig)return;
-    el.innerHTML='<p class="hint">Loading '+esc(today[key])+'…</p>';
-    const d=await bibleCall({action:'read',translation:R.trans,chapterId:id,notes:false});
-    if(!d.ok){el.innerHTML=`<p class="hint" style="color:var(--gold)">${esc(d.error)}</p>`;return}
-    el.dataset.sig=sig;track(d.fumsToken);
-    el.innerHTML=`<div class="otbox">${otBlocks(d)}</div><div class="hint" style="font-size:12px;margin-top:6px">${esc(d.copyright)} · <button type="button" class="plink" data-open="${esc(id)}">Open in the Bible reader</button></div>`;
+  // The Office shows each passage in the full Bible reader (same highlights, notes, compare, links, share, footnotes).
+  function parkReader(){
+    const rd=$('#bReader');if(!rd)return;const home=$('#bible');
+    if(rd.parentElement!==home)home.appendChild(rd);
+    rd.classList.remove('compact');rd.querySelector('.otools').hidden=true;
+    try{placePanel(false)}catch(e){}
   }
-  $('#oTrans').onchange=e=>{R.trans=e.target.value;saveRead();$$('[data-ot]').forEach(el=>delete el.dataset.sig);loadOfficeText(flows.office.i)};
+  async function loadOfficeText(i){
+    const key=OT[i];if(!key){parkReader();return}
+    const host=document.querySelector(`[data-ot="${key}"]`);if(!host)return;
+    $('#oTrans').value=R.trans;
+    if(!sb){host.innerHTML='<p class="hint">Sign in to the real app to read today’s passage here.</p>';return}
+    const id=chapIdOf(today[key]);if(!id)return;
+    const rd=$('#bReader');if(rd.parentElement!==host)host.appendChild(rd);
+    rd.classList.add('compact');rd.querySelector('.otools').hidden=false;
+    $('#oHeads').checked=R.heads;$('#oNotes').checked=R.notes;
+    const [b,c]=id.split('.');
+    if(R.book===b&&R.ch===+c&&R.data&&R.data.chapterId===id&&R.data.translation===R.trans){placePanel(false);return}
+    R.book=b;R.ch=+c;bibleStarted=true;await loadChapter();
+  }
+  $('#oTrans').onchange=e=>{R.trans=e.target.value;saveRead();loadOfficeText(flows.office.i)};
+  $('#oHeads').onchange=e=>{R.heads=e.target.checked;$('#bHeads').checked=R.heads;renderChapter()};
+  $('#oNotes').onchange=e=>{R.notes=e.target.checked;$('#bNotes').checked=R.notes;loadChapter(true)};
+  $('#oOpenBible').onclick=()=>go('bible');
   function openChapter(id){const [b,c]=id.split('.');R.book=b;R.ch=+c;R.sel=new Set();bibleStarted=true;go('bible');syncSelects();loadChapter()}
   $('#office-new').addEventListener('click',e=>{const b=e.target.closest('[data-open]');if(b)openChapter(b.dataset.open)});
 
