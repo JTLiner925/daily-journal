@@ -825,7 +825,7 @@
 
   // Quick capture (floating +)
   const qc=$('#qcModal'),qcRec=$('#qcModal .rec');
-  function qcStopIfLive(){if(qcRec.classList.contains('live'))qcRec.querySelector('.recbtn').click()}
+  function qcStopIfLive(){if(sb){qcRec._stop&&qcRec._stop();qcRec._stopDict&&qcRec._stopDict()}else if(qcRec.classList.contains('live'))qcRec.querySelector('.recbtn').click()}
   function openQC(){$('#qcText').value='';delete AUDIO.qc;qc.classList.add('open');if(!qcRec.classList.contains('live'))qcRec.querySelector('.recbtn').click()}
   function closeQC(){qcStopIfLive();qc.classList.remove('open')}
   $('#fab').onclick=openQC;
@@ -835,7 +835,7 @@
   $('#qcSave').onclick=async()=>{
     const k=qc.querySelector('.chip.on').textContent.toLowerCase();
     if(qcRec.classList.contains('live')){
-      if(sb){qcRec._stop();await qcRec._busy}else{qcRec.querySelector('.recbtn').click();await new Promise(r=>setTimeout(r,1400))}
+      if(sb){qcRec._stop();qcRec._stopDict&&qcRec._stopDict();await qcRec._busy}else{qcRec.querySelector('.recbtn').click();await new Promise(r=>setTimeout(r,1400))}
     }else if(sb)await qcRec._busy;
     const text=$('#qcText').value.trim();closeQC();
     if(!text){toast('Nothing to save yet');return}
@@ -955,33 +955,76 @@
   const takeAudio=k=>{const a=AUDIO[k];delete AUDIO[k];return a&&a.length?a:null};
   async function settleRecorders(type){
     const recs=$$('#'+(type==='qc'?'qcModal':type+'-new')+' .rec');
-    recs.forEach(r=>r._stop&&r._stop());
+    recs.forEach(r=>{r._stop&&r._stop();r._stopDict&&r._stopDict()});
     await Promise.all(recs.map(r=>r._busy));
+  }
+  // Free in-browser dictation (Web Speech API). Writes into the text box as you talk.
+  function makeDictation(ta,msg){
+    let sr=null,on=false,base0='',got=false;
+    const begin=()=>{
+      const s0=new SR();sr=s0;s0.continuous=true;s0.interimResults=true;s0.lang='en-US';
+      s0.onresult=e=>{
+        let fin='',interim='';
+        for(let i=0;i<e.results.length;i++){const tx=e.results[i][0].transcript;if(e.results[i].isFinal)fin+=tx.trim()+' ';else interim+=tx}
+        const say=(fin+interim).trim();if(say)got=true;
+        ta.value=base0+(base0&&say&&!base0.endsWith('\n')?'\n':'')+say;
+      };
+      s0.onerror=e=>{
+        if(['not-allowed','service-not-allowed','language-not-supported'].includes(e.error)){
+          sr=null;on=false;msg.textContent='Dictation isn’t available here. In Safari, turn on Dictation (Mac: System Settings → Keyboard; iPhone: Settings → General → Keyboard → Enable Dictation).';
+        }
+      };
+      s0.onend=()=>{if(on&&sr===s0){base0=ta.value;try{begin()}catch(e){}}};
+      try{s0.start()}catch(e){sr=null}
+    };
+    return {
+      start(){on=true;got=false;base0=ta.value;begin()},
+      stop(){on=false;if(sr){const s0=sr;sr=null;try{s0.stop()}catch(e){}}},
+      get got(){return got},
+      get active(){return on}
+    };
   }
   function setupRealRecorder(ta,r){
     const btn=r.querySelector('.recbtn'),tm=r.querySelector('.rtime'),msg=r.querySelector('.rmsg');
-    msg.textContent='Records audio'+(SR?' and transcribes as you talk':'');
+    const canRec=!!(window.MediaRecorder&&navigator.mediaDevices&&navigator.mediaDevices.getUserMedia);
+    // Chrome-style browsers can record and dictate together; Safari can't (dictation takes the mic away).
+    const dual=canRec&&SR&&MediaRecorder.isTypeSupported&&MediaRecorder.isTypeSupported('audio/webm');
     const fmt=s=>Math.floor(s/60)+':'+String(s%60).padStart(2,'0');
-    let stream,mr,chunks=[],t=0,iv=null,sr=null,live=false,base0='',got=false;
+    msg.textContent=!canRec?'Recording isn’t supported in this browser.':dual?'Records audio and transcribes as you talk':'Records audio'+(SR?'. Use Dictate to type by voice.':'');
     r._busy=Promise.resolve();
+    // Dictate-only button (text, no audio)
+    let dictOnly=null,dictBtn=null;
+    if(SR){
+      dictBtn=document.createElement('button');dictBtn.type='button';dictBtn.className='recbtn';dictBtn.textContent='⌨️ Dictate';
+      btn.after(dictBtn);dictOnly=makeDictation(ta,msg);
+      dictBtn.onclick=()=>{
+        if(dictOnly.active){dictOnly.stop();dictBtn.textContent='⌨️ Dictate';r.classList.remove('live');if(dictOnly.got)msg.textContent='Transcribed ✓';return}
+        dictOnly.start();dictBtn.textContent='⏹ Stop dictating';msg.textContent='Listening… say what’s on your mind';r.classList.add('live');
+      };
+      r._stopDict=()=>{if(dictOnly.active){dictOnly.stop();dictBtn.textContent='⌨️ Dictate';r.classList.remove('live')}};
+    }
+    if(!canRec){btn.disabled=true;return}
+    let stream,mr,chunks=[],t=0,iv=null,live=false,dict=null;
     function stop(){
       if(!live)return;live=false;clearInterval(iv);r.classList.remove('live');btn.textContent='🎙 Record';
-      if(sr){const s0=sr;sr=null;try{s0.stop()}catch(e){}}
+      if(dict)dict.stop();
       if(mr&&mr.state!=='inactive')mr.stop();
     }
     r._stop=stop;
     btn.onclick=async()=>{
       if(live){stop();return}
+      if(dictOnly&&dictOnly.active)r._stopDict();
       try{stream=await navigator.mediaDevices.getUserMedia({audio:true})}
       catch(e){msg.textContent='Microphone blocked. Allow it in your browser’s site settings.';return}
-      const mime=window.MediaRecorder&&MediaRecorder.isTypeSupported('audio/webm')?'audio/webm':'audio/mp4';
-      mr=new MediaRecorder(stream);chunks=[];got=false;
+      mr=new MediaRecorder(stream);chunks=[];
       mr.ondataavailable=e=>{if(e.data&&e.data.size)chunks.push(e.data)};
       r._busy=new Promise(res=>{r._res=res});
       mr.onstop=async()=>{
         stream.getTracks().forEach(x=>x.stop());
-        const secs=Math.max(t,1),blob=new Blob(chunks,{type:mr.mimeType||mime});
+        const secs=Math.max(t,1),blob=new Blob(chunks,{type:mr.mimeType||'audio/mp4'});
+        const got=dict&&dict.got;
         try{
+          if(!blob.size){msg.textContent='Nothing was recorded. Check that the right microphone is selected and try again.';return}
           if(isOffline()){msg.textContent='Offline, so the audio wasn’t saved'+(got?'. Your transcript was kept.':'.');return}
           msg.textContent='Saving audio…';
           const ext=blob.type.includes('webm')?'webm':'m4a',path=`${CURRENT_UID}/${Date.now()}-${Math.random().toString(36).slice(2,8)}.${ext}`;
@@ -991,25 +1034,10 @@
           msg.innerHTML='<span class="audio-chip">🎧 '+fmt(secs)+' audio saved</span>'+(got?' · transcribed ✓':'');
         }finally{r._res()}
       };
-      mr.start();live=true;t=0;tm.textContent='0:00';r.classList.add('live');btn.textContent='⏹ Stop';
-      msg.textContent=SR?'Listening…':'Recording (this browser can’t transcribe live)';
+      mr.start(1000);live=true;t=0;tm.textContent='0:00';r.classList.add('live');btn.textContent='⏹ Stop';
+      msg.textContent=dual?'Recording and listening…':'Recording…';
       iv=setInterval(()=>{t++;tm.textContent=fmt(t)},1000);
-      if(SR){
-        base0=ta.value;
-        const start=()=>{
-          const s0=new SR();sr=s0;s0.continuous=true;s0.interimResults=true;s0.lang='en-US';
-          s0.onresult=e=>{
-            let fin='',interim='';
-            for(let i=0;i<e.results.length;i++){const tx=e.results[i][0].transcript;if(e.results[i].isFinal)fin+=tx.trim()+' ';else interim+=tx}
-            const say=(fin+interim).trim();if(say)got=true;
-            ta.value=base0+(base0&&say&&!base0.endsWith('\n')?'\n':'')+say;
-          };
-          s0.onerror=e=>{if(e.error==='not-allowed'||e.error==='service-not-allowed'||e.error==='language-not-supported'){sr=null;msg.textContent='Live transcription isn’t available here. Recording audio only.'}};
-          s0.onend=()=>{if(live&&sr===s0){base0=ta.value;try{start()}catch(e){}}};
-          try{s0.start()}catch(e){sr=null}
-        };
-        start();
-      }
+      dict=null;if(dual){dict=makeDictation(ta,msg);dict.start()}
     };
   }
   async function playAudio(btn){
