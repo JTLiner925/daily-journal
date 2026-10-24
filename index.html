@@ -1503,16 +1503,32 @@
     S.result={ok:hit.size,total:tw.length,hit};S.checked=true;
     if(hit.size/tw.length>=.95)recordProgress();renderMemory();
   }
+  // Words that make a good place to start a new line when a line has to be broken.
+  const NATURAL=new Set('and but or nor for so yet that which who whom whose when where while because if though although until unless since as than then to in on at by from with of into upon through among against before after over under between without within about around'.split(' '));
+  const MAXLETTERS=8;
   function lettersHTML(S){
-    let wi=0,starts=true;
-    return S.tokens.map(t=>{
-      if(!t.w){starts=starts||/[.,;:!?—–]/.test(t.pre);return esc(t.pre)}
+    let wi=0,starts=true,carry='';const units=[];
+    S.tokens.forEach(t=>{
+      if(!t.w){const pc=t.pre+t.post;if(units.length)units[units.length-1].post+=pc;else carry+=pc;starts=starts||/[.,;:!?—–]/.test(pc);return}
       const i=wi++;let show=false;
       if(S.level==='beginner')show=true;else if(S.level==='intermediate')show=i%2===0;else if(S.level==='expert')show=starts;
       starts=/[.,;:!?—–]/.test(t.post);
-      const ch=[...t.w][0];
-      return esc(t.pre)+`<span class="fl ${show?'':'hid'}">${show?esc(ch):'·'}</span>`+esc(t.post);
-    }).join(' ');
+      units.push({pre:carry+t.pre,post:t.post,ch:[...t.w][0],show,nat:NATURAL.has(normW(t.w))});carry='';
+    });
+    // Lines: break after punctuation (unless the line has only 1 or 2 letters), never more than 8 letters per line,
+    // and when a line is too long, break at a natural spot (before a word like "and", "but", "to", "that").
+    const lines=[];let line=[];
+    const ends=u=>/[,;:.!?—–]['’”"]*$/.test(u.post);
+    units.forEach(u=>{
+      if(line.length+1>MAXLETTERS){
+        let k=-1;for(let i=line.length-1;i>=3;i--){if(line[i].nat){k=i;break}}
+        if(k>0){const tail=line.splice(k);lines.push(line);line=tail}else{lines.push(line);line=[]}
+      }
+      line.push(u);
+      if(ends(u)&&line.length>=3){lines.push(line);line=[]}
+    });
+    if(line.length)lines.push(line);
+    return lines.map(l=>l.map(u=>esc(u.pre)+`<span class="fl ${u.show?'':'hid'}">${u.show?esc(u.ch):'·'}</span>`+esc(u.post)).join(' ')).join('<br>');
   }
   function renderStudy(){
     const S=MS,row=S.row;
