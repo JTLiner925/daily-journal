@@ -1384,6 +1384,7 @@
     if(act==='note'){const t=$('#pNote');if(t){t.scrollIntoView({behavior:'smooth',block:'center'});t.focus()}}
     if(act==='link'){const t=$('#pLinkRef');if(t){t.scrollIntoView({behavior:'smooth',block:'center'});t.focus()}}
   });
+  document.addEventListener('click',e=>{const g=e.target.closest('[data-gov]');if(g){e.stopPropagation();go('bible');goVerse(g.dataset.gov)}});
   $('#bPanel').addEventListener('click',e=>{
     const b=e.target.closest('[data-pa]');if(!b)return;const a=b.dataset.pa;
     if(a==='cmp')doCompare();if(a==='note')addVerseNote();if(a==='link')addVerseLink();
@@ -1834,7 +1835,7 @@
       html=T('When',md?esc(md.toLocaleDateString([],{weekday:'short',month:'short',day:'numeric'})+(b.time?' · '+timeRange(b)+' ('+durLabel(+b.dur)+')':'')):'')+T('Type',esc(b.type))+T('People',esc((b.people||[]).join(', ')))+T('Notes',nl(b.text))+
         T('Action items',(b.actions||[]).map(a=>(a.done?'☑ ':'☐ ')+esc(a.t)).join('<br>'))+T('Follow up by',b.followUp?esc(shortDay(new Date(b.followUp+'T00:00:00'))):'');
     }
-    if(r.type==='scripture')html=T('Notes',nl(b.text))+T('Tags',esc(b.tags))+T('Copyright',(b.copyright||[]).map(c=>`<span style="font-size:12px;color:var(--muted)">${esc(c)}</span>`).join('<br>'));
+    if(r.type==='scripture')html=(b.verse?T('Verse',esc(b.refLabel||'')+(b.translation?' ('+esc(b.translation)+')':'')+` · <button type="button" class="plink" data-gov="${esc(rangeStr(b.verse,b.verseEnd))}">Open in the Bible</button>`)+T('Note',nl(b.note||b.text)):T('Notes',nl(b.text)))+T('Tags',esc(b.tags))+T('Copyright',(b.copyright||[]).map(c=>`<span style="font-size:12px;color:var(--muted)">${esc(c)}</span>`).join('<br>'));
     if(r.type==='office')html=T('Readings',esc([b.psalmRef,b.proverbRef,b.ntRef].filter(Boolean).join(' · ')))+T('Psalm',nl(b.psalm))+T('Proverb',nl(b.proverb))+T('New Testament',nl(b.nt))+T('Praying for',nl(b.praying))+T('Intention',nl(b.intention));
     if(r.type==='examen')html=T('Gratitude',nl(b.gratitude))+T('Emotions',esc([b.emotions,b.emotionsNote].filter(Boolean).join(' — ')))+T('Prayer',nl(b.prayer))+T('Tomorrow',nl(b.tomorrow));
     if((b.audio||[]).length)html+=kv('Audio',b.audio.map(a=>`<button class="mini" data-play="${esc(a.path)}">▶ ${Math.floor(a.secs/60)}:${String(a.secs%60).padStart(2,'0')}</button>`).join(' '));
