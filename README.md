@@ -76,3 +76,7 @@ One-time setup: run [`supabase/memory.sql`](supabase/memory.sql) in the Supabase
 **Stars and levels.** Finishing a study round shows a "Great Job!" box with your time and accuracy. Each level has three stars: ★ for 70%+, ★★ for 85%+, ★★★ for 100%. Beginner is blue, Intermediate bronze, Expert silver, Pro gold. You need ★★★ at a level to unlock the next one (separately for each study style). Your best result per level shows on each passage; finishing under 70% shows a funny face, and levels you haven't finished show nothing.
 
 Each passage card shows only your best level per study style (plus the level you're currently working on if you finished it under 70%). Tap **Records** on a card to see your best result at every level and your recent attempts.
+
+## Settings that follow you
+
+Reminder times and days, the backup reminder and your Notion sync choice are saved to your account (table `user_settings`), so a change on your phone shows up on your laptop. One-time setup: run [`supabase/settings.sql`](supabase/settings.sql) in the Supabase SQL Editor. Settings reload when you open the Settings page or return to the app. Day/Night is remembered per device. Phone notifications for reminders are not switched on yet.
