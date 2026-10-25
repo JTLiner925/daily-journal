@@ -644,7 +644,7 @@
         <div class="setrow"><label class="sw2"><input type="checkbox" checked data-rem="examen"> 🌙 Evening Examen</label><input type="time" value="21:00" data-remt="examen"></div>
         <div class="setrow"><label class="sw2"><input type="checkbox" checked data-rem="follow"> 📋 Follow-ups digest</label><input type="time" value="08:00" data-remt="follow"></div>
         <label>Days</label>
-        <div class="chips"><button class="chip on" data-day="Mon">Mon</button><button class="chip on" data-day="Tue">Tue</button><button class="chip on" data-day="Wed">Wed</button><button class="chip on" data-day="Thu">Thu</button><button class="chip on" data-day="Fri">Fri</button><button class="chip" data-day="Sat">Sat</button><button class="chip" data-day="Sun">Sun</button></div>
+        <div class="chips"><button class="chip" data-day="Sun">Sun</button><button class="chip on" data-day="Mon">Mon</button><button class="chip on" data-day="Tue">Tue</button><button class="chip on" data-day="Wed">Wed</button><button class="chip on" data-day="Thu">Thu</button><button class="chip on" data-day="Fri">Fri</button><button class="chip" data-day="Sat">Sat</button></div>
         <p class="hint">These settings are saved to your account and follow you across devices. Phone notifications themselves aren’t switched on yet.</p>
         <div class="hint" id="prefWarn" style="color:var(--gold)"></div>
       </div>
@@ -1108,9 +1108,9 @@
   };
 
   // Week at a glance (no guilt: missed days are just empty)
-  let WEEK=sb?{office:[-1,-1,-1,-1,-1,-1,-1],examen:[-1,-1,-1,-1,-1,-1,-1],runs:[0,0],both:0}:{office:[0,1,1,1,'t',-1,-1],examen:[0,1,1,1,'t',-1,-1],runs:[3,3],both:3};
+  let WEEK=sb?{office:[-1,-1,-1,-1,-1,-1,-1],examen:[-1,-1,-1,-1,-1,-1,-1],runs:[0,0],both:0}:{office:[0,1,1,1,1,'t',-1],examen:[0,1,1,1,1,'t',-1],runs:[3,3],both:3};
   function renderWeek(){
-    const days=['M','T','W','T','F','S','S'],rows=[['☀️ Office',WEEK.office],['🌙 Examen',WEEK.examen]];
+    const days=['S','M','T','W','T','F','S'],rows=[['☀️ Office',WEEK.office],['🌙 Examen',WEEK.examen]];
     const run=n=>n?n+' day'+(n>1?'s':'')+' running':'ready when you are';
     $('#weekCard').innerHTML=`<div class="pagehead"><h3>This week</h3><span class="streakchip" title="Days in a row you’ve done both the Morning Office and the Examen">⚡ <b>${WEEK.both||0}</b></span></div><div class="week">`+
       rows.map(([l,a])=>`<div class="wl">${l}</div><div class="wk">${a.map((v,i)=>`<div class="wd ${v===1?'done':v==='t'?'today':v===-1?'future':''}"><i></i>${days[i]}</div>`).join('')}</div>`).join('')+'</div>';
@@ -1952,7 +1952,7 @@
     });
     PEOPLE=Object.values(map).map(p=>({...p,m:p.m.reverse(),last:shortDay(p.lastD)})).sort((a,b)=>b.lastD-a.lastD);
     // week at a glance
-    const dow=(now.getDay()+6)%7,has=(t,dt)=>rows.some(r=>r.type===t&&sameDay(new Date(r.created_at),dt));
+    const dow=now.getDay(),has=(t,dt)=>rows.some(r=>r.type===t&&sameDay(new Date(r.created_at),dt));
     const mk=t=>Array.from({length:7},(_,i)=>{const dt=day0(now);dt.setDate(dt.getDate()-dow+i);if(dt>day0(now))return -1;return has(t,dt)?1:(sameDay(dt,now)?'t':0)});
     const run=t=>{let n=0;const dt=day0(now);if(!has(t,dt))dt.setDate(dt.getDate()-1);while(has(t,dt)){n++;dt.setDate(dt.getDate()-1)}return n};
     const both=dt=>has('office',dt)&&has('examen',dt);
