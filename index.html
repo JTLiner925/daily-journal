@@ -201,6 +201,10 @@
 
   .otools{display:flex;gap:14px;flex-wrap:wrap;align-items:center;margin:6px 0 8px}.otools[hidden]{display:none}
   #bReader.compact #bText{font-size:18px}
+  .homehead{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+  .streakchip{display:inline-flex;gap:6px;align-items:center;border:1px solid var(--line);background:var(--field);border-radius:99px;padding:3px 12px;font-size:14px;color:var(--ink);white-space:nowrap}
+  .streakchip b{color:var(--gold);font-size:1.1em}.openstreak{font-size:18px;padding:6px 14px;margin-top:2px}
+  .streakline{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:2px 0 14px}.streakline .hint{margin:0}
   .fnline{white-space:pre-wrap;font-size:13px;color:var(--muted);line-height:1.9;font-family:var(--sans);margin:0}.fnline b{color:var(--ink)}
   .otext{margin:8px 0 12px}.otbox{max-height:380px;overflow:auto;border:1px solid var(--line);border-radius:var(--radius-sm);background:var(--field);padding:12px 16px;font-family:var(--serif);font-size:17px;line-height:1.85}
   .otbox .bp{margin:0 0 .8em}
@@ -373,8 +377,7 @@
   <main>
     <!-- HOME -->
     <div class="page active" id="home">
-      <div class="eyebrow" id="today"></div>
-      <h1 id="greet">Good evening, JT.</h1>
+      <div class="homehead"><div><div class="eyebrow" id="today"></div><h1 id="greet">Good evening, JT.</h1></div><div class="streakchip openstreak" id="openStreak" title="Days in a row you’ve opened the app">⚡ <b>1</b></div></div>
       <p class="sub">What's on your mind? Pick a form to capture it.</p>
       <div class="grid" style="margin-bottom:22px">
         <button class="tile" onclick="go('thought-new')"><div class="ic">💭</div><b>Thought</b><span>Personal or work</span></button>
@@ -870,7 +873,7 @@
         <div class="hint">Tomorrow: ${tmrw.psalm} · ${tmrw.proverb} · ${tmrw.nt}. The plan moves forward each day you finish it, starting in Matthew 1.</div></div>`;
     $('#'+k).innerHTML=`<div class="eyebrow">${s.title}</div>
       <div class="pagehead"><h1>${s.icon} ${s.title}</h1><button class="btn" onclick="go('${k}-new')">+ ${s.btn}</button></div>
-      <p class="sub" style="margin-top:6px">${s.sub}</p>${plan}
+      <p class="sub" style="margin-top:6px">${s.sub}</p>${(k==='office'||k==='examen')?`<div class="streakline"><span class="streakchip">⚡ <b>${WEEK.both||0}</b> day streak</span><span class="hint">Counts only on days you finish both the Morning Office and the Examen.</span></div>`:''}${plan}
       <div class="card">${listHTML(ENTRIES.filter(e=>e[0]===k))}</div>`;
   });
   }
@@ -1105,11 +1108,11 @@
   };
 
   // Week at a glance (no guilt: missed days are just empty)
-  let WEEK=sb?{office:[-1,-1,-1,-1,-1,-1,-1],examen:[-1,-1,-1,-1,-1,-1,-1],runs:[0,0]}:{office:[0,1,1,1,'t',-1,-1],examen:[0,1,1,1,'t',-1,-1],runs:[3,3]};
+  let WEEK=sb?{office:[-1,-1,-1,-1,-1,-1,-1],examen:[-1,-1,-1,-1,-1,-1,-1],runs:[0,0],both:0}:{office:[0,1,1,1,'t',-1,-1],examen:[0,1,1,1,'t',-1,-1],runs:[3,3],both:3};
   function renderWeek(){
     const days=['M','T','W','T','F','S','S'],rows=[['☀️ Office',WEEK.office],['🌙 Examen',WEEK.examen]];
     const run=n=>n?n+' day'+(n>1?'s':'')+' running':'ready when you are';
-    $('#weekCard').innerHTML=`<div class="pagehead"><h3>This week</h3><span class="hint" style="margin:0">☀️ ${run(WEEK.runs[0])} · 🌙 ${run(WEEK.runs[1])}</span></div><div class="week">`+
+    $('#weekCard').innerHTML=`<div class="pagehead"><h3>This week</h3><span class="streakchip" title="Days in a row you’ve done both the Morning Office and the Examen">⚡ <b>${WEEK.both||0}</b></span></div><div class="week">`+
       rows.map(([l,a])=>`<div class="wl">${l}</div><div class="wk">${a.map((v,i)=>`<div class="wd ${v===1?'done':v==='t'?'today':v===-1?'future':''}"><i></i>${days[i]}</div>`).join('')}</div>`).join('')+'</div>';
   }
 
@@ -1731,9 +1734,9 @@
 
 
   // ===== Settings that follow you across devices =====
-  const PREF_DEFAULT={rem:{office:{on:true,time:'06:30'},examen:{on:true,time:'21:00'},follow:{on:true,time:'08:00'}},days:['Mon','Tue','Wed','Thu','Fri'],bk:true,sync:'ask'};
-  let PREFS=JSON.parse(JSON.stringify(PREF_DEFAULT)),prefTimer=null,PREFS_OK=true,prefRev=0;
-  const mergePrefs=p=>{const d=JSON.parse(JSON.stringify(PREF_DEFAULT));if(!p)return d;['office','examen','follow'].forEach(k=>{if(p.rem&&p.rem[k])d.rem[k]={on:p.rem[k].on!==false,time:p.rem[k].time||d.rem[k].time}});if(Array.isArray(p.days))d.days=p.days;if(typeof p.bk==='boolean')d.bk=p.bk;if(['ask','auto','manual'].includes(p.sync))d.sync=p.sync;return d};
+  const PREF_DEFAULT={rem:{office:{on:true,time:'06:30'},examen:{on:true,time:'21:00'},follow:{on:true,time:'08:00'}},days:['Mon','Tue','Wed','Thu','Fri'],bk:true,sync:'ask',opens:[]};
+  let PREFS=JSON.parse(JSON.stringify(PREF_DEFAULT)),prefTimer=null,PREFS_OK=true,prefRev=0,prefLoud=false;
+  const mergePrefs=p=>{const d=JSON.parse(JSON.stringify(PREF_DEFAULT));if(!p)return d;['office','examen','follow'].forEach(k=>{if(p.rem&&p.rem[k])d.rem[k]={on:p.rem[k].on!==false,time:p.rem[k].time||d.rem[k].time}});if(Array.isArray(p.days))d.days=p.days;if(typeof p.bk==='boolean')d.bk=p.bk;if(['ask','auto','manual'].includes(p.sync))d.sync=p.sync;if(Array.isArray(p.opens))d.opens=p.opens.filter(x=>typeof x==='string').slice(-400);return d};
   function applyPrefs(){
     ['office','examen','follow'].forEach(k=>{$(`[data-rem="${k}"]`).checked=PREFS.rem[k].on;$(`[data-remt="${k}"]`).value=PREFS.rem[k].time});
     $$('[data-day]').forEach(b=>b.classList.toggle('on',PREFS.days.includes(b.dataset.day)));
@@ -1745,15 +1748,15 @@
     PREFS.days=$$('[data-day]').filter(b=>b.classList.contains('on')).map(b=>b.dataset.day);
     PREFS.bk=$('#bk1').checked;PREFS.sync=$('#s2').checked?'auto':$('#s3').checked?'manual':'ask';
   }
-  function savePrefs(){
-    prefRev++;readPrefs();
+  function savePrefs(q){
+    const quiet=q===true;prefLoud=prefLoud||!quiet;prefRev++;readPrefs();
     ['t1','n1','m1','s1c','o1','x1'].forEach(id=>{const e=document.getElementById(id);if(e)e.checked=PREFS.sync!=='manual'});
     if(!sb)return;clearTimeout(prefTimer);
     prefTimer=setTimeout(async()=>{
-      prefTimer=null;
+      prefTimer=null;const loud=prefLoud;prefLoud=false;
       const {error}=await sb.from('user_settings').upsert({user_id:CURRENT_UID,prefs:PREFS,updated_at:new Date().toISOString()},{onConflict:'user_id'});
-      if(error){PREFS_OK=false;$('#prefWarn').textContent='Couldn’t save your settings. Run supabase/settings.sql in Supabase (see the README), then try again.';toast('Couldn’t save settings')}
-      else{PREFS_OK=true;$('#prefWarn').textContent='';toast('✓ Settings saved')}
+      if(error){PREFS_OK=false;$('#prefWarn').textContent='Couldn’t save your settings. Run supabase/settings.sql in Supabase (see the README), then try again.';if(loud)toast('Couldn’t save settings')}
+      else{PREFS_OK=true;$('#prefWarn').textContent='';if(loud)toast('✓ Settings saved')}
     },600);
   }
   async function loadPrefs(){
@@ -1763,11 +1766,21 @@
     if(prefRev!==rev||prefTimer)return; // you changed something while this was loading
     if(error){PREFS_OK=false;$('#prefWarn').textContent='Settings can’t sync yet. Run supabase/settings.sql in Supabase (see the README).';return}
     PREFS_OK=true;$('#prefWarn').textContent='';
-    PREFS=mergePrefs(data&&data.prefs);applyPrefs();
+    const prevOpens=PREFS.opens||[];PREFS=mergePrefs(data&&data.prefs);PREFS.opens=[...new Set([...prevOpens,...PREFS.opens])].sort().slice(-400);applyPrefs();renderStreaks();
   }
   $$('[data-rem],[data-remt],#bk1,#s1,#s2,#s3').forEach(el=>el.addEventListener('change',savePrefs));
   document.addEventListener('click',e=>{if(e.target.closest('[data-day]'))setTimeout(savePrefs,0)});
-  document.addEventListener('visibilitychange',()=>{if(!document.hidden&&sb&&CURRENT_UID)loadPrefs()});
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden&&sb&&CURRENT_UID)loadPrefs().then(markOpen)});
+  // Days in a row you've opened the app
+  const LOCAL_OPENS=(()=>{try{return JSON.parse(localStorage.getItem('jr-opens')||'[]')}catch(e){return[]}})();
+  function openStreakN(){const set=new Set([...(PREFS.opens||[]),...LOCAL_OPENS]);let n=0;const d=new Date();while(set.has(ymd(d))){n++;d.setDate(d.getDate()-1)}return n}
+  function renderStreaks(){const b=document.querySelector('#openStreak b');if(b)b.textContent=openStreakN()}
+  function markOpen(){
+    const t=todayStr();
+    if(!LOCAL_OPENS.includes(t)){LOCAL_OPENS.push(t);try{localStorage.setItem('jr-opens',JSON.stringify(LOCAL_OPENS.slice(-400)))}catch(e){}}
+    if(!(PREFS.opens||[]).includes(t)){PREFS.opens=[...(PREFS.opens||[]),t].sort().slice(-400);savePrefs(true)}
+    renderStreaks();
+  }
 
   // Backup & export (downloads the sample entries)
   const strip=h=>{const d=document.createElement('div');d.innerHTML=h.replace(/<br>/g,'\n').replace(/<\/div>/g,'\n');return d.textContent.replace(/\n{2,}/g,'\n').trim()};
@@ -1942,12 +1955,15 @@
     const dow=(now.getDay()+6)%7,has=(t,dt)=>rows.some(r=>r.type===t&&sameDay(new Date(r.created_at),dt));
     const mk=t=>Array.from({length:7},(_,i)=>{const dt=day0(now);dt.setDate(dt.getDate()-dow+i);if(dt>day0(now))return -1;return has(t,dt)?1:(sameDay(dt,now)?'t':0)});
     const run=t=>{let n=0;const dt=day0(now);if(!has(t,dt))dt.setDate(dt.getDate()-1);while(has(t,dt)){n++;dt.setDate(dt.getDate()-1)}return n};
-    WEEK={office:mk('office'),examen:mk('examen'),runs:[run('office'),run('examen')]};
+    const both=dt=>has('office',dt)&&has('examen',dt);
+    const runBoth=()=>{let n=0;const dt=day0(now);if(!both(dt))dt.setDate(dt.getDate()-1);while(both(dt)){n++;dt.setDate(dt.getDate()-1)}return n};
+    WEEK={office:mk('office'),examen:mk('examen'),runs:[run('office'),run('examen')],both:runBoth()};
   }
   function renderAll(){
     renderPlan();renderLists();renderLog();renderFollow();renderPeopleField();renderWeek();renderIntent();renderSync();
     if(typeof renderBibleAgain==='function')renderBibleAgain();
     try{renderMemDue()}catch(e){}
+    try{renderStreaks()}catch(e){}
     $('#bkInfo').textContent='Download a copy of everything: '+ENTRIES.length+' entr'+(ENTRIES.length===1?'y':'ies')+(sb?'.':' (sample data).');
   }
   function rebuild(){
@@ -2100,7 +2116,7 @@
   window.addEventListener('offline',renderSync);
 
   // ===== Sign-in (Supabase Auth; demo mode until config.js is filled in) =====
-  async function enterApp(){show('app');const u=await sb.auth.getUser();CURRENT_UID=u.data&&u.data.user?u.data.user.id:null;await loadRows();await loadStudy();await loadMemory();await loadPrefs();await checkNotion();await flushQueue()}
+  async function enterApp(){show('app');const u=await sb.auth.getUser();CURRENT_UID=u.data&&u.data.user?u.data.user.id:null;await loadRows();await loadStudy();await loadMemory();await loadPrefs();markOpen();await checkNotion();await flushQueue()}
   async function doLogin(e){
     e.preventDefault();
     if(!sb){show('app');return}
@@ -2114,7 +2130,7 @@
   async function signOut(){if(sb)await sb.auth.signOut();clearData();show('login')}
   (async function initAuth(){
     renderAll();renderMemory();
-    if(!sb){$('#demoNote').textContent='DEMO MODE — sign-in is not connected yet; sample data only, nothing is saved';return}
+    if(!sb){markOpen();$('#demoNote').textContent='DEMO MODE — sign-in is not connected yet; sample data only, nothing is saved';return}
     $('#u').value='';$('#p').value='';
     $('#demoNote').textContent='Private journal';
     $$('.notion-st').forEach(n=>{n.textContent='○ Not connected yet';n.style.color='var(--muted)'});

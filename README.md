@@ -80,3 +80,8 @@ Each passage card shows only your best level per study style (plus the level you
 ## Settings that follow you
 
 Reminder times and days, the backup reminder and your Notion sync choice are saved to your account (table `user_settings`), so a change on your phone shows up on your laptop. One-time setup: run [`supabase/settings.sql`](supabase/settings.sql) in the Supabase SQL Editor. Settings reload when you open the Settings page or return to the app. Day/Night is remembered per device. Phone notifications for reminders are not switched on yet.
+
+## Streaks
+
+- **Top right of Today:** ⚡ and the number of days in a row you've opened the app (stored with your settings, so it counts across devices).
+- **This Week card, Morning Office page and Examen page:** ⚡ and your Office + Examen streak, which only counts days you finished **both**. Today doesn't break the streak while it's still in progress.
