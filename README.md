@@ -66,9 +66,11 @@ Each day's psalm, proverb and New Testament chapter open in the full Bible reade
 
 **Memorize** in the menu keeps your passages in two lists: Learning and a Memorized bank. Two ways to study, each with four levels (Beginner, Intermediate, Expert, Pro):
 
-- **Missing words** with a word bank to put the words back (Pro removes every word).
+- **Missing words** with an alphabetical word bank to put the words back (Pro removes every word). A wrong word is rejected, and a Hint fills the next blank (counted as a miss).
 - **First letters**, showing only the first letter of each word with all the punctuation. Higher levels show fewer letters, and Pro shows only punctuation. Type it from memory and check.
 
 Tick "Memorized" to move a passage to the bank with a review schedule (monthly by default; weekly, every 2 weeks, or every 3 months also available). Passages due for review show on the Today page.
 
 One-time setup: run [`supabase/memory.sql`](supabase/memory.sql) in the Supabase SQL Editor. Only the reference is stored, never the verse text.
+
+**Stars and levels.** Finishing a study round shows a "Great Job!" box with your time and accuracy. Each level has three stars: ★ for 70%+, ★★ for 85%+, ★★★ for 100%. Beginner is blue, Intermediate bronze, Expert silver, Pro gold. You need ★★★ at a level to unlock the next one (separately for each study style). Your best result per level shows on each passage; finishing under 70% shows a funny face, and levels you haven't finished show nothing.

@@ -221,6 +221,12 @@
   .fl{display:inline-block;min-width:.7em;text-align:center;font-weight:600;color:var(--accent);letter-spacing:.02em}.fl.hid{color:var(--muted);font-weight:400}
   .good{color:var(--sage)}.miss{color:#d86a6a;text-decoration:underline}
   .mtabs{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
+  .stars{letter-spacing:1px;white-space:nowrap}.stars .off{opacity:.22}
+  .st-beginner{color:#3b82f6}.st-intermediate{color:#cd7f32}.st-expert{color:#a7b0bd}.st-pro{color:#f2c230}
+  .legend{display:flex;gap:6px 18px;flex-wrap:wrap;font-size:15px}
+  .achrow{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:6px;font-size:16px}.achrow .hint{margin:0;font-size:12px;min-width:92px}
+  .blank.rej{animation:shake .45s;border-color:#d86a6a;background:rgba(216,106,106,.28)}
+  @keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-5px)}40%{transform:translateX(5px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
   .mhead{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:8px 0 4px}
   .mtitle{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.mtitle b{font-family:var(--serif);font-size:22px;font-weight:500}
   .msels{display:flex;gap:6px;flex:none}.msels select{width:auto;padding:6px 8px;font-size:13px}
@@ -1456,14 +1462,23 @@
   // --- exercises ---
   async function startStudy(id,mode,level,review){
     const row=MEMP.find(x=>x.id===id);if(!row)return;
-    MS={id,row,mode:mode||'words',level:level||'beginner',review:!!review,loading:true,seed:1};go('memory');renderMemory();
+    const md=mode||'words';MS={id,row,mode:md,level:topLevel(row,md),review:!!review,loading:true,seed:1};go('memory');renderMemory();
     const d=await bibleCall({action:'passage',translation:row.translation,ref:row.ref});
     if(!MS||MS.id!==id)return;MS.loading=false;
     if(!d.ok){MS.error=d.error;renderMemory();return}
     track(d.fumsToken);MS.text=d.text;MS.copyright=d.copyright;MS.tokens=tokenize(d.text);buildExercise();renderMemory();
   }
+  // ---- stars, levels and results ----
+  const STARCLS={beginner:'st-beginner',intermediate:'st-intermediate',expert:'st-expert',pro:'st-pro'};
+  const FUNNY=['😅','🙈','🤪','🫠','🥴','🙃','😬','🐢','🦄','🍕','🤡','🥲','🦆','🙊'];
+  const normProg=p=>({words:(p&&p.words&&typeof p.words==='object')?p.words:{},letters:(p&&p.letters&&typeof p.letters==='object')?p.letters:{}});
+  const starsFor=acc=>acc>=100?3:acc>=85?2:acc>=70?1:0;
+  const starTrio=(lvl,n)=>`<span class="stars ${STARCLS[lvl]}">${'★'.repeat(n)}<span class="off">${'★'.repeat(3-n)}</span></span>`;
+  const fmtDur=sec=>Math.floor(sec/60)+':'+String(sec%60).padStart(2,'0');
+  const unlockedLv=(row,mode)=>{const pr=normProg(row.progress)[mode];return LEVELS.map((l,i)=>i===0||((pr[LEVELS[i-1][0]]||{}).s===3))};
+  const topLevel=(row,mode)=>{const u=unlockedLv(row,mode);let k=0;u.forEach((x,i)=>{if(x)k=i});return LEVELS[k][0]};
   function buildExercise(){
-    const S=MS;S.result=null;S.typed='';S.reveal=false;S.checked=false;
+    const S=MS;S.result=null;S.typed='';S.reveal=false;S.done=false;S.startAt=null;S.miss={};S.flash=null;
     if(S.mode!=='words')return;
     const idx=S.tokens.map((t,i)=>t.w?i:-1).filter(i=>i>=0),r=rng(hashS(S.text+S.level)+S.seed*7919);
     const cnt=Math.max(1,Math.round(PCT[S.level]*idx.length));
@@ -1473,21 +1488,55 @@
     S.bank=S.blanks.map((i,k)=>({id:k,word:S.tokens[i].w})).sort((a,b)=>normW(a.word).localeCompare(normW(b.word))||a.id-b.id);
     S.fill={};S.active=S.blanks[0];
   }
-  async function recordProgress(){
-    const S=MS,have=(S.row.progress||{})[S.mode];
-    if(have!==undefined&&LV[have]>=LV[S.level])return;
-    const progress={...(S.row.progress||{}),[S.mode]:S.level};
-    await memUpdate(S.id,{progress});
+  async function finishExercise(acc){
+    const S=MS;if(!S||S.done)return;S.done=true;
+    const secs=Math.max(1,Math.round((Date.now()-(S.startAt||Date.now()))/1000)),stars=starsFor(acc),row=S.row;
+    const prog=normProg(row.progress),cur=prog[S.mode][S.level];
+    if(!cur||stars>cur.s||(stars===cur.s&&acc>cur.a)){
+      prog[S.mode][S.level]=stars>0?{s:stars,a:Math.round(acc),t:secs}:{s:0,a:Math.round(acc),t:secs,e:(cur&&cur.e)||FUNNY[Math.floor(Math.random()*FUNNY.length)]};
+    }
+    await memUpdate(S.id,{progress:prog});
+    S.last={acc:Math.round(acc),secs,stars,emoji:FUNNY[Math.floor(Math.random()*FUNNY.length)]};
+    renderMemory();showDone();
+  }
+  function showDone(){
+    const S=MS,r=S.last,lvIdx=LV[S.level],nextLabel=LEVELS[lvIdx+1]&&LEVELS[lvIdx+1][1];
+    const nextOk=S.level!=='pro'&&unlockedLv(S.row,S.mode)[lvIdx+1];
+    const msg=r.stars===3?(S.level==='pro'?'Perfect! You’ve mastered every level.':'Perfect! '+nextLabel+' is unlocked.'):r.stars===2?'So close! Get 100% to earn three stars'+(S.level==='pro'?'.':' and unlock '+nextLabel+'.'):r.stars===1?'Nice start. 85% earns two stars, and 100% earns three.':'Under 70% this time. Give it another go!';
+    const el=document.createElement('div');el.className='modal open';el.id='mDoneModal';
+    el.innerHTML=`<div class="modalcard" style="text-align:center"><h2 style="font-size:32px;margin-bottom:6px">Great Job! 🎉</h2><p style="margin:8px 0 2px;font-size:16px">Time <b>${fmtDur(r.secs)}</b> · Accuracy <b>${r.acc}%</b></p><div style="font-size:38px;margin:8px 0;line-height:1.3">${r.stars?starTrio(S.level,r.stars):r.emoji}</div><p class="hint">${msg}</p><div class="actions" style="justify-content:center"><button class="btn ghost" data-d="again">Try again</button>${nextOk?'<button class="btn" data-d="next">Next level ›</button>':''}<button class="btn ${nextOk?'ghost':''}" data-d="close">Done</button></div></div>`;
+    el.addEventListener('click',e=>{
+      const d=e.target.closest('[data-d]');if(!d&&e.target!==el)return;
+      const act=d?d.dataset.d:'close';el.remove();if(!MS)return;
+      if(act==='again'){MS.seed++;MS.resetScroll=true;buildExercise();renderMemory()}
+      if(act==='next'&&nextOk){MS.level=LEVELS[lvIdx+1][0];MS.resetScroll=true;buildExercise();renderMemory()}
+    });
+    document.body.appendChild(el);
+  }
+  function afterFill(){
+    const S=MS;S.active=S.blanks.find(i=>S.fill[i]===undefined);
+    renderMemory();
+    if(S.active===undefined){const total=S.blanks.length,missed=Object.keys(S.miss).length;finishExercise((total-missed)/total*100)}
   }
   function placeWord(bid){
-    const S=MS;let t=(S.active!==undefined&&S.fill[S.active]===undefined)?S.active:S.blanks.find(i=>S.fill[i]===undefined);
-    if(t===undefined)return;S.fill[t]=bid;S.checked=false;S.active=S.blanks.find(i=>S.fill[i]===undefined);renderMemory();
+    const S=MS;if(!S||S.done)return;
+    const t=(S.active!==undefined&&S.fill[S.active]===undefined)?S.active:S.blanks.find(i=>S.fill[i]===undefined);
+    if(t===undefined)return;S.startAt=S.startAt||Date.now();
+    const w=S.bank.find(b=>b.id===bid).word;
+    if(normW(w)!==normW(S.tokens[t].w)){
+      S.miss[t]=true;S.flash=t;S.active=t;renderMemory();
+      setTimeout(()=>{if(MS===S){S.flash=null;renderMemory()}},550);return;
+    }
+    S.fill[t]=bid;afterFill();
   }
-  function checkWords(){
-    const S=MS;let ok=0;
-    S.blanks.forEach(i=>{if(S.fill[i]!==undefined&&normW(S.bank.find(b=>b.id===S.fill[i]).word)===normW(S.tokens[i].w))ok++});
-    S.checked=true;S.result={ok,total:S.blanks.length};if(ok===S.blanks.length)recordProgress();renderMemory();
+  function giveHint(){
+    const S=MS;if(!S||S.done||S.mode!=='words')return;
+    const t=(S.active!==undefined&&S.fill[S.active]===undefined)?S.active:S.blanks.find(i=>S.fill[i]===undefined);
+    if(t===undefined)return;S.startAt=S.startAt||Date.now();
+    const used=new Set(Object.values(S.fill)),b=S.bank.find(x=>!used.has(x.id)&&normW(x.word)===normW(S.tokens[t].w));
+    if(!b)return;S.miss[t]=true;S.fill[t]=b.id;afterFill();
   }
+  function resetWords(){const S=MS;S.fill={};S.miss={};S.flash=null;S.startAt=null;S.done=false;S.active=S.blanks[0];S.resetScroll=true;renderMemory()}
   function lcsMatch(a,b){
     const n=a.length,m=b.length,dp=Array.from({length:n+1},()=>new Uint16Array(m+1));
     for(let i=1;i<=n;i++)for(let j=1;j<=m;j++)dp[i][j]=a[i-1]===b[j-1]?dp[i-1][j-1]+1:Math.max(dp[i-1][j],dp[i][j-1]);
@@ -1497,9 +1546,11 @@
   }
   function checkLetters(){
     const S=MS,typed=tokenize(S.typed).filter(t=>t.w).map(t=>normW(t.w)),tw=S.tokens.filter(t=>t.w);
+    if(!typed.length){toast('Type the passage from memory first');return}
     const hit=lcsMatch(typed,tw.map(t=>normW(t.w)));
-    S.result={ok:hit.size,total:tw.length,hit};S.checked=true;
-    if(hit.size/tw.length>=.95)recordProgress();renderMemory();
+    S.startAt=S.startAt||Date.now();S.done=false;
+    S.result={ok:hit.size,total:tw.length,hit};
+    finishExercise(hit.size/tw.length*100);
   }
   // Words that make a good place to start a new line when a line has to be broken.
   const NATURAL=new Set('and but or nor for so yet that which who whom whose when where while because if though although until unless since as than then to in on at by from with of into upon through among against before after over under between without within about around'.split(' '));
@@ -1528,30 +1579,31 @@
     if(line.length)lines.push(line);
     return lines.map(l=>l.map(u=>esc(u.pre)+`<span class="fl ${u.show?'':'hid'}">${u.show?esc(u.ch):'·'}</span>`+esc(u.post)).join(' ')).join('<br>');
   }
+  const legendLine='<span class="stars st-beginner">★</span> Beginner <span class="stars st-intermediate">★</span> Intermediate <span class="stars st-expert">★</span> Expert <span class="stars st-pro">★</span> Pro · ★ 70% · ★★ 85% · ★★★ 100%';
   function renderStudy(){
-    const S=MS,row=S.row;
+    const S=MS,row=S.row,ul=unlockedLv(row,S.mode),lvIdx=LV[S.level];
     let h='<button class="mini" data-m="back">‹ My passages</button>';
-    h+=`<div class="mhead"><div class="mtitle"><b>${esc(row.ref)}</b> <span class="hint">${esc(row.translation)}${S.review?' · review':''}</span></div><div class="msels"><select data-m="modesel" aria-label="Study style"><option value="words" ${S.mode==='words'?'selected':''}>Missing words</option><option value="letters" ${S.mode==='letters'?'selected':''}>First letters</option></select><select data-m="levelsel" aria-label="Level">${LEVELS.map(l=>`<option value="${l[0]}" ${S.level===l[0]?'selected':''}>${l[1]}</option>`).join('')}</select></div></div>`;
+    h+=`<div class="mhead"><div class="mtitle"><b>${esc(row.ref)}</b> <span class="hint">${esc(row.translation)}${S.review?' · review':''}</span></div><div class="msels"><select data-m="modesel" aria-label="Study style"><option value="words" ${S.mode==='words'?'selected':''}>Missing words</option><option value="letters" ${S.mode==='letters'?'selected':''}>First letters</option></select><select data-m="levelsel" aria-label="Level">${LEVELS.map((l,i)=>`<option value="${l[0]}" ${S.level===l[0]?'selected':''} ${ul[i]?'':'disabled'}>${l[1]}${ul[i]?'':' 🔒'}</option>`).join('')}</select></div></div>`;
     if(S.loading)return h+'<p class="hint">Loading the passage…</p>';
     if(S.error)return h+`<p class="hint" style="color:var(--gold)">${esc(S.error)}</p>`;
-    const hint=S.mode==='words'?({beginner:'About a quarter of the words are missing.',intermediate:'About half of the words are missing.',expert:'About three quarters of the words are missing.',pro:'Every word is missing. Rebuild the passage from the word bank.'})[S.level]:({beginner:'Every word shows its first letter, with all the punctuation.',intermediate:'Every other word shows its first letter.',expert:'Only the first word of each phrase shows its letter.',pro:'Only the punctuation is shown. The rest is up to you.'})[S.level];
-    const next=S.level!=='pro'?`<button class="btn ghost sm" data-m="level" data-v="${LEVELS[LV[S.level]+1][0]}">Next level ›</button>`:'';
-    let msg='';
-    if(S.result){
-      if(S.mode==='words')msg=S.result.ok===S.result.total?`<span class="rs good">✓ All ${S.result.total} correct!</span>`:`<span class="rs hint">${S.result.ok} of ${S.result.total} correct</span>`;
-      else msg=`<span class="rs ${S.result.ok/S.result.total>=.95?'good':'hint'}">${S.result.ok} of ${S.result.total} words (${Math.round(S.result.ok/S.result.total*100)}%)</span>`;
-    }
+    let hint=S.mode==='words'?({beginner:'About a quarter of the words are missing.',intermediate:'About half of the words are missing.',expert:'About three quarters of the words are missing.',pro:'Every word is missing. Rebuild the passage from the word bank.'})[S.level]:({beginner:'Every word shows its first letter, with all the punctuation.',intermediate:'Every other word shows its first letter.',expert:'Only the first word of each phrase shows its letter.',pro:'Only the punctuation is shown. The rest is up to you.'})[S.level];
+    hint+=S.mode==='words'?' A wrong word is rejected.':' Type it from memory, then Check.';
+    const cur=normProg(row.progress)[S.mode][S.level],nextLabel=S.level!=='pro'?LEVELS[lvIdx+1][1]:'';
+    if(S.level!=='pro'&&!ul[lvIdx+1])hint+=` Earn ★★★ to unlock ${nextLabel}.`;
+    const next=S.level!=='pro'&&ul[lvIdx+1]?`<button class="btn ghost sm" data-m="level" data-v="${LEVELS[lvIdx+1][0]}">Next level ›</button>`:'';
+    const best=cur?`<span class="rs">${cur.s?starTrio(S.level,cur.s):(cur.e||'😅')}</span>`:'';
     h+=`<div class="hint" style="margin:4px 0 2px">${hint}</div><div class="mtool">`;
-    h+=S.mode==='words'
-      ?`<button class="btn sm" data-m="check">Check</button><button class="btn ghost sm" data-m="reset">Start over</button><button class="btn ghost sm" data-m="reshuffle">Different words</button>${next}${msg}`
-      :`<button class="btn sm" data-m="checkL">Check</button><button class="btn ghost sm" data-m="reveal">${S.reveal?'Hide passage':'Show passage'}</button>${next}${msg}`;
+    if(S.mode==='words'){
+      const filled=Object.keys(S.fill).length,total=S.blanks.length,miss=Object.keys(S.miss).length;
+      h+=`<button class="btn ghost sm" data-m="hint">Hint</button><button class="btn ghost sm" data-m="reset">Start over</button><button class="btn ghost sm" data-m="reshuffle">Different words</button>${next}<span class="rs hint">${filled}/${total}${miss?' · '+miss+' miss'+(miss>1?'es':''):''}</span>${best}`;
+    }else h+=`<button class="btn sm" data-m="checkL">Check</button><button class="btn ghost sm" data-m="reveal">${S.reveal?'Hide passage':'Show passage'}</button>${next}${best}`;
     h+='</div><div class="msplit">';
     if(S.mode==='words'){
       h+='<div class="mpane"><div class="mex">'+S.tokens.map((t,i)=>{
         if(!S.blanks.includes(i))return esc(t.pre+t.w+t.post);
         const f=S.fill[i],w=f===undefined?'':S.bank.find(b=>b.id===f).word;
-        let cls=i===S.active?' active':'';
-        if(S.checked&&f!==undefined)cls+=normW(w)===normW(t.w)?' ok':' bad';
+        let cls=f!==undefined?' ok':(i===S.active?' active':'');
+        if(S.flash===i)cls+=' rej';
         return esc(t.pre)+`<button class="blank${cls}" data-b="${i}" style="min-width:${Math.max(3,t.w.length)}ch">${esc(w)||'&nbsp;'}</button>`+esc(t.post);
       }).join(' ')+'</div></div>';
       h+='<div class="mpane bankp"><div class="bank">'+S.bank.map(b=>`<button class="bw" data-w="${b.id}" ${Object.values(S.fill).includes(b.id)?'disabled':''}>${esc(b.word)}</button>`).join('')+'</div></div>';
@@ -1559,11 +1611,11 @@
       h+=`<div class="mpane"><div class="mex">${lettersHTML(S)}</div></div>`;
       h+=`<div class="mpane bankp"><textarea id="mTyped" placeholder="Say it in your head, then type it from memory…" style="min-height:140px">${esc(S.typed)}</textarea>`;
       if(S.reveal)h+=`<div class="mex" style="font-size:17px;margin-top:10px">${esc(S.text)}</div>`;
-      if(S.result){let k=0;h+='<div class="mex" style="font-size:17px;margin-top:10px">'+S.tokens.map(t=>{if(!t.w)return esc(t.pre+t.post);const ok=S.result.hit.has(k++);return esc(t.pre)+`<span class="${ok?'good':'miss'}">${esc(t.w)}</span>`+esc(t.post)}).join(' ')+'</div>'}
+      if(S.result){let k=0;h+=`<p class="hint" style="margin:10px 0 0;font-weight:600">${S.result.ok} of ${S.result.total} words (${Math.round(S.result.ok/S.result.total*100)}%)</p><div class="mex" style="font-size:17px;margin-top:6px">`+S.tokens.map(t=>{if(!t.w)return esc(t.pre+t.post);const ok=S.result.hit.has(k++);return esc(t.pre)+`<span class="${ok?'good':'miss'}">${esc(t.w)}</span>`+esc(t.post)}).join(' ')+'</div>'}
       h+='</div>';
     }
     h+='</div>';
-    h+=`<div class="hint" style="font-size:12px;margin-top:6px">${esc(S.copyright||'')}</div>`;
+    h+=`<div class="hint" style="font-size:12px;margin-top:6px">${legendLine}<br>${esc(S.copyright||'')}</div>`;
     if(S.review){
       h+='<div class="mbtns" style="margin-top:10px"><button class="btn" data-m="recalled">✓ I recalled it</button><button class="btn ghost" data-m="needwork">Needs more work</button></div>';
     }else if(row.status==='learning'){
@@ -1582,10 +1634,11 @@
       if(ab){const pane=ab.closest('.mpane'),a=ab.getBoundingClientRect(),b=pane.getBoundingClientRect();if(a.top<b.top+8||a.bottom>b.bottom-8)pane.scrollTop+=(a.top-b.top)-pane.clientHeight/3}
       return;
     }
-    const prog=r=>Object.entries(r.progress||{}).map(([m,l])=>`<span class="mbadge">${m==='words'?'Missing words':'First letters'}: ${(LEVELS.find(x=>x[0]===l)||[0,l])[1]}</span>`).join('');
+    const prog=r=>{const pr=normProg(r.progress);return ['words','letters'].map(m=>{const cells=LEVELS.filter(l=>pr[m][l[0]]).map(l=>{const x=pr[m][l[0]];return x.s>0?`<span class="ach" title="${l[1]} · ${x.a}% · ${fmtDur(x.t)}">${starTrio(l[0],x.s)}</span>`:`<span class="ach" title="${l[1]} · ${x.a}%">${x.e||'😅'}</span>`}).join(' ');return cells?`<div class="achrow"><span class="hint">${m==='words'?'Missing words':'First letters'}</span>${cells}</div>`:''}).join('')};
     const learning=MEMP.filter(p=>p.status==='learning'),done=MEMP.filter(p=>p.status==='memorized').sort((a,b)=>String(a.next_review).localeCompare(String(b.next_review)));
     let h='<div class="eyebrow">Hide it in your heart</div><h1>🧠 Memorize</h1><p class="sub">Study a passage two ways, then keep it fresh with reviews.</p>';
     if(!MEM_OK)h+='<p class="hint" style="color:var(--gold)">One setup step is missing: run supabase/memory.sql in Supabase (see the README), then reload.</p>';
+    h+=`<div class="card"><h3 style="margin-bottom:6px">⭐ How stars work</h3><div class="legend"><span><span class="stars st-beginner">★★★</span> Beginner</span><span><span class="stars st-intermediate">★★★</span> Intermediate</span><span><span class="stars st-expert">★★★</span> Expert</span><span><span class="stars st-pro">★★★</span> Pro</span></div><div class="hint" style="margin-top:6px">★ = 70% or better · ★★ = 85% or better · ★★★ = 100%. Finish under 70% and you get a funny face instead. You need ★★★ at a level to unlock the next one. Levels you haven’t finished don’t show.</div></div>`;
     h+=`<div class="card"><h3 style="margin-bottom:6px">Add a passage</h3><div class="bctl-row"><input id="mRef" placeholder="e.g. Psalm 23:1–6 or Romans 8:28–30" style="flex:1;min-width:200px"><select id="mTr" style="width:auto">${TRANS.map(t=>`<option ${t===R.trans?'selected':''}>${t}</option>`).join('')}</select><button class="btn" data-m="add">Add</button></div></div>`;
     h+=`<div class="card"><h3>Learning (${learning.length})</h3>`+(learning.length?learning.map(p=>`<div class="mcard"><div class="mt"><b>${esc(p.ref)}</b><span class="hint">${esc(p.translation)}</span></div><div>${prog(p)}</div><div class="mbtns"><button class="btn" data-m="study" data-id="${esc(p.id)}">Study</button><label class="bchk"><input type="checkbox" data-m="memo" data-id="${esc(p.id)}"> Memorized</label><select data-m="interval" data-id="${esc(p.id)}" title="How often to review it once memorized">${intOptions(p.interval_days||30)}</select><button class="mini" data-m="remove" data-id="${esc(p.id)}">Remove</button></div></div>`).join(''):'<p class="hint">No passages yet. Add one above.</p>')+'</div>';
     h+=`<div class="card"><h3>Memorized bank (${done.length})</h3>`+(done.length?done.map(p=>{const n=p.next_review?daysUntil(p.next_review):null,due=n!==null&&n<=0;return `<div class="mcard"><div class="mt"><b>${esc(p.ref)}</b><span class="hint">${esc(p.translation)}</span></div><div>${prog(p)}</div><div class="mdue ${due?'now':''}">${due?'Due for review '+(n===0?'today':Math.abs(n)+' day'+(Math.abs(n)>1?'s':'')+' ago'):'Next review in '+n+' day'+(n===1?'':'s')} · ${esc(intLabel(p.interval_days))}</div><div class="mbtns"><button class="btn" data-m="review" data-id="${esc(p.id)}">Review</button><select data-m="interval" data-id="${esc(p.id)}" title="Follow-up schedule">${intOptions(p.interval_days)}</select><button class="mini" data-m="unmemo" data-id="${esc(p.id)}">Back to learning</button><button class="mini" data-m="remove" data-id="${esc(p.id)}">Remove</button></div></div>`}).join(''):'<p class="hint">Passages you finish memorizing will live here, with a review schedule (monthly by default).</p>')+'</div>';
@@ -1599,7 +1652,7 @@
   }
   $('#memDueCard').addEventListener('click',e=>{const b=e.target.closest('[data-memrev]');if(b)startStudy(b.dataset.memrev,'words','expert',true)});
   $('#memory').addEventListener('click',async e=>{
-    const bl=e.target.closest('.blank');if(bl&&MS){const i=+bl.dataset.b;if(MS.fill[i]!==undefined){delete MS.fill[i];MS.checked=false}MS.active=i;renderMemory();return}
+    const bl=e.target.closest('.blank');if(bl&&MS){const i=+bl.dataset.b;if(MS.fill[i]===undefined&&!MS.done){MS.active=i;renderMemory()}return}
     const bw=e.target.closest('.bw');if(bw&&MS){placeWord(+bw.dataset.w);return}
     const b=e.target.closest('[data-m]');if(!b||b.tagName==='SELECT'||b.type==='checkbox')return;
     const a=b.dataset.m,id=b.dataset.id;
@@ -1612,8 +1665,8 @@
     if(!MS)return;
     if(a==='mode'){MS.mode=b.dataset.v;MS.resetScroll=true;buildExercise();renderMemory()}
     if(a==='level'){MS.level=b.dataset.v;MS.resetScroll=true;buildExercise();renderMemory()}
-    if(a==='check')checkWords();if(a==='checkL')checkLetters();
-    if(a==='reset'){MS.fill={};MS.active=MS.blanks[0];MS.checked=false;MS.result=null;MS.resetScroll=true;renderMemory()}
+    if(a==='hint')giveHint();if(a==='checkL')checkLetters();
+    if(a==='reset')resetWords();
     if(a==='reshuffle'){MS.seed++;MS.resetScroll=true;buildExercise();renderMemory()}
     if(a==='reveal'){MS.reveal=!MS.reveal;renderMemory()}
     if(a==='recalled'){const ok=await memUpdate(MS.id,{last_reviewed:new Date().toISOString(),next_review:addDays(MS.row.interval_days)});if(ok){toast('✓ Nice. Next review in '+intLabel(MS.row.interval_days).toLowerCase().replace('every ','')+'.');MS=null;renderMemory();renderMemDue()}}
@@ -1622,12 +1675,12 @@
   $('#memory').addEventListener('change',e=>{
     const t=e.target,a=t.dataset&&t.dataset.m;
     if(a==='memo'&&t.checked){const sel=document.querySelector(`select[data-m="interval"][data-id="${t.dataset.id}"]`);setMemorized(t.dataset.id,true,+(sel?sel.value:30))}
-    if(a==='modesel'&&MS){MS.mode=t.value;MS.resetScroll=true;buildExercise();renderMemory();return}
+    if(a==='modesel'&&MS){MS.mode=t.value;MS.level=topLevel(MS.row,MS.mode);MS.resetScroll=true;buildExercise();renderMemory();return}
     if(a==='levelsel'&&MS){MS.level=t.value;MS.resetScroll=true;buildExercise();renderMemory();return}
     if(a==='interval'){const p=MEMP.find(x=>x.id===t.dataset.id);if(!p)return;const days=+t.value,patch={interval_days:days};if(p.status==='memorized'&&p.last_reviewed)patch.next_review=ymd(new Date(new Date(p.last_reviewed).getTime()+days*864e5));memUpdate(p.id,patch).then(()=>{renderMemory();renderMemDue()})}
     if(t.id==='mDone'&&t.checked)setMemorized(MS.id,true,+$('#mDoneInt').value).then(()=>{MS=null;renderMemory()});
   });
-  $('#memory').addEventListener('input',e=>{if(e.target.id==='mTyped'&&MS)MS.typed=e.target.value});
+  $('#memory').addEventListener('input',e=>{if(e.target.id==='mTyped'&&MS){MS.typed=e.target.value;MS.startAt=MS.startAt||Date.now()}});
 
   // Backup & export (downloads the sample entries)
   const strip=h=>{const d=document.createElement('div');d.innerHTML=h.replace(/<br>/g,'\n').replace(/<\/div>/g,'\n');return d.textContent.replace(/\n{2,}/g,'\n').trim()};
