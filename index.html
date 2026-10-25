@@ -228,6 +228,11 @@
   .ach{display:inline-flex;gap:7px;align-items:center;border:1px solid var(--line);border-radius:99px;padding:2px 10px;background:var(--card)}
   .ach .lvn{font-size:11px;text-transform:uppercase;letter-spacing:.05em;font-weight:700}
   .ach .tm{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+  .recs{margin-top:8px;padding:10px 12px;border:1px solid var(--line);border-radius:var(--radius-sm);background:var(--card)}
+  .rrow{display:flex;gap:10px;flex-wrap:wrap;align-items:center;padding:3px 0;font-size:13px}
+  .rrow .rmode{min-width:92px;color:var(--muted);font-size:12px}
+  .rrow .lvn{font-size:11px;text-transform:uppercase;letter-spacing:.05em;font-weight:700}
+  .rrow .tm{color:var(--muted);font-variant-numeric:tabular-nums}
   .blank.lb{min-width:1.3em;padding:0 4px;text-align:center;font-weight:600}
   .bw.bwl{min-width:40px;text-align:center;font-weight:600;padding:6px 10px}
   .blank.rej{animation:shake .45s;border-color:#d86a6a;background:rgba(216,106,106,.28)}
@@ -1425,7 +1430,7 @@
   $('#office-new').addEventListener('click',e=>{const b=e.target.closest('[data-open]');if(b)openChapter(b.dataset.open)});
 
   // ===== Scripture memory =====
-  let MEMP=[],MEM_OK=true,MS=null;
+  let MEMP=[],MEM_OK=true,MS=null;const MEMEXP=new Set();
   const ymd=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
   const todayStr=()=>ymd(new Date());
   const addDays=n=>{const d=new Date();d.setDate(d.getDate()+n);return ymd(d)};
@@ -1472,7 +1477,7 @@
   // ---- stars, levels and results ----
   const STARCLS={beginner:'st-beginner',intermediate:'st-intermediate',expert:'st-expert',pro:'st-pro'};
   const FUNNY=['😅','🙈','🤪','🫠','🥴','🙃','😬','🐢','🦄','🍕','🤡','🥲','🦆','🙊'];
-  const normProg=p=>({words:(p&&p.words&&typeof p.words==='object')?p.words:{},letters:(p&&p.letters&&typeof p.letters==='object')?p.letters:{}});
+  const normProg=p=>({words:(p&&p.words&&typeof p.words==='object')?p.words:{},letters:(p&&p.letters&&typeof p.letters==='object')?p.letters:{},hist:(p&&Array.isArray(p.hist))?p.hist:[]});
   const starsFor=acc=>acc>=100?3:acc>=85?2:acc>=70?1:0;
   const starTrio=(lvl,n)=>`<span class="stars ${STARCLS[lvl]}">${'★'.repeat(n)}<span class="off">${'★'.repeat(3-n)}</span></span>`;
   const fmtDur=sec=>Math.floor(sec/60)+':'+String(sec%60).padStart(2,'0');
@@ -1497,6 +1502,7 @@
     const S=MS;if(!S||S.done)return;S.done=true;
     const secs=Math.max(1,Math.round((Date.now()-(S.startAt||Date.now()))/1000)),stars=starsFor(acc),row=S.row;
     const prog=normProg(row.progress),cur=prog[S.mode][S.level];
+    prog.hist=[...prog.hist,{m:S.mode,l:S.level,s:stars,a:Math.round(acc),t:secs,d:new Date().toISOString(),...(stars===0?{e:FUNNY[Math.floor(Math.random()*FUNNY.length)]}:{})}].slice(-60);
     if(!cur||stars>cur.s||(stars===cur.s&&acc>cur.a)){
       prog[S.mode][S.level]=stars>0?{s:stars,a:Math.round(acc),t:secs}:{s:0,a:Math.round(acc),t:secs,e:(cur&&cur.e)||FUNNY[Math.floor(Math.random()*FUNNY.length)]};
     }
@@ -1650,7 +1656,29 @@
       if(ab){const pane=ab.closest('.mpane'),a=ab.getBoundingClientRect(),b=pane.getBoundingClientRect();if(a.top<b.top+8||a.bottom>b.bottom-8)pane.scrollTop+=(a.top-b.top)-pane.clientHeight/3}
       return;
     }
-    const prog=r=>{const pr=normProg(r.progress);return ['words','letters'].map(m=>{const cells=LEVELS.filter(l=>pr[m][l[0]]).map(l=>{const x=pr[m][l[0]];return `<span class="ach" title="Best ${l[1]} result: ${x.a}% in ${fmtDur(x.t)}">${x.s>0?starTrio(l[0],x.s):`<span class="lvn ${STARCLS[l[0]]}">${l[1]}</span><span>${x.e||'😅'}</span>`}<span class="tm">${fmtDur(x.t)}</span></span>`}).join(' ');return cells?`<div class="achrow"><span class="hint">${m==='words'?'Missing words':'First letters'}</span>${cells}</div>`:''}).join('')};
+    const modeName=m=>m==='words'?'Missing words':'First letters';
+    const cellOf=(l,x,tag)=>`<span class="ach" title="${l[1]} · ${x.a}% · ${fmtDur(x.t)}">${x.s>0?starTrio(l[0],x.s):`<span class="lvn ${STARCLS[l[0]]}">${l[1]}</span><span>${x.e||'😅'}</span>`}<span class="tm">${fmtDur(x.t)}</span></span>`;
+    const prog=r=>{
+      const pr=normProg(r.progress);
+      const rows=['words','letters'].map(m=>{
+        const have=LEVELS.map((l,i)=>pr[m][l[0]]?i:-1).filter(i=>i>=0);
+        const best=Math.max(-1,...have.filter(i=>pr[m][LEVELS[i][0]].s>0)),front=Math.max(-1,...have);
+        const cells=[];
+        if(best>=0)cells.push(cellOf(LEVELS[best],pr[m][LEVELS[best][0]]));
+        if(front>best&&front>=0)cells.push(cellOf(LEVELS[front],pr[m][LEVELS[front][0]]));
+        return cells.length?`<div class="achrow"><span class="hint">${modeName(m)}</span>${cells.join(' ')}</div>`:'';
+      }).join('');
+      const any=['words','letters'].some(m=>Object.keys(pr[m]).length)||pr.hist.length;
+      if(!any)return rows;
+      const open=MEMEXP.has(r.id);
+      let recs='';
+      if(open){
+        const lines=['words','letters'].map(m=>LEVELS.filter(l=>pr[m][l[0]]).map(l=>{const x=pr[m][l[0]];return `<div class="rrow"><span class="rmode">${modeName(m)}</span><span class="lvn ${STARCLS[l[0]]}">${l[1]}</span>${x.s>0?starTrio(l[0],x.s):`<span>${x.e||'😅'}</span>`}<span>${x.a}%</span><span class="tm">${fmtDur(x.t)}</span></div>`}).join('')).join('');
+        const hist=pr.hist.slice(-12).reverse().map(h=>{const lv=LEVELS.find(l=>l[0]===h.l)||[h.l,h.l];return `<div class="rrow"><span class="rmode">${esc(new Date(h.d).toLocaleDateString([],{month:'short',day:'numeric'}))}</span><span class="hint" style="margin:0">${modeName(h.m)} · <span class="lvn ${STARCLS[h.l]||''}">${lv[1]}</span></span>${h.s>0?starTrio(h.l,h.s):`<span>${h.e||'😅'}</span>`}<span>${h.a}%</span><span class="tm">${fmtDur(h.t)}</span></div>`}).join('');
+        recs=`<div class="recs"><div class="hint" style="margin:0 0 4px;font-weight:600">Best at each level</div>${lines||'<div class="hint">Nothing yet.</div>'}${hist?`<div class="hint" style="margin:10px 0 4px;font-weight:600">Recent attempts</div>${hist}`:''}</div>`;
+      }
+      return rows+`<div><button type="button" class="plink" data-m="rec" data-id="${esc(r.id)}" style="font-size:12px;margin-top:6px">${open?'Hide records ▴':'Records ▾'}</button></div>`+recs;
+    };
     const learning=MEMP.filter(p=>p.status==='learning'),done=MEMP.filter(p=>p.status==='memorized').sort((a,b)=>String(a.next_review).localeCompare(String(b.next_review)));
     let h='<div class="eyebrow">Hide it in your heart</div><h1>🧠 Memorize</h1><p class="sub">Study a passage two ways, then keep it fresh with reviews.</p>';
     if(!MEM_OK)h+='<p class="hint" style="color:var(--gold)">One setup step is missing: run supabase/memory.sql in Supabase (see the README), then reload.</p>';
@@ -1676,6 +1704,7 @@
     if(a==='study')startStudy(id,'words','beginner',false);
     if(a==='review')startStudy(id,'words','expert',true);
     if(a==='remove'){if(!confirm('Remove this passage?'))return;const {error}=await sb.from('memory_passages').delete().eq('id',id);if(error){mErr(error);return}MEMP=MEMP.filter(p=>p.id!==id);renderMemory();renderMemDue()}
+    if(a==='rec'){MEMEXP.has(id)?MEMEXP.delete(id):MEMEXP.add(id);renderMemory();return}
     if(a==='unmemo'){if(!confirm('Relearn this passage? Its stars will be cleared.'))return;if(await memUpdate(id,{status:'learning',next_review:null,progress:{}})){renderMemory();renderMemDue();toast('Moved back to learning')}}
     if(a==='back'){MS=null;renderMemory()}
     if(!MS)return;
