@@ -228,6 +228,8 @@
   .ach{display:inline-flex;gap:7px;align-items:center;border:1px solid var(--line);border-radius:99px;padding:2px 10px;background:var(--card)}
   .ach .lvn{font-size:11px;text-transform:uppercase;letter-spacing:.05em;font-weight:700}
   .ach .tm{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+  .blank.lb{min-width:1.3em;padding:0 4px;text-align:center;font-weight:600}
+  .bw.bwl{min-width:40px;text-align:center;font-weight:600;padding:6px 10px}
   .blank.rej{animation:shake .45s;border-color:#d86a6a;background:rgba(216,106,106,.28)}
   @keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-5px)}40%{transform:translateX(5px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
   .mhead{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:8px 0 4px}
@@ -1480,15 +1482,19 @@
   const fmtDur=sec=>Math.floor(sec/60)+':'+String(sec%60).padStart(2,'0');
   const unlockedLv=(row,mode)=>{const pr=normProg(row.progress)[mode];return LEVELS.map((l,i)=>i===0||((pr[LEVELS[i-1][0]]||{}).s===3))};
   const topLevel=(row,mode)=>{const u=unlockedLv(row,mode);let k=0;u.forEach((x,i)=>{if(x)k=i});return LEVELS[k][0]};
+  const expectOf=(S,i)=>S.mode==='letters'?[...S.tokens[i].w][0]:S.tokens[i].w;
   function buildExercise(){
     const S=MS;S.result=null;S.typed='';S.reveal=false;S.done=false;S.startAt=null;S.miss={};S.flash=null;
-    if(S.mode!=='words')return;
-    const idx=S.tokens.map((t,i)=>t.w?i:-1).filter(i=>i>=0),r=rng(hashS(S.text+S.level)+S.seed*7919);
+    const idx=S.tokens.map((t,i)=>t.w?i:-1).filter(i=>i>=0),r=rng(hashS(S.text+S.level+S.mode)+S.seed*7919);
     const cnt=Math.max(1,Math.round(PCT[S.level]*idx.length));
     let pool=shuffleA(idx,r);
-    if(S.level==='beginner'||S.level==='intermediate'){const easy=i=>STOP.has(normW(S.tokens[i].w))||S.tokens[i].w.length<4;pool.sort((x,y)=>(easy(x)?1:0)-(easy(y)?1:0))}
+    if(S.mode==='words'&&(S.level==='beginner'||S.level==='intermediate')){const easy=i=>STOP.has(normW(S.tokens[i].w))||S.tokens[i].w.length<4;pool.sort((x,y)=>(easy(x)?1:0)-(easy(y)?1:0))}
     S.blanks=pool.slice(0,cnt).sort((x,y)=>x-y);
-    S.bank=S.blanks.map((i,k)=>({id:k,word:S.tokens[i].w})).sort((a,b)=>normW(a.word).localeCompare(normW(b.word))||a.id-b.id);
+    S.bank=S.blanks.map((i,k)=>({id:k,word:expectOf(S,i)})).sort((a,b)=>{
+      const x=normW(a.word),y=normW(b.word);
+      if(x!==y)return x.localeCompare(y);
+      return (a.word===a.word.toUpperCase()?0:1)-(b.word===b.word.toUpperCase()?0:1)||a.id-b.id;
+    });
     S.fill={};S.active=S.blanks[0];
   }
   async function finishExercise(acc){
@@ -1526,17 +1532,17 @@
     const t=(S.active!==undefined&&S.fill[S.active]===undefined)?S.active:S.blanks.find(i=>S.fill[i]===undefined);
     if(t===undefined)return;S.startAt=S.startAt||Date.now();
     const w=S.bank.find(b=>b.id===bid).word;
-    if(normW(w)!==normW(S.tokens[t].w)){
+    if(normW(w)!==normW(expectOf(S,t))){
       S.miss[t]=true;S.flash=t;S.active=t;renderMemory();
       setTimeout(()=>{if(MS===S){S.flash=null;renderMemory()}},550);return;
     }
     S.fill[t]=bid;afterFill();
   }
   function giveHint(){
-    const S=MS;if(!S||S.done||S.mode!=='words')return;
+    const S=MS;if(!S||S.done)return;
     const t=(S.active!==undefined&&S.fill[S.active]===undefined)?S.active:S.blanks.find(i=>S.fill[i]===undefined);
     if(t===undefined)return;S.startAt=S.startAt||Date.now();
-    const used=new Set(Object.values(S.fill)),b=S.bank.find(x=>!used.has(x.id)&&normW(x.word)===normW(S.tokens[t].w));
+    const used=new Set(Object.values(S.fill)),b=S.bank.find(x=>!used.has(x.id)&&normW(x.word)===normW(expectOf(S,t)));
     if(!b)return;S.miss[t]=true;S.fill[t]=b.id;afterFill();
   }
   function resetWords(){const S=MS;S.fill={};S.miss={};S.flash=null;S.startAt=null;S.done=false;S.active=S.blanks[0];S.resetScroll=true;renderMemory()}
@@ -1551,21 +1557,17 @@
     const S=MS,typed=tokenize(S.typed).filter(t=>t.w).map(t=>normW(t.w)),tw=S.tokens.filter(t=>t.w);
     if(!typed.length){toast('Type the passage from memory first');return}
     const hit=lcsMatch(typed,tw.map(t=>normW(t.w)));
-    S.startAt=S.startAt||Date.now();S.done=false;
     S.result={ok:hit.size,total:tw.length,hit};
-    finishExercise(hit.size/tw.length*100);
+    renderMemory();
   }
   // Words that make a good place to start a new line when a line has to be broken.
   const NATURAL=new Set('and but or nor for so yet that which who whom whose when where while because if though although until unless since as than then to in on at by from with of into upon through among against before after over under between without within about around'.split(' '));
   const MAXLETTERS=8;
   function lettersHTML(S){
-    let wi=0,starts=true,carry='';const units=[];
-    S.tokens.forEach(t=>{
-      if(!t.w){const pc=t.pre+t.post;if(units.length)units[units.length-1].post+=pc;else carry+=pc;starts=starts||/[.,;:!?—–]/.test(pc);return}
-      const i=wi++;let show=false;
-      if(S.level==='beginner')show=true;else if(S.level==='intermediate')show=i%2===0;else if(S.level==='expert')show=starts;
-      starts=/[.,;:!?—–]/.test(t.post);
-      units.push({pre:carry+t.pre,post:t.post,ch:[...t.w][0],show,nat:NATURAL.has(normW(t.w))});carry='';
+    let carry='';const units=[];
+    S.tokens.forEach((t,i)=>{
+      if(!t.w){const pc=t.pre+t.post;if(units.length)units[units.length-1].post+=pc;else carry+=pc;return}
+      units.push({i,pre:carry+t.pre,post:t.post,ch:[...t.w][0],blank:S.blanks.includes(i),nat:NATURAL.has(normW(t.w))});carry='';
     });
     // Lines: break after punctuation (unless the line has only 1 or 2 letters), never more than 8 letters per line,
     // and when a line is too long, break at a natural spot (before a word like "and", "but", "to", "that").
@@ -1580,28 +1582,32 @@
       if(ends(u)&&line.length>=3){lines.push(line);line=[]}
     });
     if(line.length)lines.push(line);
-    return lines.map(l=>l.map(u=>esc(u.pre)+`<span class="fl ${u.show?'':'hid'}">${u.show?esc(u.ch):'·'}</span>`+esc(u.post)).join(' ')).join('<br>');
+    const cell=u=>{
+      if(!u.blank)return `<span class="fl">${esc(u.ch)}</span>`;
+      const f=S.fill[u.i],w=f===undefined?'':S.bank.find(b=>b.id===f).word;
+      let cls=f!==undefined?' ok':(u.i===S.active?' active':'');
+      if(S.flash===u.i)cls+=' rej';
+      return `<button class="blank lb${cls}" data-b="${u.i}">${esc(w)||'&nbsp;'}</button>`;
+    };
+    return lines.map(l=>l.map(u=>esc(u.pre)+cell(u)+esc(u.post)).join(' ')).join('<br>');
   }
   const legendLine='<span class="stars st-beginner">★</span> Beginner <span class="stars st-intermediate">★</span> Intermediate <span class="stars st-expert">★</span> Expert <span class="stars st-pro">★</span> Pro · ★ 70% · ★★ 85% · ★★★ 100%';
   function renderStudy(){
-    const S=MS,row=S.row,ul=unlockedLv(row,S.mode),lvIdx=LV[S.level];
+    const S=MS,row=S.row,ul=unlockedLv(row,S.mode),lvIdx=LV[S.level],L=S.mode==='letters';
     let h='<button class="mini" data-m="back">‹ My passages</button>';
-    h+=`<div class="mhead"><div class="mtitle"><b>${esc(row.ref)}</b> <span class="hint">${esc(row.translation)}${S.review?' · review':''}</span></div><div class="msels"><select data-m="modesel" aria-label="Study style"><option value="words" ${S.mode==='words'?'selected':''}>Missing words</option><option value="letters" ${S.mode==='letters'?'selected':''}>First letters</option></select><select data-m="levelsel" aria-label="Level">${LEVELS.map((l,i)=>`<option value="${l[0]}" ${S.level===l[0]?'selected':''} ${ul[i]?'':'disabled'}>${l[1]}${ul[i]?'':' 🔒'}</option>`).join('')}</select></div></div>`;
+    h+=`<div class="mhead"><div class="mtitle"><b>${esc(row.ref)}</b> <span class="hint">${esc(row.translation)}${S.review?' · review':''}</span></div><div class="msels"><select data-m="modesel" aria-label="Study style"><option value="words" ${S.mode==='words'?'selected':''}>Missing words</option><option value="letters" ${L?'selected':''}>First letters</option></select><select data-m="levelsel" aria-label="Level">${LEVELS.map((l,i)=>`<option value="${l[0]}" ${S.level===l[0]?'selected':''} ${ul[i]?'':'disabled'}>${l[1]}${ul[i]?'':' 🔒'}</option>`).join('')}</select></div></div>`;
     if(S.loading)return h+'<p class="hint">Loading the passage…</p>';
     if(S.error)return h+`<p class="hint" style="color:var(--gold)">${esc(S.error)}</p>`;
-    let hint=S.mode==='words'?({beginner:'About a quarter of the words are missing.',intermediate:'About half of the words are missing.',expert:'About three quarters of the words are missing.',pro:'Every word is missing. Rebuild the passage from the word bank.'})[S.level]:({beginner:'Every word shows its first letter, with all the punctuation.',intermediate:'Every other word shows its first letter.',expert:'Only the first word of each phrase shows its letter.',pro:'Only the punctuation is shown. The rest is up to you.'})[S.level];
-    hint+=S.mode==='words'?' A wrong word is rejected.':' Type it from memory, then Check.';
+    const what=L?'first letters':'words';
+    let hint=({beginner:`About a quarter of the ${what} are missing.`,intermediate:`About half of the ${what} are missing.`,expert:`About three quarters of the ${what} are missing.`,pro:L?'Every first letter is missing. Only the punctuation shows.':'Every word is missing. Rebuild the passage from the word bank.'})[S.level];
+    hint+=L?' Fill them in from the letter bank (wrong ones are rejected), then type the whole verse in the box.':' A wrong word is rejected.';
     const cur=normProg(row.progress)[S.mode][S.level],nextLabel=S.level!=='pro'?LEVELS[lvIdx+1][1]:'';
     if(S.level!=='pro'&&!ul[lvIdx+1])hint+=` Earn ★★★ to unlock ${nextLabel}.`;
     const next=S.level!=='pro'&&ul[lvIdx+1]?`<button class="btn ghost sm" data-m="level" data-v="${LEVELS[lvIdx+1][0]}">Next level ›</button>`:'';
     const best=cur?`<span class="rs">${cur.s?starTrio(S.level,cur.s):(cur.e||'😅')}</span>`:'';
-    h+=`<div class="hint" style="margin:4px 0 2px">${hint}</div><div class="mtool">`;
-    if(S.mode==='words'){
-      const filled=Object.keys(S.fill).length,total=S.blanks.length,miss=Object.keys(S.miss).length;
-      h+=`<button class="btn ghost sm" data-m="hint">Hint</button><button class="btn ghost sm" data-m="reset">Start over</button><button class="btn ghost sm" data-m="reshuffle">Different words</button>${next}<span class="rs hint">${filled}/${total}${miss?' · '+miss+' miss'+(miss>1?'es':''):''}</span>${best}`;
-    }else h+=`<button class="btn sm" data-m="checkL">Check</button><button class="btn ghost sm" data-m="reveal">${S.reveal?'Hide passage':'Show passage'}</button>${next}${best}`;
-    h+='</div><div class="msplit">';
-    if(S.mode==='words'){
+    const filled=Object.keys(S.fill).length,total=S.blanks.length,miss=Object.keys(S.miss).length;
+    h+=`<div class="hint" style="margin:4px 0 2px">${hint}</div><div class="mtool"><button class="btn ghost sm" data-m="hint">Hint</button><button class="btn ghost sm" data-m="reset">Start over</button><button class="btn ghost sm" data-m="reshuffle">Different ${L?'letters':'words'}</button>${next}<span class="rs hint">${filled}/${total}${miss?' · '+miss+' miss'+(miss>1?'es':''):''}</span>${best}</div><div class="msplit">`;
+    if(!L){
       h+='<div class="mpane"><div class="mex">'+S.tokens.map((t,i)=>{
         if(!S.blanks.includes(i))return esc(t.pre+t.w+t.post);
         const f=S.fill[i],w=f===undefined?'':S.bank.find(b=>b.id===f).word;
@@ -1612,7 +1618,8 @@
       h+='<div class="mpane bankp"><div class="bank">'+S.bank.map(b=>`<button class="bw" data-w="${b.id}" ${Object.values(S.fill).includes(b.id)?'disabled':''}>${esc(b.word)}</button>`).join('')+'</div></div>';
     }else{
       h+=`<div class="mpane"><div class="mex">${lettersHTML(S)}</div></div>`;
-      h+=`<div class="mpane bankp"><textarea id="mTyped" placeholder="Say it in your head, then type it from memory…" style="min-height:140px">${esc(S.typed)}</textarea>`;
+      h+='<div class="mpane bankp"><div class="bank">'+S.bank.map(b=>`<button class="bw bwl" data-w="${b.id}" ${Object.values(S.fill).includes(b.id)?'disabled':''}>${esc(b.word)}</button>`).join('')+'</div>';
+      h+=`<div class="hint" style="margin:14px 0 4px;font-weight:600">Now type the whole verse from memory</div><textarea id="mTyped" placeholder="Type the passage…" style="min-height:120px">${esc(S.typed)}</textarea><div class="mbtns" style="margin-top:8px"><button class="btn sm" data-m="checkL">Check my typing</button><button class="btn ghost sm" data-m="reveal">${S.reveal?'Hide passage':'Show passage'}</button></div>`;
       if(S.reveal)h+=`<div class="mex" style="font-size:17px;margin-top:10px">${esc(S.text)}</div>`;
       if(S.result){let k=0;h+=`<p class="hint" style="margin:10px 0 0;font-weight:600">${S.result.ok} of ${S.result.total} words (${Math.round(S.result.ok/S.result.total*100)}%)</p><div class="mex" style="font-size:17px;margin-top:6px">`+S.tokens.map(t=>{if(!t.w)return esc(t.pre+t.post);const ok=S.result.hit.has(k++);return esc(t.pre)+`<span class="${ok?'good':'miss'}">${esc(t.w)}</span>`+esc(t.post)}).join(' ')+'</div>'}
       h+='</div>';
