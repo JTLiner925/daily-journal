@@ -1459,11 +1459,6 @@
     if(error){mErr(error);return}
     MEMP.push(data);$('#mRef').value='';renderMemory();toast('✓ Added '+r.label);
   }
-  async function setMemorized(id,on,days){
-    const now=new Date().toISOString();
-    const patch=on?{status:'memorized',interval_days:days,memorized_at:now,last_reviewed:now,next_review:addDays(days)}:{status:'learning',next_review:null};
-    if(await memUpdate(id,patch)){renderMemory();renderMemDue();toast(on?'✓ Moved to your memorized bank':'Moved back to learning')}
-  }
   // --- exercises ---
   async function startStudy(id,mode,level,review){
     const row=MEMP.find(x=>x.id===id);if(!row)return;
@@ -1505,15 +1500,24 @@
       prog[S.mode][S.level]=stars>0?{s:stars,a:Math.round(acc),t:secs}:{s:0,a:Math.round(acc),t:secs,e:(cur&&cur.e)||FUNNY[Math.floor(Math.random()*FUNNY.length)]};
     }
     await memUpdate(S.id,{progress:prog});
-    S.last={acc:Math.round(acc),secs,stars,emoji:FUNNY[Math.floor(Math.random()*FUNNY.length)]};
-    renderMemory();showDone();
+    // Memorized = three gold stars (Pro) in both study styles
+    let nowMem=false;
+    if(row.status==='learning'){
+      const pr=normProg(row.progress);
+      if((pr.words.pro||{}).s===3&&(pr.letters.pro||{}).s===3){
+        const now=new Date().toISOString(),days=row.interval_days||30;
+        nowMem=await memUpdate(S.id,{status:'memorized',memorized_at:now,last_reviewed:now,next_review:addDays(days)});
+      }
+    }
+    S.last={acc:Math.round(acc),secs,stars,memorized:nowMem,emoji:FUNNY[Math.floor(Math.random()*FUNNY.length)]};
+    renderMemory();renderMemDue();showDone();
   }
   function showDone(){
     const S=MS,r=S.last,lvIdx=LV[S.level],nextLabel=LEVELS[lvIdx+1]&&LEVELS[lvIdx+1][1];
     const nextOk=S.level!=='pro'&&unlockedLv(S.row,S.mode)[lvIdx+1];
     const msg=r.stars===3?(S.level==='pro'?'Perfect! You’ve mastered every level.':'Perfect! '+nextLabel+' is unlocked.'):r.stars===2?'So close! Get 100% to earn three stars'+(S.level==='pro'?'.':' and unlock '+nextLabel+'.'):r.stars===1?'Nice start. 85% earns two stars, and 100% earns three.':'Under 70% this time. Give it another go!';
     const el=document.createElement('div');el.className='modal open';el.id='mDoneModal';
-    el.innerHTML=`<div class="modalcard" style="text-align:center"><h2 style="font-size:32px;margin-bottom:6px">Great Job! 🎉</h2><p style="margin:8px 0 2px;font-size:16px">Time <b>${fmtDur(r.secs)}</b> · Accuracy <b>${r.acc}%</b></p><div style="font-size:38px;margin:8px 0;line-height:1.3">${r.stars?starTrio(S.level,r.stars):r.emoji}</div><p class="hint">${msg}</p><div class="actions" style="justify-content:center"><button class="btn ghost" data-d="again">Try again</button>${nextOk?'<button class="btn" data-d="next">Next level ›</button>':''}<button class="btn ${nextOk?'ghost':''}" data-d="close">Done</button></div></div>`;
+    el.innerHTML=`<div class="modalcard" style="text-align:center"><h2 style="font-size:32px;margin-bottom:6px">Great Job! 🎉</h2><p style="margin:8px 0 2px;font-size:16px">Time <b>${fmtDur(r.secs)}</b> · Accuracy <b>${r.acc}%</b></p><div style="font-size:38px;margin:8px 0;line-height:1.3">${r.stars?starTrio(S.level,r.stars):r.emoji}</div><p class="hint">${msg}</p>${r.memorized?`<p style="font-weight:600;margin:10px 0 0">🏆 Memorized! ${esc(S.row.ref)} is now in your Memorized bank. First review: ${esc(intLabel(S.row.interval_days).toLowerCase())}.</p>`:''}<div class="actions" style="justify-content:center"><button class="btn ghost" data-d="again">Try again</button>${nextOk?'<button class="btn" data-d="next">Next level ›</button>':''}<button class="btn ${nextOk?'ghost':''}" data-d="close">Done</button></div></div>`;
     el.addEventListener('click',e=>{
       const d=e.target.closest('[data-d]');if(!d&&e.target!==el)return;
       const act=d?d.dataset.d:'close';el.remove();if(!MS)return;
@@ -1629,7 +1633,8 @@
     if(S.review){
       h+='<div class="mbtns" style="margin-top:10px"><button class="btn" data-m="recalled">✓ I recalled it</button><button class="btn ghost" data-m="needwork">Needs more work</button></div>';
     }else if(row.status==='learning'){
-      h+=`<div class="toggle" style="margin-top:12px"><input type="checkbox" id="mDone"><label for="mDone" style="margin:0;text-transform:none;letter-spacing:0;font-size:14px;color:var(--ink)">I’ve memorized this passage</label><select id="mDoneInt" style="width:auto;margin-left:auto;padding:6px 10px">${intOptions(30)}</select></div>`;
+      const pr=normProg(row.progress),g=m=>((pr[m].pro||{}).s===3?'<span class="stars st-pro">★★★</span> ✓':'<span class="stars st-pro"><span class="off">★★★</span></span>');
+      h+=`<div class="hint" style="margin-top:10px">To memorize this passage, earn <span class="stars st-pro">★★★</span> at Pro in both styles. Missing words ${g('words')} · First letters ${g('letters')}</div>`;
     }
     return h;
   }
@@ -1648,10 +1653,10 @@
     const learning=MEMP.filter(p=>p.status==='learning'),done=MEMP.filter(p=>p.status==='memorized').sort((a,b)=>String(a.next_review).localeCompare(String(b.next_review)));
     let h='<div class="eyebrow">Hide it in your heart</div><h1>🧠 Memorize</h1><p class="sub">Study a passage two ways, then keep it fresh with reviews.</p>';
     if(!MEM_OK)h+='<p class="hint" style="color:var(--gold)">One setup step is missing: run supabase/memory.sql in Supabase (see the README), then reload.</p>';
-    h+=`<div class="card"><h3 style="margin-bottom:6px">⭐ How stars work</h3><div class="legend"><span><span class="stars st-beginner">★★★</span> Beginner</span><span><span class="stars st-intermediate">★★★</span> Intermediate</span><span><span class="stars st-expert">★★★</span> Expert</span><span><span class="stars st-pro">★★★</span> Pro</span></div><div class="hint" style="margin-top:6px">★ = 70% or better · ★★ = 85% or better · ★★★ = 100%. Finish under 70% and you get a funny face instead. You need ★★★ at a level to unlock the next one. Levels you haven’t finished don’t show.</div></div>`;
+    h+=`<div class="card"><h3 style="margin-bottom:6px">⭐ How stars work</h3><div class="legend"><span><span class="stars st-beginner">★★★</span> Beginner</span><span><span class="stars st-intermediate">★★★</span> Intermediate</span><span><span class="stars st-expert">★★★</span> Expert</span><span><span class="stars st-pro">★★★</span> Pro</span></div><div class="hint" style="margin-top:6px">★ = 70% or better · ★★ = 85% or better · ★★★ = 100%. Finish under 70% and you get a funny face instead. You need ★★★ at a level to unlock the next one. Earn ★★★ at Pro in both Missing words and First letters and the passage is memorized and moves to your Memorized bank. Levels you haven’t finished don’t show.</div></div>`;
     h+=`<div class="card"><h3 style="margin-bottom:6px">Add a passage</h3><div class="bctl-row"><input id="mRef" placeholder="e.g. Psalm 23:1–6 or Romans 8:28–30" style="flex:1;min-width:200px"><select id="mTr" style="width:auto">${TRANS.map(t=>`<option ${t===R.trans?'selected':''}>${t}</option>`).join('')}</select><button class="btn" data-m="add">Add</button></div></div>`;
-    h+=`<div class="card"><h3>Learning (${learning.length})</h3>`+(learning.length?learning.map(p=>`<div class="mcard"><div class="mt"><b>${esc(p.ref)}</b><span class="hint">${esc(p.translation)}</span></div><div>${prog(p)}</div><div class="mbtns"><button class="btn" data-m="study" data-id="${esc(p.id)}">Study</button><label class="bchk"><input type="checkbox" data-m="memo" data-id="${esc(p.id)}"> Memorized</label><select data-m="interval" data-id="${esc(p.id)}" title="How often to review it once memorized">${intOptions(p.interval_days||30)}</select><button class="mini" data-m="remove" data-id="${esc(p.id)}">Remove</button></div></div>`).join(''):'<p class="hint">No passages yet. Add one above.</p>')+'</div>';
-    h+=`<div class="card"><h3>Memorized bank (${done.length})</h3>`+(done.length?done.map(p=>{const n=p.next_review?daysUntil(p.next_review):null,due=n!==null&&n<=0;return `<div class="mcard"><div class="mt"><b>${esc(p.ref)}</b><span class="hint">${esc(p.translation)}</span></div><div>${prog(p)}</div><div class="mdue ${due?'now':''}">${due?'Due for review '+(n===0?'today':Math.abs(n)+' day'+(Math.abs(n)>1?'s':'')+' ago'):'Next review in '+n+' day'+(n===1?'':'s')} · ${esc(intLabel(p.interval_days))}</div><div class="mbtns"><button class="btn" data-m="review" data-id="${esc(p.id)}">Review</button><select data-m="interval" data-id="${esc(p.id)}" title="Follow-up schedule">${intOptions(p.interval_days)}</select><button class="mini" data-m="unmemo" data-id="${esc(p.id)}">Back to learning</button><button class="mini" data-m="remove" data-id="${esc(p.id)}">Remove</button></div></div>`}).join(''):'<p class="hint">Passages you finish memorizing will live here, with a review schedule (monthly by default).</p>')+'</div>';
+    h+=`<div class="card"><h3>Learning (${learning.length})</h3>`+(learning.length?learning.map(p=>`<div class="mcard"><div class="mt"><b>${esc(p.ref)}</b><span class="hint">${esc(p.translation)}</span></div><div>${prog(p)}</div><div class="mbtns"><button class="btn" data-m="study" data-id="${esc(p.id)}">Study</button><span class="hint" style="margin:0;font-size:12px">Review once memorized:</span><select data-m="interval" data-id="${esc(p.id)}" title="How often to review it once memorized">${intOptions(p.interval_days||30)}</select><button class="mini" data-m="remove" data-id="${esc(p.id)}">Remove</button></div></div>`).join(''):'<p class="hint">No passages yet. Add one above.</p>')+'</div>';
+    h+=`<div class="card"><h3>Memorized bank (${done.length})</h3>`+(done.length?done.map(p=>{const n=p.next_review?daysUntil(p.next_review):null,due=n!==null&&n<=0;return `<div class="mcard"><div class="mt"><b>${esc(p.ref)}</b><span class="hint">${esc(p.translation)}</span></div><div>${prog(p)}</div><div class="mdue ${due?'now':''}">${due?'Due for review '+(n===0?'today':Math.abs(n)+' day'+(Math.abs(n)>1?'s':'')+' ago'):'Next review in '+n+' day'+(n===1?'':'s')} · ${esc(intLabel(p.interval_days))}</div><div class="mbtns"><button class="btn" data-m="review" data-id="${esc(p.id)}">Review</button><select data-m="interval" data-id="${esc(p.id)}" title="Follow-up schedule">${intOptions(p.interval_days)}</select><button class="mini" data-m="unmemo" data-id="${esc(p.id)}" title="Clears your stars so you can learn it again">Relearn</button><button class="mini" data-m="remove" data-id="${esc(p.id)}">Remove</button></div></div>`}).join(''):'<p class="hint">A passage moves here automatically when you earn three gold stars at Pro in both study styles. It then gets a review schedule (monthly by default).</p>')+'</div>';
     pg.innerHTML=h;
   }
   function renderMemDue(){
@@ -1670,7 +1675,7 @@
     if(a==='study')startStudy(id,'words','beginner',false);
     if(a==='review')startStudy(id,'words','expert',true);
     if(a==='remove'){if(!confirm('Remove this passage?'))return;const {error}=await sb.from('memory_passages').delete().eq('id',id);if(error){mErr(error);return}MEMP=MEMP.filter(p=>p.id!==id);renderMemory();renderMemDue()}
-    if(a==='unmemo')setMemorized(id,false);
+    if(a==='unmemo'){if(!confirm('Relearn this passage? Its stars will be cleared.'))return;if(await memUpdate(id,{status:'learning',next_review:null,progress:{}})){renderMemory();renderMemDue();toast('Moved back to learning')}}
     if(a==='back'){MS=null;renderMemory()}
     if(!MS)return;
     if(a==='mode'){MS.mode=b.dataset.v;MS.resetScroll=true;buildExercise();renderMemory()}
@@ -1684,11 +1689,9 @@
   });
   $('#memory').addEventListener('change',e=>{
     const t=e.target,a=t.dataset&&t.dataset.m;
-    if(a==='memo'&&t.checked){const sel=document.querySelector(`select[data-m="interval"][data-id="${t.dataset.id}"]`);setMemorized(t.dataset.id,true,+(sel?sel.value:30))}
     if(a==='modesel'&&MS){MS.mode=t.value;MS.level=topLevel(MS.row,MS.mode);MS.resetScroll=true;buildExercise();renderMemory();return}
     if(a==='levelsel'&&MS){MS.level=t.value;MS.resetScroll=true;buildExercise();renderMemory();return}
     if(a==='interval'){const p=MEMP.find(x=>x.id===t.dataset.id);if(!p)return;const days=+t.value,patch={interval_days:days};if(p.status==='memorized'&&p.last_reviewed)patch.next_review=ymd(new Date(new Date(p.last_reviewed).getTime()+days*864e5));memUpdate(p.id,patch).then(()=>{renderMemory();renderMemDue()})}
-    if(t.id==='mDone'&&t.checked)setMemorized(MS.id,true,+$('#mDoneInt').value).then(()=>{MS=null;renderMemory()});
   });
   $('#memory').addEventListener('input',e=>{if(e.target.id==='mTyped'&&MS){MS.typed=e.target.value;MS.startAt=MS.startAt||Date.now()}});
 

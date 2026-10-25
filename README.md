@@ -69,7 +69,7 @@ Each day's psalm, proverb and New Testament chapter open in the full Bible reade
 - **Missing words** with an alphabetical word bank to put the words back (Pro removes every word). A wrong word is rejected, and a Hint fills the next blank (counted as a miss).
 - **First letters**, showing the first letter of each word with all the punctuation, in short lines. Some letters are missing, and you fill them in from an alphabetical letter bank (wrong ones are rejected). Higher levels remove more letters; Pro removes them all. At the end you can type the whole verse from memory and check it.
 
-Tick "Memorized" to move a passage to the bank with a review schedule (monthly by default; weekly, every 2 weeks, or every 3 months also available). Passages due for review show on the Today page.
+A passage is memorized automatically when you earn three gold stars (Pro, ★★★) in both study styles. It moves to the Memorized bank with a review schedule (monthly by default; weekly, every 2 weeks, or every 3 months also available; pick it on the passage card). Passages due for review show on the Today page.
 
 One-time setup: run [`supabase/memory.sql`](supabase/memory.sql) in the Supabase SQL Editor. Only the reference is stored, never the verse text.
 
