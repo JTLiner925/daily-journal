@@ -129,6 +129,7 @@
   /* Scripture */
   .t-scripture{background:color-mix(in srgb,var(--tc-scripture) 15%,var(--card));color:var(--tc-scripture)}
   .t-office{background:color-mix(in srgb,var(--tc-office) 15%,var(--card));color:var(--tc-office)}
+  .esv:empty{display:none}
   .esv{font-size:11px;font-weight:700;letter-spacing:.06em;background:color-mix(in srgb,var(--tc-scripture) 15%,var(--card));color:var(--tc-scripture);border-radius:6px;padding:2px 7px;vertical-align:middle}
   .lookup-status{font-size:13px;color:var(--sage);min-height:20px;margin-top:8px}
   .try{margin-top:10px;font-size:13px;color:var(--muted)}
@@ -380,7 +381,7 @@
         <button class="tile" onclick="go('note-new')"><div class="ic">📝</div><b>Note</b><span>Random, quick</span></button>
         <button class="tile" onclick="go('meeting-new')"><div class="ic">🤝</div><b>Meeting</b><span>People & next steps</span></button>
         <button class="tile" onclick="go('bible')"><div class="ic">📜</div><b>Bible</b><span>Read, highlight, study</span></button>
-        <button class="tile" onclick="go('scripture-new')"><div class="ic">📖</div><b>Scripture note</b><span>Verses auto-fill (ESV)</span></button>
+        <button class="tile" onclick="go('scripture-new')"><div class="ic">📖</div><b>Scripture note</b><span>Verses auto-fill</span></button>
       </div>
       <div class="card examen-card hero2" style="margin-bottom:12px">
         <div><h3>☀️ Morning Office</h3><p id="homeReading">Start the day with Scripture and prayer. About 10 minutes.</p><p id="homeIntent"></p></div>
@@ -507,7 +508,7 @@
 
     <!-- SCRIPTURE NOTES -->
     <div class="page" id="scripture-new">
-      <div class="eyebrow">New entry</div><h1>📖 Scripture note <span class="esv" id="trBadge">ESV</span></h1>
+      <div class="eyebrow">New entry</div><h1>📖 Scripture note <span class="esv" id="trBadge">CSB</span></h1>
       <p class="sub">Type a verse reference, press Enter, and the passage appears.</p>
       <div class="card">
         <label style="margin-top:0">Title</label><input data-f="title" placeholder="e.g. Sermon on anxiety, Reading in Philippians">
@@ -672,7 +673,7 @@
         <div class="db"><div class="ic">💭</div><div class="meta"><b>Thoughts</b><span>Title · Category · Mood · Tags · Body · Date</span></div><span class="ok notion-st">● Connected</span></div>
         <div class="db"><div class="ic">📝</div><div class="meta"><b>Notes</b><span>Title · Folder · Link · Body · Date</span></div><span class="ok notion-st">● Connected</span></div>
         <div class="db"><div class="ic">🤝</div><div class="meta"><b>Meetings</b><span>Title · Type · People · Notes · Actions · Follow-up</span></div><span class="ok notion-st">● Connected</span></div>
-        <div class="db"><div class="ic">📖</div><div class="meta"><b>Scripture Notes</b><span>Title · Passages · Notes with ESV text · Tags · Date</span></div><span class="ok notion-st">● Connected</span></div>
+        <div class="db"><div class="ic">📖</div><div class="meta"><b>Scripture Notes</b><span>Title · Passages · Notes with verse text · Tags · Date</span></div><span class="ok notion-st">● Connected</span></div>
         <div class="db"><div class="ic">☀️</div><div class="meta"><b>Daily Office</b><span>Day · Psalm · Proverb · NT chapter · Reflections · Intention</span></div><span class="ok notion-st">● Connected</span></div>
         <div class="db"><div class="ic">🌙</div><div class="meta"><b>Examen</b><span>Date · Gratitude · Emotions · Prayer · Tomorrow</span></div><span class="ok notion-st">● Connected</span></div>
       </div>
@@ -793,7 +794,7 @@
     thought:{icon:'💭',title:'Thoughts',sub:'Everything on your mind, personal and work.',btn:'New Thought',tag:'t-thought',label:'Thought'},
     note:{icon:'📝',title:'Notes',sub:'Quick captures, links and ideas.',btn:'New Note',tag:'t-note',label:'Note'},
     meeting:{icon:'🤝',title:'Meetings',sub:'Who you met, how long, and what comes next.',btn:'New Meeting',tag:'t-meeting',label:'Meeting'},
-    scripture:{icon:'📖',title:'Scripture Notes',sub:'Notes with passages pulled from the ESV.',btn:'New Scripture Note',tag:'t-scripture',label:'Scripture'},
+    scripture:{icon:'📖',title:'Scripture Notes',sub:'Notes with passages pulled from your Bible.',btn:'New Scripture Note',tag:'t-scripture',label:'Scripture'},
     office:{icon:'☀️',title:'Morning Office',sub:'Your morning times in the Word and prayer.',btn:'Begin Morning Office',tag:'t-office',label:'Office'},
     examen:{icon:'🌙',title:'Daily Examen',sub:'Looking back on each day with God.',btn:'Begin Examen',tag:'t-examen',label:'Examen'}
   };
@@ -817,8 +818,8 @@
   let ENTRIES=sb?[]:[
     ['meeting','Launch Global team sync','2:30–3:15 pm · 45 min · 3 people · 2 action items','Today · 2:30 pm',1,
       kv('When','Fri, Oct 23 · 2:30–3:15 pm (45 min)')+kv('Type','Team')+kv('People','Maria, Dan, Priya')+kv('Notes','Reviewed fall training schedule. Maria will lead the new-cohort orientation. We need a clearer follow-up process for partner churches.')+kv('Action items','☐ Send updated schedule to the team<br>☐ Draft follow-up email template')+kv('Follow up by','Fri, Oct 30')],
-    ['scripture','Philippians 4 reflection','2 verses · ESV','Today · 12:10 pm',1,
-      '<div class="vtext"><b>📖 Philippians 4:6–7</b><br>“do not be anxious about anything, but in everything by prayer and supplication with thanksgiving let your requests be made known to God. And the peace of God, which surpasses all understanding, will guard your hearts and your minds in Christ Jesus.” (ESV)</div>'+kv('Notes','Paul says everything, not just the big things. Practice: turn each worry into a specific request before lunch.')+kv('Tags','anxiety, prayer')],
+    ['scripture','Philippians 4 reflection','2 verses','Today · 12:10 pm',1,
+      '<div class="vtext"><b>📖 Philippians 4:6–7</b><br>“do not be anxious about anything, but in everything by prayer and supplication with thanksgiving let your requests be made known to God. And the peace of God, which surpasses all understanding, will guard your hearts and your minds in Christ Jesus.” (sample)</div>'+kv('Notes','Paul says everything, not just the big things. Practice: turn each worry into a specific request before lunch.')+kv('Tags','anxiety, prayer')],
     ['thought','Training idea for new missions cohort','Work · 🎧 voice · Start with story, not strategy…','Today · 11:05 am',1,
       kv('Category','Work')+kv('Mood','🔥 Energized')+kv('Thought','Start the first session with stories of ordinary people who said yes, not with strategy. Strategy lands better once people feel the why. Maybe each trainee brings one story from their own life.')+kv('Tags','training, vision')+'<div class="kv"><b>Audio</b><span><span class="audio-chip">🎧 0:48 recording</span></span></div>'],
     ['note','Book to read: The Common Rule','Reading list','Today · 8:40 am',0,
@@ -841,8 +842,8 @@
       kv('Category','Personal')+kv('Mood','😔 Heavy')+kv('Thought','I keep skipping the Sabbath because there is always one more thing. I want to plan the day in advance, and tell someone, so it is not only willpower.')+kv('Tags','rest, rhythm')],
     ['meeting','Coffee with Sam','Mon · 9:00–10:00 am · 1 hr · follow up on trip','Mon · 9:00 am',1,
       kv('When','Mon, Oct 19 · 9:00–10:00 am (1 hr)')+kv('Type','1-on-1')+kv('People','Sam')+kv('Notes','Sam is considering the spring trip. Wants to understand costs and time off work. Asked for prayer around the decision.')+kv('Action items','☑ Send trip budget sheet<br>☐ Check in after he prays about it')],
-    ['scripture','Sermon notes: Trusting in uncertainty','3 verses · ESV','Sun · 12:30 pm',1,
-      '<div class="vtext"><b>📖 Proverbs 3:5–6</b><br>“Trust in the LORD with all your heart, and do not lean on your own understanding. In all your ways acknowledge him, and he will make straight your paths.” (ESV)</div>'+kv('Notes','Three points: trust is a daily choice, understanding is limited, God directs paths as we acknowledge him.')],
+    ['scripture','Sermon notes: Trusting in uncertainty','3 verses','Sun · 12:30 pm',1,
+      '<div class="vtext"><b>📖 Proverbs 3:5–6</b><br>“Trust in the LORD with all your heart, and do not lean on your own understanding. In all your ways acknowledge him, and he will make straight your paths.” (sample)</div>'+kv('Notes','Three points: trust is a daily choice, understanding is limited, God directs paths as we acknowledge him.')],
     ['thought','What I want the podcast to feel like','Work · Unhurried, honest, hopeful…','Last week',1,
       kv('Category','Work')+kv('Thought','Unhurried, honest and hopeful. Real stories, no polish for polish’s sake. Short intro, long listening.')+kv('Tags','podcast')],
     ['note','Questions for next training','Inbox','Last week',1,
@@ -943,7 +944,7 @@
   $('#mDate').value=ld.getFullYear()+'-'+p2(ld.getMonth()+1)+'-'+p2(ld.getDate());
   $('#mTime').value=p2(ld.getHours())+':'+p2(Math.floor(ld.getMinutes()/15)*15);mEnd();
 
-  // Scripture lookup (mockup: sample verses; real build calls the ESV API)
+  // Scripture lookup (demo mode uses a few sample verses; signed in, it calls the scripture function)
   const ESV={
     'john 3:16':'For God so loved the world, that he gave his only Son, that whoever believes in him should not perish but have eternal life.',
     'psalm 23:1-3':'The LORD is my shepherd; I shall not want. He makes me lie down in green pastures. He leads me beside still waters. He restores my soul. He leads me in paths of righteousness for his name’s sake.',
@@ -956,7 +957,7 @@
     const m=line.trim().match(REF);if(!m)return null;
     const ref=m[1].replace(/\b\w/g,c=>c.toUpperCase())+' '+m[2]+(m[3]?':'+m[3]+(m[4]?'–'+m[4]:''):'');
     const key=ref.toLowerCase().replace('–','-').replace(/^psalms/,'psalm');
-    return {ref,text:ESV[key]||'[ESV text for '+ref+' loads here from the API]',known:!!ESV[key]};
+    return {ref,text:ESV[key]||'[Sample text for '+ref+' appears here]',known:!!ESV[key]};
   }
   const scr=$('#scrText');
   const TRANS=['CSB','NIV','NLT'];
@@ -965,7 +966,7 @@
   const LCACHE={};let SCR_COPY={};
   function renderTrans(){
     $$('#transChips .chip').forEach(c=>c.classList.toggle('on',c.dataset.tr===trans));
-    $('#trBadge').textContent=sb?trans:'ESV';
+    $('#trBadge').textContent=sb?trans:'';
     $('#transRow').style.display=sb?'':'none';
     $('#scrHint').textContent=sb?'Verses come from API.Bible. Pick CSB, NIV or NLT above, or tap “Also in…” after a lookup to compare.':'Demo mode uses a few sample verses.';
   }
@@ -1009,7 +1010,7 @@
     const line=before.slice(start),hit=lookup(line);if(!hit)return;
     e.preventDefault();
     if(sb){insertLookup(line,start,pos);return}
-    const ins='📖 '+hit.ref+'\n“'+hit.text+'” (ESV)\n\n';
+    const ins='📖 '+hit.ref+'\n“'+hit.text+'” (sample)\n\n';
     scr.value=before.slice(0,start)+ins+scr.value.slice(pos);
     scr.selectionStart=scr.selectionEnd=start+ins.length;
     showVerseTools(hit);
@@ -1135,7 +1136,7 @@
       return;
     }
     const nx=NEXT[keyOf(hit.ref)];
-    $('#lookupStatus').textContent='✓ '+hit.ref+' added from the ESV';
+    $('#lookupStatus').textContent='✓ '+hit.ref+' added';
     $('#verseTools').innerHTML=`<button type="button" class="mini" data-vt="next" ${nx?'':'disabled'}>＋ Next verse</button><button type="button" class="mini" data-vt="chap">📖 Whole chapter</button>`;
   }
   $('#verseTools').onclick=async e=>{
@@ -1153,12 +1154,12 @@
     }
     if(b.dataset.vt==='next'){
       const nx=NEXT[keyOf(lastHit.ref)];if(!nx)return;
-      scr.value+=(scr.value&&!scr.value.endsWith('\n')?'\n':'')+'📖 '+nx.ref+'\n“'+nx.text+'” (ESV)\n\n';
+      scr.value+=(scr.value&&!scr.value.endsWith('\n')?'\n':'')+'📖 '+nx.ref+'\n“'+nx.text+'” (sample)\n\n';
       showVerseTools(nx);
     }
     if(b.dataset.vt==='chap'){
       const name=lastHit.ref.replace(/:.*$/,''),v=(lastHit.ref.match(/:(\d+)/)||[])[1]||'';
-      $('#chapterPanel').innerHTML=`<div class="chap-h"><b>${name} · ESV</b><button type="button" class="mini" data-vt="close">Close</button></div><div class="skel"></div><div class="skel s"></div><p class="hl"><sup>${v}</sup>${lastHit.text}</p><div class="skel"></div><div class="skel s"></div><p class="hint" style="margin:6px 0 0">The full chapter loads from the ESV API in the real build.</p>`;
+      $('#chapterPanel').innerHTML=`<div class="chap-h"><b>${name}</b><button type="button" class="mini" data-vt="close">Close</button></div><div class="skel"></div><div class="skel s"></div><p class="hl"><sup>${v}</sup>${lastHit.text}</p><div class="skel"></div><div class="skel s"></div><p class="hint" style="margin:6px 0 0">The full chapter loads from the ESV API in the real build.</p>`;
       $('#chapterPanel').classList.add('open');
     }
   };
@@ -2022,7 +2023,7 @@
       return {title,summary:[timeRange(body),durLabel(body.dur),people.length+' '+(people.length===1?'person':'people'),actions.length+' action item'+(actions.length===1?'':'s')].filter(Boolean).join(' · '),body}},
     scripture(){const text=$('#scrText').value.trim(),title=F('scripture','title');if(!text&&!title)return null;
       const v=(text.match(/^📖/gm)||[]).length,trs=[...new Set((text.match(/\((CSB|NIV|NLT|ESV)\)/g)||[]).map(x=>x.slice(1,-1)))];
-      return {title:title||snip(text.replace(/^📖\s*/,'').split('\n')[0],50),summary:v?v+' verse'+(v>1?'s':'')+' · '+(trs.join(', ')||'ESV'):snip(text),body:{text,tags:$('#scrTags').value.trim(),copyright:Object.values(SCR_COPY).filter(Boolean),pushNotion:$('#s1c').checked}}},
+      return {title:title||snip(text.replace(/^📖\s*/,'').split('\n')[0],50),summary:v?v+' verse'+(v>1?'s':'')+' · '+(trs.join(', ')||'Scripture'):snip(text),body:{text,tags:$('#scrTags').value.trim(),copyright:Object.values(SCR_COPY).filter(Boolean),pushNotion:$('#s1c').checked}}},
     office(){const t=$$('#office-new textarea').map(x=>x.value.trim()),pl=planFor(PLAN_DAY);
       return {title:'Morning Office — Day '+PLAN_DAY,summary:pl.psalm+' · '+pl.proverb+' · '+pl.nt,body:{day:PLAN_DAY,psalmRef:pl.psalm,proverbRef:pl.proverb,ntRef:pl.nt,psalm:t[0],proverb:t[1],nt:t[2],praying:t[3],intention:t[4],pushNotion:$('#o1').checked}}},
     examen(){const t=$$('#examen-new textarea').map(x=>x.value.trim()),emo=$$('#examen-new .emo .chip.on').map(c=>c.textContent).join(', ');
