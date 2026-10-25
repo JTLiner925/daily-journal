@@ -224,7 +224,10 @@
   .stars{letter-spacing:1px;white-space:nowrap}.stars .off{opacity:.22}
   .st-beginner{color:#3b82f6}.st-intermediate{color:#cd7f32}.st-expert{color:#a7b0bd}.st-pro{color:#f2c230}
   .legend{display:flex;gap:6px 18px;flex-wrap:wrap;font-size:15px}
-  .achrow{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:6px;font-size:16px}.achrow .hint{margin:0;font-size:12px;min-width:92px}
+  .achrow{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px;font-size:15px}.achrow .hint{margin:0;font-size:12px;min-width:92px}
+  .ach{display:inline-flex;gap:7px;align-items:center;border:1px solid var(--line);border-radius:99px;padding:2px 10px;background:var(--card)}
+  .ach .lvn{font-size:11px;text-transform:uppercase;letter-spacing:.05em;font-weight:700}
+  .ach .tm{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
   .blank.rej{animation:shake .45s;border-color:#d86a6a;background:rgba(216,106,106,.28)}
   @keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-5px)}40%{transform:translateX(5px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
   .mhead{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:8px 0 4px}
@@ -1634,7 +1637,7 @@
       if(ab){const pane=ab.closest('.mpane'),a=ab.getBoundingClientRect(),b=pane.getBoundingClientRect();if(a.top<b.top+8||a.bottom>b.bottom-8)pane.scrollTop+=(a.top-b.top)-pane.clientHeight/3}
       return;
     }
-    const prog=r=>{const pr=normProg(r.progress);return ['words','letters'].map(m=>{const cells=LEVELS.filter(l=>pr[m][l[0]]).map(l=>{const x=pr[m][l[0]];return x.s>0?`<span class="ach" title="${l[1]} · ${x.a}% · ${fmtDur(x.t)}">${starTrio(l[0],x.s)}</span>`:`<span class="ach" title="${l[1]} · ${x.a}%">${x.e||'😅'}</span>`}).join(' ');return cells?`<div class="achrow"><span class="hint">${m==='words'?'Missing words':'First letters'}</span>${cells}</div>`:''}).join('')};
+    const prog=r=>{const pr=normProg(r.progress);return ['words','letters'].map(m=>{const cells=LEVELS.filter(l=>pr[m][l[0]]).map(l=>{const x=pr[m][l[0]];return `<span class="ach" title="Best ${l[1]} result: ${x.a}% in ${fmtDur(x.t)}"><span class="lvn ${STARCLS[l[0]]}">${l[1]}</span>${x.s>0?starTrio(l[0],x.s):`<span>${x.e||'😅'}</span>`}<span class="tm">${fmtDur(x.t)}</span></span>`}).join(' ');return cells?`<div class="achrow"><span class="hint">${m==='words'?'Missing words':'First letters'}</span>${cells}</div>`:''}).join('')};
     const learning=MEMP.filter(p=>p.status==='learning'),done=MEMP.filter(p=>p.status==='memorized').sort((a,b)=>String(a.next_review).localeCompare(String(b.next_review)));
     let h='<div class="eyebrow">Hide it in your heart</div><h1>🧠 Memorize</h1><p class="sub">Study a passage two ways, then keep it fresh with reviews.</p>';
     if(!MEM_OK)h+='<p class="hint" style="color:var(--gold)">One setup step is missing: run supabase/memory.sql in Supabase (see the README), then reload.</p>';
