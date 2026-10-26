@@ -33,6 +33,10 @@
     --tc-thought:#946d12; --tc-note:#3e6fb0; --tc-meeting:#2f7d5c; --tc-scripture:#7a56b8; --tc-office:#c2662a; --tc-examen:#4b57b8;
   }
   *{box-sizing:border-box}
+  html{touch-action:pan-y pinch-zoom;overscroll-behavior-x:none}
+  body{overflow-x:hidden;overflow-x:clip;max-width:100%}
+  input[type=date],input[type=time]{min-width:0;max-width:100%}
+  .row2>*{min-width:0}
   body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.5}
   h1,h2,h3{font-family:var(--head);font-weight:var(--head-w);letter-spacing:var(--head-ls);margin:0}
   button{font:inherit;cursor:pointer}
@@ -205,11 +209,11 @@
   .chgrid{margin-top:6px}.chnums{display:flex;flex-wrap:wrap;gap:6px;max-height:210px;overflow:auto;padding:2px}
   .chn{min-width:44px;height:40px;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:10px;font-size:15px}
   .chn.on,.chn:hover{border-color:var(--accent);background:var(--accent-soft)}
-  .bnav{position:fixed;bottom:132px;left:12px;z-index:6;width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:var(--card);color:var(--ink);font-size:28px;line-height:1;padding:0 0 4px;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 18px var(--shadow)}
-  .bnav.r{left:auto;right:12px}.bnav:hover{border-color:var(--accent)}
+  .bnav{position:fixed;bottom:132px;left:max(12px,env(safe-area-inset-left));z-index:6;width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:var(--card);color:var(--ink);font-size:28px;line-height:1;padding:0 0 4px;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 18px var(--shadow)}
+  .bnav.r{left:auto;right:max(12px,env(safe-area-inset-right))}.bnav:hover{border-color:var(--accent)}
   @media(min-width:761px){.bnav{bottom:28px;left:calc(230px + 18px)}.bnav.r{left:calc(230px + 72px);right:auto}}
   @media(max-width:1099px){
-    .vbar{position:fixed;left:8px;right:8px;bottom:72px;top:auto;z-index:7;flex-direction:column;align-items:stretch;flex-wrap:nowrap;gap:8px;margin:0;padding:10px 12px 12px;border-radius:18px;box-shadow:0 -6px 28px var(--shadow)}
+    .vbar{position:fixed;left:max(8px,env(safe-area-inset-left));right:max(8px,env(safe-area-inset-right));bottom:72px;top:auto;z-index:7;flex-direction:column;align-items:stretch;flex-wrap:nowrap;gap:8px;margin:0;padding:10px 12px 12px;border-radius:18px;box-shadow:0 -6px 28px var(--shadow)}
     .vtop{justify-content:space-between}.vlabel{font-size:13px}
     .vrow{flex-wrap:nowrap;overflow-x:auto;gap:8px;padding-bottom:2px;-webkit-overflow-scrolling:touch}
     .vrow>*{flex:none}.vsw{gap:8px}.swc{width:34px;height:34px}
@@ -1208,7 +1212,7 @@
   const inRange=(id,str)=>{const [a,b]=String(str||'').split('-');const k=vkey(id);return !!a&&k>=vkey(a)&&k<=vkey(b||a)};
   const R={trans:'CSB',book:'JHN',ch:3,notes:false,heads:true,sel:new Set(),data:null,cmp:{},search:null,last:null,req:0};
   try{const sv=JSON.parse(localStorage.getItem('jr-read')||'{}');if(TRANS.includes(sv.trans))R.trans=sv.trans;if(BKI[sv.book]!==undefined){R.book=sv.book;R.ch=Math.max(1,Math.min(sv.ch||1,BK[BKI[sv.book]][2]))}}catch(e){}
-  R.panelOpen=false;R.showLink=false;
+  R.panelOpen=false;R.showLink=false;R.panelMode='';
   let HL={},LINKS=[],STUDY_OK=true,VT={},bibleStarted=false;
   const saveRead=()=>{try{localStorage.setItem('jr-read',JSON.stringify({trans:R.trans,book:R.book,ch:R.ch}))}catch(e){}};
   $('#bBook').innerHTML='<optgroup label="Old Testament">'+BK.slice(0,39).map(b=>`<option value="${b[0]}">${b[1]}</option>`).join('')+'</optgroup><optgroup label="New Testament">'+BK.slice(39).map(b=>`<option value="${b[0]}">${b[1]}</option>`).join('')+'</optgroup>';
@@ -1367,19 +1371,29 @@
     const seenL=new Set(),links=ids.flatMap(v=>linksFor(v)).filter(l=>!seenL.has(l.id)&&seenL.add(l.id));
     const fns=(R.data&&R.data.notes||[]).map((n,i)=>({...n,i})).filter(n=>ids.includes(n.v));
     const cmp=R.cmp[key];
-    let h=`<div class="pagehead" style="margin:0"><h3>${esc(lab)}</h3><button class="mini pclose" data-pa="closepanel" aria-label="Close">✕</button></div><div class="hint">${esc(R.trans)}</div>`;
-    h+='<h4>Compare versions</h4>';
-    if(!cmp)h+='<button class="mini" data-pa="cmp">⚖️ Show in CSB, NIV and NLT</button>';
-    else if(cmp.loading)h+='<p class="hint">Loading…</p>';
-    else if(cmp.error)h+=`<p class="hint" style="color:var(--gold)">${esc(cmp.error)}</p>`;
-    else h+=TRANS.map(t=>{const r=cmp[t]||{};return r.error?`<div class="cmpi"><b>${t}</b> <span class="hint">${esc(r.error)}</span></div>`:`<div class="cmpi"><b>${t}</b> ${esc(r.text)}<div class="hint" style="font-size:11px;margin:2px 0 0">${esc(r.copyright)}</div></div>`}).join('');
-    h+=`<h4>My notes (${notes.length})</h4>`;
-    h+=notes.map(n=>`<div class="pn"><div class="pnh"><span>${esc(new Date(n.created_at).toLocaleDateString([],{month:'short',day:'numeric'}))} · ${esc(n.body.refLabel||'')} ${n.body.translation?'('+esc(n.body.translation)+')':''}${n.pending?' · waiting to save':''}</span><button class="mini" data-del="${esc(n.id)}">Delete</button></div>${nl(n.body.note||n.body.text)}</div>`).join('');
-    h+=`<textarea id="pNote" placeholder="Add a note on ${esc(lab)}…"></textarea><div class="toggle" style="margin-top:8px"><input type="checkbox" id="pPush" checked><label for="pPush" style="margin:0;text-transform:none;letter-spacing:0;font-size:13px;color:var(--ink)">Also send to Notion</label></div><div class="actions" style="margin-top:8px"><button class="btn ghost" data-pa="linkform">🔗 Add link</button><button class="btn" data-pa="note">Save note</button></div>`;
-    if(R.showLink)h+=`<h4>Link ${esc(lab)} to another verse</h4><input id="pLinkRef" placeholder="e.g. Romans 5:8"><input id="pLinkNote" placeholder="Why are they connected? (optional)"><div class="actions" style="margin-top:8px"><button class="btn ghost" data-pa="linkcancel">Cancel</button><button class="btn" data-pa="link">Add</button></div>`;
-    h+=`<h4>Linked verses (${links.length})</h4>`;
-    h+=links.map(l=>{const here=ids.some(v=>inRange(v,l.a)),other=here?l.b:l.a;const [o1,o2]=other.split('-');return `<div class="pl"><button class="plink" data-pa="jump" data-range="${esc(other)}">${esc(vlabel(o1,o2))}</button>${l.note?' · '+esc(l.note):''} <button class="mini" data-pa="dellink" data-id="${esc(l.id)}" style="float:right">Remove</button></div>`}).join('');
-    if(fns.length)h+='<h4>Footnotes</h4><p class="fnline">'+fns.map(n=>`<b>${String.fromCharCode(97+(n.i%26))}</b> ${esc(n.t)}`).join('  ')+'</p>';
+    const narrow=window.innerWidth<1100,m=narrow?(R.panelMode||'note'):'all';
+    const show={cmp:m==='all'||m==='cmp',note:m==='all'||m==='note',link:m==='all'||m==='link',fn:m==='all'};
+    const linkOpen=m==='link'||(m==='all'&&R.showLink),head=t=>m==='all'?`<h4>${t}</h4>`:'';
+    let h=`<div class="pagehead" style="margin:0"><h3>${esc(lab)}</h3><button class="mini pclose" data-pa="closepanel" aria-label="Close">✕</button></div><div class="hint">${esc(R.trans)}${narrow?' · '+({cmp:'Compare versions',note:'Notes',link:'Linked verses'})[m]:''}</div>`;
+    if(show.cmp){
+      h+=head('Compare versions');
+      if(!cmp)h+='<button class="mini" data-pa="cmp">⚖️ Show in CSB, NIV and NLT</button>';
+      else if(cmp.loading)h+='<p class="hint">Loading…</p>';
+      else if(cmp.error)h+=`<p class="hint" style="color:var(--gold)">${esc(cmp.error)}</p>`;
+      else h+=TRANS.map(t=>{const r=cmp[t]||{};return r.error?`<div class="cmpi"><b>${t}</b> <span class="hint">${esc(r.error)}</span></div>`:`<div class="cmpi"><b>${t}</b> ${esc(r.text)}<div class="hint" style="font-size:11px;margin:2px 0 0">${esc(r.copyright)}</div></div>`}).join('');
+    }
+    if(show.note){
+      h+=head(`My notes (${notes.length})`);
+      h+=notes.map(n=>`<div class="pn"><div class="pnh"><span>${esc(new Date(n.created_at).toLocaleDateString([],{month:'short',day:'numeric'}))} · ${esc(n.body.refLabel||'')} ${n.body.translation?'('+esc(n.body.translation)+')':''}${n.pending?' · waiting to save':''}</span><button class="mini" data-del="${esc(n.id)}">Delete</button></div>${nl(n.body.note||n.body.text)}</div>`).join('');
+      h+=`<textarea id="pNote" placeholder="Add a note on ${esc(lab)}…"></textarea><div class="toggle" style="margin-top:8px"><input type="checkbox" id="pPush" checked><label for="pPush" style="margin:0;text-transform:none;letter-spacing:0;font-size:13px;color:var(--ink)">Also send to Notion</label></div><div class="actions" style="margin-top:8px">${m==='all'?'<button class="btn ghost" data-pa="linkform">🔗 Add link</button>':''}<button class="btn" data-pa="note">Save note</button></div>`;
+    }
+    if(show.link){
+      if(linkOpen)h+=`${m==='all'?`<h4>Link ${esc(lab)} to another verse</h4>`:''}<input id="pLinkRef" placeholder="Link to… e.g. Romans 5:8"><input id="pLinkNote" placeholder="Why are they connected? (optional)"><div class="actions" style="margin-top:8px">${m==='all'?'<button class="btn ghost" data-pa="linkcancel">Cancel</button>':''}<button class="btn" data-pa="link">Add link</button></div>`;
+      h+=head(`Linked verses (${links.length})`);
+      if(m!=='all'&&!links.length)h+='<p class="hint" style="margin-top:10px">No links on this verse yet.</p>';
+      h+=links.map(l=>{const here=ids.some(v=>inRange(v,l.a)),other=here?l.b:l.a;const [o1,o2]=other.split('-');return `<div class="pl"><button class="plink" data-pa="jump" data-range="${esc(other)}">${esc(vlabel(o1,o2))}</button>${l.note?' · '+esc(l.note):''} <button class="mini" data-pa="dellink" data-id="${esc(l.id)}" style="float:right">Remove</button></div>`}).join('');
+    }
+    if(show.fn&&fns.length)h+='<h4>Footnotes</h4><p class="fnline">'+fns.map(n=>`<b>${String.fromCharCode(97+(n.i%26))}</b> ${esc(n.t)}`).join('  ')+'</p>';
     p.innerHTML=h;
   }
   async function addVerseNote(){
@@ -1421,18 +1435,18 @@
     const v=el.dataset.v;
     if(e.shiftKey&&R.last&&R.last!==v){const vs=chapterVerses(),i=vs.indexOf(R.last),j=vs.indexOf(v);if(i>=0&&j>=0)vs.slice(Math.min(i,j),Math.max(i,j)+1).forEach(x=>R.sel.add(x))}
     else if(R.sel.has(v))R.sel.delete(v);else R.sel.add(v);
-    if(!R.sel.size){R.panelOpen=false;R.showLink=false}
+    if(!R.sel.size){R.panelOpen=false;R.showLink=false;R.panelMode=''}
     R.last=v;applyMarks();renderBar();renderPanel();placePanel(true);
   });
   $('#bBar').addEventListener('click',e=>{
     const hl=e.target.closest('[data-hl]');if(hl){setHL(hl.dataset.hl);return}
     const b=e.target.closest('[data-bar]');if(!b)return;
     const act=b.dataset.bar;
-    if(act==='clear'){R.sel.clear();R.showLink=false;R.panelOpen=false;applyMarks();renderBar();renderPanel();placePanel(false)}
+    if(act==='clear'){R.sel.clear();R.showLink=false;R.panelOpen=false;R.panelMode='';applyMarks();renderBar();renderPanel();placePanel(false)}
     if(act==='copy')doCopy();if(act==='share')doShare();
-    if(act==='cmp'){R.panelOpen=true;doCompare();placePanel(true)}
-    if(act==='note'){R.panelOpen=true;renderPanel();placePanel(true);setTimeout(()=>{const t=$('#pNote');if(t)t.focus({preventScroll:true})},150)}
-    if(act==='link'){R.panelOpen=true;R.showLink=true;renderPanel();placePanel(true);setTimeout(()=>{const t=$('#pLinkRef');if(t)t.focus({preventScroll:true})},150)}
+    if(act==='cmp'){R.panelOpen=true;R.panelMode='cmp';doCompare();placePanel(true)}
+    if(act==='note'){R.panelOpen=true;R.panelMode='note';renderPanel();placePanel(true);setTimeout(()=>{const t=$('#pNote');if(t)t.focus({preventScroll:true})},150)}
+    if(act==='link'){R.panelOpen=true;R.panelMode='link';R.showLink=true;renderPanel();placePanel(true);setTimeout(()=>{const t=$('#pLinkRef');if(t)t.focus({preventScroll:true})},150)}
   });
   document.addEventListener('click',e=>{const g=e.target.closest('[data-gov]');if(g){e.stopPropagation();go('bible');goVerse(g.dataset.gov)}});
   $('#bPanel').addEventListener('click',e=>{
@@ -1440,7 +1454,7 @@
     if(a==='cmp')doCompare();if(a==='note')addVerseNote();if(a==='link')addVerseLink();
     if(a==='linkform'){R.showLink=!R.showLink;renderPanel();if(R.showLink){const t=$('#pLinkRef');if(t)t.focus({preventScroll:true})}}
     if(a==='linkcancel'){R.showLink=false;renderPanel()}
-    if(a==='closepanel'){R.panelOpen=false;R.showLink=false;placePanel(false)}
+    if(a==='closepanel'){R.panelOpen=false;R.showLink=false;R.panelMode='';placePanel(false)}
     if(a==='jump')goVerse(b.dataset.range);if(a==='sjump')goVerse(b.dataset.id);
     if(a==='dellink')delVerseLink(b.dataset.id);if(a==='closesearch'){R.search=null;renderPanel()}
   });
