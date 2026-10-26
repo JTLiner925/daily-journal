@@ -59,7 +59,7 @@ function build(r: any) {
         ? { date: { start, end: b.dur ? addMin(b.date, b.time, +b.dur) : undefined, time_zone: TZ } }
         : { date: { start: b.date || r.created_at } };
       return {
-        props: { Title: title(r.title), When: date, "Duration (min)": { number: b.dur ? +b.dur : null }, Type: sel(b.type), People: multi(b.people || []), "Follow up by": { date: b.followUp ? { start: b.followUp } : null }, "Open action items": { number: acts.filter((a) => !a.done).length }, Comments: text(b.text), ...base },
+        props: { Title: title(r.title), When: date, "Duration (min)": { number: b.dur ? +b.dur : null }, Type: sel(b.type), People: multi(b.people || []), "Follow up by": { date: b.followUp ? { start: b.followUp } : null }, "Open action items": { number: acts.filter((a) => !a.done).length }, "Action items": text(acts.map((a) => `${a.done ? "☑" : "☐"} ${a.t}`).join("\n")), Comments: text(b.text), ...base },
         kids: [...paras(b.text), ...(acts.length ? [head("Action items"), ...acts.map((a) => todo(a.t, a.done))] : [])],
       };
     }
