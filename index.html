@@ -80,6 +80,8 @@
   .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
   .tile{background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:var(--radius);padding:18px;text-align:left;transition:.15s}
   .tile:hover{border-color:var(--accent);transform:translateY(-2px)}
+  .tile{position:relative}.tilestreak{position:absolute;top:12px;right:12px;font-style:normal;padding:2px 10px;font-size:13px}
+  .btn.done{opacity:.4;pointer-events:none;cursor:default}
   .tile .ic{font-size:22px}.tile b{display:block;font-family:var(--serif);font-size:18px;font-weight:500;margin-top:6px}
   .tile span{font-size:13px;color:var(--muted)}
   .examen-card{background:linear-gradient(135deg,var(--hero-a),var(--hero-b));color:var(--hero-ink);border:0;display:flex;gap:18px;align-items:center;justify-content:space-between;flex-wrap:wrap}
@@ -411,15 +413,15 @@
         <button class="tile" onclick="go('meeting-new')"><div class="ic">🤝</div><b>Meeting</b><span>People & next steps</span></button>
         <button class="tile" onclick="go('bible')"><div class="ic">📜</div><b>Bible</b><span>Read, highlight, study</span></button>
         <button class="tile" onclick="go('scripture-new')"><div class="ic">📖</div><b>Scripture note</b><span>Verses auto-fill</span></button>
-        <button class="tile" onclick="go('memory')"><div class="ic">🧠</div><b>Memorize</b><span>Learn it by heart</span></button>
+        <button class="tile" onclick="go('memory')"><div class="ic">🧠</div><b>Memorize</b><span>Learn it by heart</span><i class="streakchip tilestreak" id="memTileStreak" title="Days in a row you’ve finished a memory challenge">⚡ <b>0</b></i></button>
       </div>
       <div class="card examen-card hero2" style="margin-bottom:12px">
         <div><h3>☀️ Morning Office</h3><p id="homeReading">Start the day with Scripture and prayer. About 10 minutes.</p><p id="homeIntent"></p></div>
-        <button class="btn" onclick="go('office-new')">Begin</button>
+        <button class="btn" id="officeBtn" onclick="go('office-new')">Begin</button>
       </div>
       <div class="card examen-card">
         <div><h3>🌙 Tonight's Examen</h3><p>Five quiet steps to look back on your day with God. About 10 minutes.</p></div>
-        <button class="btn" onclick="go('examen-new')">Begin</button>
+        <button class="btn" id="examenBtn" onclick="go('examen-new')">Begin</button>
       </div>
       <div class="card" id="weekCard"></div>
       <div class="card" id="followCard"></div>
@@ -901,7 +903,7 @@
         <div class="prog"><span>New Testament · ${doneToday?PLAN_DAY:PLAN_DAY-1} of ${NT_CH.length} chapters</span><div class="bar"><i style="width:${((doneToday?PLAN_DAY:PLAN_DAY-1)/NT_CH.length*100).toFixed(1)}%"></i></div></div>
         <div class="hint">Tomorrow: ${tmrw.psalm} · ${tmrw.proverb} · ${tmrw.nt}. The plan moves forward each day you finish it, starting in Matthew 1.</div></div>`;
     $('#'+k).innerHTML=`<div class="eyebrow">${s.title}</div>
-      <div class="pagehead"><h1>${s.icon} ${s.title}</h1><button class="btn" onclick="go('${k}-new')">+ ${s.btn}</button></div>
+      <div class="pagehead"><h1>${s.icon} ${s.title}</h1><button class="btn" id="hb-${k}" onclick="go('${k}-new')">+ ${s.btn}</button></div>
       <p class="sub" style="margin-top:6px">${s.sub}</p>${(k==='office'||k==='examen')?`<div class="streakline"><span class="streakchip">⚡ <b>${WEEK.both||0}</b> day streak</span><span class="hint">Counts only on days you finish both the Morning Office and the Examen.</span></div>`:''}${plan}
       <div class="card">${listHTML(ENTRIES.filter(e=>e[0]===k))}</div>`;
   });
@@ -1561,7 +1563,7 @@
     S.fill={};S.active=S.blanks[0];
   }
   async function finishExercise(acc){
-    const S=MS;if(!S||S.done)return;S.done=true;
+    const S=MS;if(!S||S.done)return;S.done=true;if(typeof markMemDay==='function')markMemDay();
     const secs=Math.max(1,Math.round((Date.now()-(S.startAt||Date.now()))/1000)),stars=starsFor(acc),row=S.row;
     const prog=normProg(row.progress),cur=prog[S.mode][S.level];
     prog.hist=[...prog.hist,{m:S.mode,l:S.level,s:stars,a:Math.round(acc),t:secs,d:new Date().toISOString(),...(stars===0?{e:FUNNY[Math.floor(Math.random()*FUNNY.length)]}:{})}].slice(-60);
@@ -1743,6 +1745,7 @@
     };
     const learning=MEMP.filter(p=>p.status==='learning'),done=MEMP.filter(p=>p.status==='memorized').sort((a,b)=>String(a.next_review).localeCompare(String(b.next_review)));
     let h='<div class="eyebrow">Hide it in your heart</div><h1>🧠 Memorize</h1><p class="sub">Study a passage two ways, then keep it fresh with reviews.</p>';
+    h+=`<div class="streakline"><span class="streakchip">⚡ <b>${memStreakN()}</b> day streak</span><span class="hint">Finish at least one challenge a day to keep it going.</span></div>`;
     if(!MEM_OK)h+='<p class="hint" style="color:var(--gold)">One setup step is missing: run supabase/memory.sql in Supabase (see the README), then reload.</p>';
     h+=`<div class="card"><h3 style="margin-bottom:6px">⭐ How stars work</h3><div class="legend"><span><span class="stars st-beginner">★★★</span> Beginner</span><span><span class="stars st-intermediate">★★★</span> Intermediate</span><span><span class="stars st-expert">★★★</span> Expert</span><span><span class="stars st-pro">★★★</span> Pro</span></div><div class="hint" style="margin-top:6px">★ = 70% or better · ★★ = 85% or better · ★★★ = 100%. Finish under 70% and you get a funny face instead. You need ★★★ at a level to unlock the next one. Earn ★★★ at Pro in both Missing words and First letters and the passage is memorized and moves to your Memorized bank. Levels you haven’t finished don’t show.</div></div>`;
     h+=`<div class="card"><h3 style="margin-bottom:6px">Add a passage</h3><div class="bctl-row"><input id="mRef" placeholder="e.g. Psalm 23:1–6 or Romans 8:28–30" style="flex:1;min-width:200px"><select id="mTr" style="width:auto">${TRANS.map(t=>`<option ${t===R.trans?'selected':''}>${t}</option>`).join('')}</select><button class="btn" data-m="add">Add</button></div></div>`;
@@ -1789,9 +1792,9 @@
 
 
   // ===== Settings that follow you across devices =====
-  const PREF_DEFAULT={rem:{office:{on:true,time:'06:30'},examen:{on:true,time:'21:00'},follow:{on:true,time:'08:00'}},days:['Mon','Tue','Wed','Thu','Fri'],bk:true,sync:'ask',opens:[],drafts:{}};
+  const PREF_DEFAULT={rem:{office:{on:true,time:'06:30'},examen:{on:true,time:'21:00'},follow:{on:true,time:'08:00'}},days:['Mon','Tue','Wed','Thu','Fri'],bk:true,sync:'ask',opens:[],drafts:{},memDays:[]};
   let PREFS=JSON.parse(JSON.stringify(PREF_DEFAULT)),prefTimer=null,PREFS_OK=true,prefRev=0,prefLoud=false;
-  const mergePrefs=p=>{const d=JSON.parse(JSON.stringify(PREF_DEFAULT));if(!p)return d;['office','examen','follow'].forEach(k=>{if(p.rem&&p.rem[k])d.rem[k]={on:p.rem[k].on!==false,time:p.rem[k].time||d.rem[k].time}});if(Array.isArray(p.days))d.days=p.days;if(typeof p.bk==='boolean')d.bk=p.bk;if(['ask','auto','manual'].includes(p.sync))d.sync=p.sync;if(Array.isArray(p.opens))d.opens=p.opens.filter(x=>typeof x==='string').slice(-400);if(p.drafts&&typeof p.drafts==='object')d.drafts=p.drafts;return d};
+  const mergePrefs=p=>{const d=JSON.parse(JSON.stringify(PREF_DEFAULT));if(!p)return d;['office','examen','follow'].forEach(k=>{if(p.rem&&p.rem[k])d.rem[k]={on:p.rem[k].on!==false,time:p.rem[k].time||d.rem[k].time}});if(Array.isArray(p.days))d.days=p.days;if(typeof p.bk==='boolean')d.bk=p.bk;if(['ask','auto','manual'].includes(p.sync))d.sync=p.sync;if(Array.isArray(p.opens))d.opens=p.opens.filter(x=>typeof x==='string').slice(-400);if(p.drafts&&typeof p.drafts==='object')d.drafts=p.drafts;if(Array.isArray(p.memDays))d.memDays=p.memDays.filter(x=>typeof x==='string').slice(-400);return d};
   function applyPrefs(){
     ['office','examen','follow'].forEach(k=>{$(`[data-rem="${k}"]`).checked=PREFS.rem[k].on;$(`[data-remt="${k}"]`).value=PREFS.rem[k].time});
     $$('[data-day]').forEach(b=>b.classList.toggle('on',PREFS.days.includes(b.dataset.day)));
@@ -1821,7 +1824,7 @@
     if(prefRev!==rev||prefTimer)return; // you changed something while this was loading
     if(error){PREFS_OK=false;$('#prefWarn').textContent='Settings can’t sync yet. Run supabase/settings.sql in Supabase (see the README).';return}
     PREFS_OK=true;$('#prefWarn').textContent='';
-    const prevOpens=PREFS.opens||[],prevDrafts=PREFS.drafts||{};PREFS=mergePrefs(data&&data.prefs);PREFS.opens=[...new Set([...prevOpens,...PREFS.opens])].sort().slice(-400);Object.keys(prevDrafts).forEach(k=>{if(!PREFS.drafts[k]||(prevDrafts[k].at||0)>(PREFS.drafts[k].at||0))PREFS.drafts[k]=prevDrafts[k]});applyPrefs();renderStreaks();
+    const prevOpens=PREFS.opens||[],prevDrafts=PREFS.drafts||{},prevMem=PREFS.memDays||[];PREFS=mergePrefs(data&&data.prefs);PREFS.memDays=[...new Set([...prevMem,...PREFS.memDays])].sort().slice(-400);PREFS.opens=[...new Set([...prevOpens,...PREFS.opens])].sort().slice(-400);Object.keys(prevDrafts).forEach(k=>{if(!PREFS.drafts[k]||(prevDrafts[k].at||0)>(PREFS.drafts[k].at||0))PREFS.drafts[k]=prevDrafts[k]});applyPrefs();renderStreaks();
   }
   $$('[data-rem],[data-remt],#bk1,#s1,#s2,#s3').forEach(el=>el.addEventListener('change',savePrefs));
   document.addEventListener('click',e=>{if(e.target.closest('[data-day]'))setTimeout(savePrefs,0)});
@@ -1849,11 +1852,13 @@
     try{localStorage.removeItem('jr-draft-'+p)}catch(e){}
     if(PREFS.drafts&&PREFS.drafts[p]){delete PREFS.drafts[p];if(sb)savePrefs(true)}
     const n=$('#draftNote-'+p);if(n)n.textContent='';
+    if(typeof refreshFlowButtons==='function')refreshFlowButtons();
   }
   function saveDraft(p){
     const d=collectDraft(p),n=$('#draftNote-'+p);
-    if(isEmptyDraft(d)){if(n)n.textContent='';return}
+    if(isEmptyDraft(d)&&!(d.step>0)){if(n)n.textContent='';try{localStorage.removeItem('jr-draft-'+p)}catch(e){}refreshFlowButtons();return}
     try{localStorage.setItem('jr-draft-'+p,JSON.stringify(d))}catch(e){}
+    refreshFlowButtons();
     if(n)n.textContent='✓ Auto-saved';
     if(sb){clearTimeout(cloudTimers[p]);cloudTimers[p]=setTimeout(()=>{PREFS.drafts=PREFS.drafts||{};PREFS.drafts[p]=d;savePrefs(true)},2500)}
   }
@@ -1861,7 +1866,7 @@
   function restoreDraft(p){
     if(allRows().some(r=>r.type===p&&sameDay(new Date(r.created_at),new Date()))){clearDraft(p);return}
     let local=null;try{local=JSON.parse(localStorage.getItem('jr-draft-'+p)||'null')}catch(e){}
-    const d=[local,PREFS.drafts&&PREFS.drafts[p]].filter(x=>x&&x.d===todayStr()&&!isEmptyDraft(x)).sort((a,b)=>b.at-a.at)[0];
+    const d=[local,PREFS.drafts&&PREFS.drafts[p]].filter(x=>x&&x.d===todayStr()&&(x.step>0||!isEmptyDraft(x))).sort((a,b)=>b.at-a.at)[0];
     if(!d)return;
     const els=draftEls(p);if(els.some(t=>t.value.trim()))return;
     d.vals.forEach((v,i)=>{if(els[i])els[i].value=v});
@@ -1871,6 +1876,44 @@
   }
   DRAFT_FLOWS.forEach(p=>$('#'+p+'-new').addEventListener('input',e=>{if(e.target.matches('.xstep > textarea'))queueDraft(p)}));
   $('#examen-new').addEventListener('click',e=>{if(e.target.closest('.emo .chip'))setTimeout(()=>queueDraft('examen'),0)});
+
+
+  // ===== Today: Begin / Continue / Done, and the Memorize streak =====
+  function flowState(p){
+    if(allRows().some(r=>r.type===p&&sameDay(new Date(r.created_at),new Date())))return 'done';
+    let local=null;try{local=JSON.parse(localStorage.getItem('jr-draft-'+p)||'null')}catch(e){}
+    const started=x=>x&&x.d===todayStr()&&(x.step>0||!isEmptyDraft(x));
+    if(started(local)||started(PREFS.drafts&&PREFS.drafts[p])||started(collectDraft(p)))return 'continue';
+    return 'begin';
+  }
+  function refreshFlowButtons(){
+    const names={office:'Morning Office',examen:'Examen'};
+    ['office','examen'].forEach(p=>{
+      const st=flowState(p);
+      const label=st==='done'?'Done ✓':st==='continue'?'Continue':'Begin';
+      const b=$('#'+p+'Btn');if(b){b.textContent=label;b.disabled=st==='done';b.classList.toggle('done',st==='done')}
+      const h=$('#hb-'+p);if(h){h.textContent=st==='done'?'Done ✓':st==='continue'?'→ Continue '+names[p]:'+ Begin '+names[p];h.disabled=st==='done';h.classList.toggle('done',st==='done')}
+    });
+  }
+  const LOCAL_MEMDAYS=(()=>{try{return JSON.parse(localStorage.getItem('jr-memdays')||'[]')}catch(e){return[]}})();
+  function memDaySet(){
+    const set=new Set([...(PREFS.memDays||[]),...LOCAL_MEMDAYS]);
+    (MEMP||[]).forEach(m=>(normProg(m.progress).hist||[]).forEach(h=>{if(h.d)set.add(ymd(new Date(h.d)))}));
+    return set;
+  }
+  function memStreakN(){
+    const set=memDaySet(),d=new Date();let n=0;
+    if(!set.has(ymd(d)))d.setDate(d.getDate()-1);
+    while(set.has(ymd(d))){n++;d.setDate(d.getDate()-1)}
+    return n;
+  }
+  function renderMemStreak(){const b=document.querySelector('#memTileStreak b');if(b)b.textContent=memStreakN()}
+  function markMemDay(){
+    const t=todayStr();
+    if(!LOCAL_MEMDAYS.includes(t)){LOCAL_MEMDAYS.push(t);try{localStorage.setItem('jr-memdays',JSON.stringify(LOCAL_MEMDAYS.slice(-400)))}catch(e){}}
+    if(!(PREFS.memDays||[]).includes(t)){PREFS.memDays=[...(PREFS.memDays||[]),t].sort().slice(-400);savePrefs(true)}
+    renderMemStreak();
+  }
 
   // Backup & export (downloads the sample entries)
   const strip=h=>{const d=document.createElement('div');d.innerHTML=h.replace(/<br>/g,'\n').replace(/<\/div>/g,'\n');return d.textContent.replace(/\n{2,}/g,'\n').trim()};
@@ -2054,6 +2097,7 @@
     if(typeof renderBibleAgain==='function')renderBibleAgain();
     try{renderMemDue()}catch(e){}
     try{renderStreaks()}catch(e){}
+    try{refreshFlowButtons();renderMemStreak()}catch(e){}
     $('#bkInfo').textContent='Download a copy of everything: '+ENTRIES.length+' entr'+(ENTRIES.length===1?'y':'ies')+(sb?'.':' (sample data).');
   }
   function rebuild(){

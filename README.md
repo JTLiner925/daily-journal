@@ -93,3 +93,8 @@ Pick a book and the chapter numbers appear; the chapter loads only when you tap 
 ## Auto-save for the Morning Office and Examen
 
 Whatever you write in a step is saved automatically as a draft (on the device right away, and to your account a moment later). If you leave and come back the same day, the Office or Examen picks up where you left off. Finishing it saves the entry and clears the draft.
+
+## Memorize streak and Begin / Continue / Done
+
+- The **Memorize** card on Today shows ⚡ and your memory streak: days in a row you finished at least one challenge on any passage (a review counts too). Like the Office streak, today doesn't break it while it's still in progress.
+- The **Morning Office** and **Examen** buttons on Today (and on their own pages) read **Begin**, **Continue** (you started but haven't finished) or **Done ✓** (faded and not clickable once it's saved for the day).
