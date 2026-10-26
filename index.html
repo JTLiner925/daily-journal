@@ -247,7 +247,7 @@
   .mex{font-family:var(--serif);font-size:20px;line-height:2.2;margin:12px 0}
   .blank{min-width:3ch;border:0;border-bottom:2px solid var(--accent);background:color-mix(in srgb,var(--accent) 8%,transparent);color:var(--ink);font:inherit;padding:0 6px;border-radius:4px 4px 0 0;cursor:pointer;height:1.5em;vertical-align:baseline}
   .blank.active{background:color-mix(in srgb,var(--accent) 24%,transparent)}
-  .blank.ok{border-color:var(--sage);background:color-mix(in srgb,var(--sage) 22%,transparent)}.blank.bad{border-color:#d86a6a;background:rgba(216,106,106,.22)}
+  .blank.ok{border-color:var(--sage);background:color-mix(in srgb,var(--sage) 22%,transparent);color:var(--sage)}.blank.bad{border-color:#d86a6a;background:rgba(216,106,106,.22)}
   .bank{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0;padding:12px;border:1px dashed var(--line);border-radius:var(--radius-sm)}
   .bw{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:99px;padding:6px 14px;font-size:15px}
   .bw:hover{border-color:var(--accent)}.bw[disabled]{opacity:.25;cursor:default}
@@ -269,7 +269,7 @@
   .rrow .tm{color:var(--muted);font-variant-numeric:tabular-nums}
   .blank.lb{min-width:1.3em;padding:0 4px;text-align:center;font-weight:600}
   .bw.bwl{min-width:40px;text-align:center;font-weight:600;padding:6px 10px}
-  .blank.peek{border-color:var(--muted);background:color-mix(in srgb,var(--muted) 18%,transparent);cursor:default}
+  .blank.peek{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 14%,transparent);color:var(--accent);cursor:default}
   .blank.rej{animation:shake .45s;border-color:#d86a6a;background:rgba(216,106,106,.28)}
   @keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-5px)}40%{transform:translateX(5px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
   .mhead{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:8px 0 4px}
@@ -289,7 +289,7 @@
   .db:last-child{border:0}
   .db .ic{font-size:20px;width:36px;height:36px;display:grid;place-items:center;background:var(--bg);border-radius:9px}
   .db .meta{flex:1}.db .meta b{display:block;font-size:15px}.db .meta span{font-size:12px;color:var(--muted)}
-  .ok{color:var(--sage);font-size:13px;font-weight:600}
+  .db .ok{color:var(--sage);font-size:13px;font-weight:600}
 
   @media(max-width:760px){
     .shell{grid-template-columns:1fr}
