@@ -49,9 +49,9 @@ function build(r: any) {
   const base = { "Journal ID": text(r.id) };
   switch (r.type) {
     case "thought":
-      return { props: { Title: title(r.title), Date: when(r.created_at), Category: sel(b.category), Mood: sel(b.mood), Tags: multi(b.tags), ...base }, kids: paras(b.text) };
+      return { props: { Title: title(r.title), Date: when(r.created_at), Category: sel(b.category), Mood: sel(b.mood), Tags: multi(b.tags), Comments: text(b.text), ...base }, kids: paras(b.text) };
     case "note":
-      return { props: { Title: title(r.title), Date: when(r.created_at), Folder: sel(b.folder), Link: { url: /^https?:\/\//i.test(b.link || "") ? b.link : null }, ...base }, kids: paras(b.text) };
+      return { props: { Title: title(r.title), Date: when(r.created_at), Folder: sel(b.folder), Link: { url: /^https?:\/\//i.test(b.link || "") ? b.link : null }, Comments: text(b.text), ...base }, kids: paras(b.text) };
     case "meeting": {
       const acts = (b.actions || []) as { t: string; done: boolean }[];
       const start = b.date && b.time ? `${b.date}T${b.time}:00` : null;
@@ -59,18 +59,18 @@ function build(r: any) {
         ? { date: { start, end: b.dur ? addMin(b.date, b.time, +b.dur) : undefined, time_zone: TZ } }
         : { date: { start: b.date || r.created_at } };
       return {
-        props: { Title: title(r.title), When: date, "Duration (min)": { number: b.dur ? +b.dur : null }, Type: sel(b.type), People: multi(b.people || []), "Follow up by": { date: b.followUp ? { start: b.followUp } : null }, "Open action items": { number: acts.filter((a) => !a.done).length }, ...base },
+        props: { Title: title(r.title), When: date, "Duration (min)": { number: b.dur ? +b.dur : null }, Type: sel(b.type), People: multi(b.people || []), "Follow up by": { date: b.followUp ? { start: b.followUp } : null }, "Open action items": { number: acts.filter((a) => !a.done).length }, Comments: text(b.text), ...base },
         kids: [...paras(b.text), ...(acts.length ? [head("Action items"), ...acts.map((a) => todo(a.t, a.done))] : [])],
       };
     }
     case "scripture": {
       const lines = String(b.text || "").split("\n");
       const passages = lines.filter((l) => l.startsWith("📖")).map((l) => l.replace(/^📖\s*/, "")).join("; ");
-      return { props: { Title: title(r.title), Date: when(r.created_at), Passages: text(passages), Tags: multi(b.tags), ...base }, kids: paras(b.text) };
+      return { props: { Title: title(r.title), Date: when(r.created_at), Passages: text(passages), Tags: multi(b.tags), Comments: text(lines.filter((l) => !l.startsWith("📖")).join("\n").trim()), ...base }, kids: paras(b.text) };
     }
     case "office":
       return {
-        props: { Title: title(r.title), Date: when(r.created_at), Day: { number: b.day ?? null }, Psalm: text(b.psalmRef), Proverb: text(b.proverbRef), "New Testament": text(b.ntRef), Intention: text(b.intention), ...base },
+        props: { Title: title(r.title), Date: when(r.created_at), Day: { number: b.day ?? null }, Psalm: text(b.psalmRef), Proverb: text(b.proverbRef), "New Testament": text(b.ntRef), Intention: text(b.intention), "Praying for": text(b.praying), ...base },
         kids: [
           ...(b.psalm ? [head(`${b.psalmRef || "Psalm"}`), ...paras(b.psalm)] : []),
           ...(b.proverb ? [head(`${b.proverbRef || "Proverb"}`), ...paras(b.proverb)] : []),
@@ -81,7 +81,7 @@ function build(r: any) {
       };
     case "examen":
       return {
-        props: { Title: title(r.title), Date: when(r.created_at), Emotions: multi(b.emotions), Tomorrow: text(b.tomorrow), ...base },
+        props: { Title: title(r.title), Date: when(r.created_at), Emotions: multi(b.emotions), Tomorrow: text(b.tomorrow), Gratitude: text(b.gratitude), "Emotions note": text(b.emotionsNote), Prayer: text(b.prayer), ...base },
         kids: [
           ...(b.gratitude ? [head("Gratitude"), ...paras(b.gratitude)] : []),
           ...(b.emotionsNote ? [head("Emotions"), ...paras(b.emotionsNote)] : []),
