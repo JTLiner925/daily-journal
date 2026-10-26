@@ -252,6 +252,7 @@
   .bw{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:99px;padding:6px 14px;font-size:15px}
   .bw:hover{border-color:var(--accent)}.bw[disabled]{opacity:.25;cursor:default}
   .fl{display:inline-block;min-width:.7em;text-align:center;font-weight:600;color:var(--accent);letter-spacing:.02em}.fl.hid{color:var(--muted);font-weight:400}
+  .near{color:var(--gold);text-decoration:underline dotted}
   .good{color:var(--sage)}.miss{color:#d86a6a;text-decoration:underline}
   .mtabs{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
   .stars{letter-spacing:1px;white-space:nowrap}.stars .off{opacity:.22}
@@ -1549,6 +1550,8 @@
   const unlockedLv=(row,mode)=>{const pr=normProg(row.progress)[mode];return LEVELS.map((l,i)=>i===0||((pr[LEVELS[i-1][0]]||{}).s===3))};
   const topLevel=(row,mode)=>{const u=unlockedLv(row,mode);let k=0;u.forEach((x,i)=>{if(x)k=i});return LEVELS[k][0]};
   const expectOf=(S,i)=>S.mode==='letters'?[...S.tokens[i].w][0]:S.tokens[i].w;
+  // Words match without caring about case; letters must match the exact capital or lowercase.
+  const sameAns=(S,a,b)=>S.mode==='letters'?a===b:normW(a)===normW(b);
   function buildExercise(){
     const S=MS;S.result=null;S.typed='';S.reveal=false;S.done=false;S.peeked=false;S.startAt=null;S.miss={};S.flash=null;
     const idx=S.tokens.map((t,i)=>t.w?i:-1).filter(i=>i>=0),r=rng(hashS(S.text+S.level+S.mode)+S.seed*7919);
@@ -1608,7 +1611,7 @@
     const t=(S.active!==undefined&&S.fill[S.active]===undefined)?S.active:S.blanks.find(i=>S.fill[i]===undefined);
     if(t===undefined)return;S.startAt=S.startAt||Date.now();
     const w=S.bank.find(b=>b.id===bid).word;
-    if(normW(w)!==normW(expectOf(S,t))){
+    if(!sameAns(S,w,expectOf(S,t))){
       S.miss[t]=true;S.flash=t;S.active=t;renderMemory();
       setTimeout(()=>{if(MS===S){S.flash=null;renderMemory()}},550);return;
     }
@@ -1619,7 +1622,7 @@
     const S=MS;if(!S||!S.blanks||S.peeked)return;
     if(Object.keys(S.fill).length&&!confirm('Peeking fills in everything and this round won’t count. Peek anyway?'))return;
     const used=new Set();S.fill={};
-    S.blanks.forEach(i=>{const b=S.bank.find(x=>!used.has(x.id)&&normW(x.word)===normW(expectOf(S,i)));if(b){used.add(b.id);S.fill[i]=b.id}});
+    S.blanks.forEach(i=>{const b=S.bank.find(x=>!used.has(x.id)&&sameAns(S,x.word,expectOf(S,i)));if(b){used.add(b.id);S.fill[i]=b.id}});
     S.peeked=true;S.done=true;S.miss={};S.startAt=null;S.flash=null;S.active=undefined;
     renderMemory();
   }
@@ -1627,7 +1630,7 @@
     const S=MS;if(!S||S.done)return;
     const t=(S.active!==undefined&&S.fill[S.active]===undefined)?S.active:S.blanks.find(i=>S.fill[i]===undefined);
     if(t===undefined)return;S.startAt=S.startAt||Date.now();
-    const used=new Set(Object.values(S.fill)),b=S.bank.find(x=>!used.has(x.id)&&normW(x.word)===normW(expectOf(S,t)));
+    const used=new Set(Object.values(S.fill)),b=S.bank.find(x=>!used.has(x.id)&&sameAns(S,x.word,expectOf(S,t)));
     if(!b)return;S.miss[t]=true;S.fill[t]=b.id;afterFill();
   }
   function resetWords(){const S=MS;S.fill={};S.miss={};S.flash=null;S.startAt=null;S.done=false;S.peeked=false;S.active=S.blanks[0];S.resetScroll=true;renderMemory()}
@@ -1638,12 +1641,17 @@
     while(i>0&&j>0){if(a[i-1]===b[j-1]){hit.add(j-1);i--;j--}else if(dp[i-1][j]>=dp[i][j-1])i--;else j--}
     return hit;
   }
+  // Typing check: capital letters and punctuation count (curly and straight quotes are treated the same).
+  const quoteNorm=t=>String(t).replace(/[“”„]/g,'"').replace(/[‘’‚]/g,"'").replace(/[–—]/g,'-').replace(/…/g,'...');
+  const strictKey=t=>quoteNorm(t.pre)+quoteNorm(t.w)+quoteNorm(t.post);
   function checkLetters(){
-    const S=MS,typed=tokenize(S.typed).filter(t=>t.w).map(t=>normW(t.w)),tw=S.tokens.filter(t=>t.w);
+    const S=MS,typed=tokenize(S.typed).filter(t=>t.w),target=S.tokens.filter(t=>t.w);
     if(S.peeked){toast('You peeked. Tap Start over to try again');return}
     if(!typed.length){toast('Type the passage from memory first');return}
-    const hit=lcsMatch(typed,tw.map(t=>normW(t.w)));
-    S.result={ok:hit.size,total:tw.length,hit};
+    const strict=lcsMatch(typed.map(strictKey),target.map(strictKey));
+    const loose=lcsMatch(typed.map(t=>normW(t.w)),target.map(t=>normW(t.w)));
+    const close=new Set([...loose].filter(i=>!strict.has(i)));
+    S.result={ok:strict.size,total:target.length,hit:strict,close};
     renderMemory();
   }
   // Words that make a good place to start a new line when a line has to be broken.
@@ -1686,7 +1694,7 @@
     if(S.error)return h+`<p class="hint" style="color:var(--gold)">${esc(S.error)}</p>`;
     const what=L?'first letters':'words';
     let hint=({beginner:`About a quarter of the ${what} are missing.`,intermediate:`About half of the ${what} are missing.`,expert:`About three quarters of the ${what} are missing.`,pro:L?'Every first letter is missing. Only the punctuation shows.':'Every word is missing. Rebuild the passage from the word bank.'})[S.level];
-    hint+=L?' Fill them in from the letter bank (wrong ones are rejected), then type the whole verse in the box.':' A wrong word is rejected.';
+    hint+=L?' Fill them in from the letter bank (capital vs lowercase matters, and wrong ones are rejected), then type the whole verse in the box. Punctuation and capitals count there too.':' A wrong word is rejected.';
     const cur=normProg(row.progress)[S.mode][S.level],nextLabel=S.level!=='pro'?LEVELS[lvIdx+1][1]:'';
     if(S.level!=='pro'&&!ul[lvIdx+1])hint+=` Earn ★★★ to unlock ${nextLabel}.`;
     const next=S.level!=='pro'&&ul[lvIdx+1]?`<button class="btn ghost sm" data-m="level" data-v="${LEVELS[lvIdx+1][0]}">Next level ›</button>`:'';
@@ -1707,7 +1715,7 @@
       h+='<div class="mpane bankp"><div class="bank">'+S.bank.map(b=>`<button class="bw bwl" data-w="${b.id}" ${Object.values(S.fill).includes(b.id)?'disabled':''}>${esc(b.word)}</button>`).join('')+'</div>';
       h+=`<div class="hint" style="margin:14px 0 4px;font-weight:600">Now type the whole verse from memory</div><textarea id="mTyped" placeholder="Type the passage…" style="min-height:120px">${esc(S.typed)}</textarea><div class="mbtns" style="margin-top:8px"><button class="btn sm" data-m="checkL">Check my typing</button></div>`;
       if(S.reveal)h+=`<div class="mex" style="font-size:17px;margin-top:10px">${esc(S.text)}</div>`;
-      if(S.result){let k=0;h+=`<p class="hint" style="margin:10px 0 0;font-weight:600">${S.result.ok} of ${S.result.total} words (${Math.round(S.result.ok/S.result.total*100)}%)</p><div class="mex" style="font-size:17px;margin-top:6px">`+S.tokens.map(t=>{if(!t.w)return esc(t.pre+t.post);const ok=S.result.hit.has(k++);return esc(t.pre)+`<span class="${ok?'good':'miss'}">${esc(t.w)}</span>`+esc(t.post)}).join(' ')+'</div>'}
+      if(S.result){let k=0;const R2=S.result;h+=`<p class="hint" style="margin:10px 0 0;font-weight:600">${R2.ok} of ${R2.total} words exactly right (${Math.round(R2.ok/R2.total*100)}%)${R2.close.size?` · ${R2.close.size} had the wrong capital letter or punctuation`:''}</p><div class="mex" style="font-size:17px;margin-top:6px">`+S.tokens.map(t=>{if(!t.w)return esc(t.pre+t.post);const i=k++,c=R2.hit.has(i)?'good':R2.close.has(i)?'near':'miss';return `<span class="${c}">${esc(t.pre+t.w+t.post)}</span>`}).join(' ')+'</div>'}
       h+='</div>';
     }
     h+='</div>';

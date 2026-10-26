@@ -100,3 +100,5 @@ Whatever you write in a step is saved automatically as a draft (on the device ri
 - The **Morning Office** and **Examen** buttons on Today (and on their own pages) read **Begin**, **Continue** (you started but haven't finished) or **Done ✓** (faded and not clickable once it's saved for the day).
 
 **Peek.** The 👀 Peek button fills in every blank so you can see the answers (words or letters). That round no longer counts for stars or time; tap Start over to try again.
+
+**Capitals and punctuation.** In First letters, a missing letter must be the exact capital or lowercase letter (the bank has both). When you type the whole verse, capital letters and punctuation count: a word only counts as right if its punctuation and capitalization match too. Words that are right except for a capital letter or punctuation show in gold. Straight and curly quotes are treated the same.
