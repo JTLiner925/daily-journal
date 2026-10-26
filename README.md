@@ -98,3 +98,5 @@ Whatever you write in a step is saved automatically as a draft (on the device ri
 
 - The **Memorize** card on Today shows ⚡ and your memory streak: days in a row you finished at least one challenge on any passage (a review counts too). Like the Office streak, today doesn't break it while it's still in progress.
 - The **Morning Office** and **Examen** buttons on Today (and on their own pages) read **Begin**, **Continue** (you started but haven't finished) or **Done ✓** (faded and not clickable once it's saved for the day).
+
+**Peek.** The 👀 Peek button on a study round shows the whole passage. Closing it starts the round over (no stars, no time), so peeking costs you your progress in that round.

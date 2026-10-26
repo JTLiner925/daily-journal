@@ -1613,6 +1613,17 @@
     }
     S.fill[t]=bid;afterFill();
   }
+  // Peek: see the whole passage, then this round starts over (no stars, no time)
+  function peekPassage(){
+    const S=MS;if(!S||!S.text)return;
+    const started=Object.keys(S.fill||{}).length||String(S.typed||'').trim();
+    if(started&&!confirm('Peeking starts this round over. Peek anyway?'))return;
+    const el=document.createElement('div');el.className='modal open';el.id='mPeekModal';
+    el.innerHTML=`<div class="modalcard"><div class="pagehead" style="margin:0"><h3>${esc(S.row.ref)}</h3><span class="hint">${esc(S.row.translation)}</span></div><div class="mex" style="font-size:19px;margin:10px 0;max-height:55vh;overflow:auto">${esc(S.text)}</div><p class="hint">This round starts over when you close this.</p><div class="actions"><button class="btn" data-pk="close">Close and start over</button></div></div>`;
+    const close=()=>{el.remove();if(MS===S){S.resetScroll=true;buildExercise();renderMemory()}};
+    el.addEventListener('click',e=>{if(e.target===el||e.target.closest('[data-pk]'))close()});
+    document.body.appendChild(el);
+  }
   function giveHint(){
     const S=MS;if(!S||S.done)return;
     const t=(S.active!==undefined&&S.fill[S.active]===undefined)?S.active:S.blanks.find(i=>S.fill[i]===undefined);
@@ -1681,7 +1692,7 @@
     const next=S.level!=='pro'&&ul[lvIdx+1]?`<button class="btn ghost sm" data-m="level" data-v="${LEVELS[lvIdx+1][0]}">Next level ›</button>`:'';
     const best=cur?`<span class="rs">${cur.s?starTrio(S.level,cur.s):(cur.e||'😅')}</span>`:'';
     const filled=Object.keys(S.fill).length,total=S.blanks.length,miss=Object.keys(S.miss).length;
-    h+=`<div class="hint" style="margin:4px 0 2px">${hint}</div><div class="mtool"><button class="btn ghost sm" data-m="hint">Hint</button><button class="btn ghost sm" data-m="reset">Start over</button><button class="btn ghost sm" data-m="reshuffle">Different ${L?'letters':'words'}</button>${next}<span class="rs hint">${filled}/${total}${miss?' · '+miss+' miss'+(miss>1?'es':''):''}</span>${best}</div><div class="msplit">`;
+    h+=`<div class="hint" style="margin:4px 0 2px">${hint}</div><div class="mtool"><button class="btn ghost sm" data-m="hint">Hint</button><button class="btn ghost sm" data-m="reset">Start over</button><button class="btn ghost sm" data-m="peek" title="See the whole passage (this round starts over)">👀 Peek</button><button class="btn ghost sm" data-m="reshuffle">Different ${L?'letters':'words'}</button>${next}<span class="rs hint">${filled}/${total}${miss?' · '+miss+' miss'+(miss>1?'es':''):''}</span>${best}</div><div class="msplit">`;
     if(!L){
       h+='<div class="mpane"><div class="mex">'+S.tokens.map((t,i)=>{
         if(!S.blanks.includes(i))return esc(t.pre+t.w+t.post);
@@ -1694,7 +1705,7 @@
     }else{
       h+=`<div class="mpane"><div class="mex">${lettersHTML(S)}</div></div>`;
       h+='<div class="mpane bankp"><div class="bank">'+S.bank.map(b=>`<button class="bw bwl" data-w="${b.id}" ${Object.values(S.fill).includes(b.id)?'disabled':''}>${esc(b.word)}</button>`).join('')+'</div>';
-      h+=`<div class="hint" style="margin:14px 0 4px;font-weight:600">Now type the whole verse from memory</div><textarea id="mTyped" placeholder="Type the passage…" style="min-height:120px">${esc(S.typed)}</textarea><div class="mbtns" style="margin-top:8px"><button class="btn sm" data-m="checkL">Check my typing</button><button class="btn ghost sm" data-m="reveal">${S.reveal?'Hide passage':'Show passage'}</button></div>`;
+      h+=`<div class="hint" style="margin:14px 0 4px;font-weight:600">Now type the whole verse from memory</div><textarea id="mTyped" placeholder="Type the passage…" style="min-height:120px">${esc(S.typed)}</textarea><div class="mbtns" style="margin-top:8px"><button class="btn sm" data-m="checkL">Check my typing</button></div>`;
       if(S.reveal)h+=`<div class="mex" style="font-size:17px;margin-top:10px">${esc(S.text)}</div>`;
       if(S.result){let k=0;h+=`<p class="hint" style="margin:10px 0 0;font-weight:600">${S.result.ok} of ${S.result.total} words (${Math.round(S.result.ok/S.result.total*100)}%)</p><div class="mex" style="font-size:17px;margin-top:6px">`+S.tokens.map(t=>{if(!t.w)return esc(t.pre+t.post);const ok=S.result.hit.has(k++);return esc(t.pre)+`<span class="${ok?'good':'miss'}">${esc(t.w)}</span>`+esc(t.post)}).join(' ')+'</div>'}
       h+='</div>';
@@ -1775,7 +1786,7 @@
     if(!MS)return;
     if(a==='mode'){MS.mode=b.dataset.v;MS.resetScroll=true;buildExercise();renderMemory()}
     if(a==='level'){MS.level=b.dataset.v;MS.resetScroll=true;buildExercise();renderMemory()}
-    if(a==='hint')giveHint();if(a==='checkL')checkLetters();
+    if(a==='hint')giveHint();if(a==='peek')peekPassage();if(a==='checkL')checkLetters();
     if(a==='reset')resetWords();
     if(a==='reshuffle'){MS.seed++;MS.resetScroll=true;buildExercise();renderMemory()}
     if(a==='reveal'){MS.reveal=!MS.reveal;renderMemory()}
