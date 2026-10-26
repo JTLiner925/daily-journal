@@ -85,3 +85,11 @@ Reminder times and days, the backup reminder and your Notion sync choice are sav
 
 - **Top right of Today:** ⚡ and the number of days in a row you've opened the app (stored with your settings, so it counts across devices).
 - **This Week card, Morning Office page and Examen page:** ⚡ and your Office + Examen streak, which only counts days you finished **both**. Today doesn't break the streak while it's still in progress.
+
+## Bible reader on phones
+
+Pick a book and the chapter numbers appear; the chapter loads only when you tap one. Floating ‹ › arrows move to the previous or next chapter. Tapping a verse opens a small menu at the bottom (highlight colors, Note, Compare, Link, Copy, Share); the notes panel only opens under the verse when you choose Note, Compare or Link, so the verse stays visible.
+
+## Auto-save for the Morning Office and Examen
+
+Whatever you write in a step is saved automatically as a draft (on the device right away, and to your account a moment later). If you leave and come back the same day, the Office or Examen picks up where you left off. Finishing it saves the entry and clears the draft.
