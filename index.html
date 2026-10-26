@@ -268,6 +268,7 @@
   .rrow .tm{color:var(--muted);font-variant-numeric:tabular-nums}
   .blank.lb{min-width:1.3em;padding:0 4px;text-align:center;font-weight:600}
   .bw.bwl{min-width:40px;text-align:center;font-weight:600;padding:6px 10px}
+  .blank.peek{border-color:var(--muted);background:color-mix(in srgb,var(--muted) 18%,transparent);cursor:default}
   .blank.rej{animation:shake .45s;border-color:#d86a6a;background:rgba(216,106,106,.28)}
   @keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-5px)}40%{transform:translateX(5px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
   .mhead{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:8px 0 4px}
@@ -1549,7 +1550,7 @@
   const topLevel=(row,mode)=>{const u=unlockedLv(row,mode);let k=0;u.forEach((x,i)=>{if(x)k=i});return LEVELS[k][0]};
   const expectOf=(S,i)=>S.mode==='letters'?[...S.tokens[i].w][0]:S.tokens[i].w;
   function buildExercise(){
-    const S=MS;S.result=null;S.typed='';S.reveal=false;S.done=false;S.startAt=null;S.miss={};S.flash=null;
+    const S=MS;S.result=null;S.typed='';S.reveal=false;S.done=false;S.peeked=false;S.startAt=null;S.miss={};S.flash=null;
     const idx=S.tokens.map((t,i)=>t.w?i:-1).filter(i=>i>=0),r=rng(hashS(S.text+S.level+S.mode)+S.seed*7919);
     const cnt=Math.max(1,Math.round(PCT[S.level]*idx.length));
     let pool=shuffleA(idx,r);
@@ -1613,16 +1614,14 @@
     }
     S.fill[t]=bid;afterFill();
   }
-  // Peek: see the whole passage, then this round starts over (no stars, no time)
+  // Peek: fill in every blank so you can see the answers. The round no longer counts; Start over to try again.
   function peekPassage(){
-    const S=MS;if(!S||!S.text)return;
-    const started=Object.keys(S.fill||{}).length||String(S.typed||'').trim();
-    if(started&&!confirm('Peeking starts this round over. Peek anyway?'))return;
-    const el=document.createElement('div');el.className='modal open';el.id='mPeekModal';
-    el.innerHTML=`<div class="modalcard"><div class="pagehead" style="margin:0"><h3>${esc(S.row.ref)}</h3><span class="hint">${esc(S.row.translation)}</span></div><div class="mex" style="font-size:19px;margin:10px 0;max-height:55vh;overflow:auto">${esc(S.text)}</div><p class="hint">This round starts over when you close this.</p><div class="actions"><button class="btn" data-pk="close">Close and start over</button></div></div>`;
-    const close=()=>{el.remove();if(MS===S){S.resetScroll=true;buildExercise();renderMemory()}};
-    el.addEventListener('click',e=>{if(e.target===el||e.target.closest('[data-pk]'))close()});
-    document.body.appendChild(el);
+    const S=MS;if(!S||!S.blanks||S.peeked)return;
+    if(Object.keys(S.fill).length&&!confirm('Peeking fills in everything and this round won’t count. Peek anyway?'))return;
+    const used=new Set();S.fill={};
+    S.blanks.forEach(i=>{const b=S.bank.find(x=>!used.has(x.id)&&normW(x.word)===normW(expectOf(S,i)));if(b){used.add(b.id);S.fill[i]=b.id}});
+    S.peeked=true;S.done=true;S.miss={};S.startAt=null;S.flash=null;S.active=undefined;
+    renderMemory();
   }
   function giveHint(){
     const S=MS;if(!S||S.done)return;
@@ -1631,7 +1630,7 @@
     const used=new Set(Object.values(S.fill)),b=S.bank.find(x=>!used.has(x.id)&&normW(x.word)===normW(expectOf(S,t)));
     if(!b)return;S.miss[t]=true;S.fill[t]=b.id;afterFill();
   }
-  function resetWords(){const S=MS;S.fill={};S.miss={};S.flash=null;S.startAt=null;S.done=false;S.active=S.blanks[0];S.resetScroll=true;renderMemory()}
+  function resetWords(){const S=MS;S.fill={};S.miss={};S.flash=null;S.startAt=null;S.done=false;S.peeked=false;S.active=S.blanks[0];S.resetScroll=true;renderMemory()}
   function lcsMatch(a,b){
     const n=a.length,m=b.length,dp=Array.from({length:n+1},()=>new Uint16Array(m+1));
     for(let i=1;i<=n;i++)for(let j=1;j<=m;j++)dp[i][j]=a[i-1]===b[j-1]?dp[i-1][j-1]+1:Math.max(dp[i-1][j],dp[i][j-1]);
@@ -1641,6 +1640,7 @@
   }
   function checkLetters(){
     const S=MS,typed=tokenize(S.typed).filter(t=>t.w).map(t=>normW(t.w)),tw=S.tokens.filter(t=>t.w);
+    if(S.peeked){toast('You peeked. Tap Start over to try again');return}
     if(!typed.length){toast('Type the passage from memory first');return}
     const hit=lcsMatch(typed,tw.map(t=>normW(t.w)));
     S.result={ok:hit.size,total:tw.length,hit};
@@ -1671,7 +1671,7 @@
     const cell=u=>{
       if(!u.blank)return `<span class="fl">${esc(u.ch)}</span>`;
       const f=S.fill[u.i],w=f===undefined?'':S.bank.find(b=>b.id===f).word;
-      let cls=f!==undefined?' ok':(u.i===S.active?' active':'');
+      let cls=f!==undefined?(S.peeked?' peek':' ok'):(u.i===S.active?' active':'');
       if(S.flash===u.i)cls+=' rej';
       return `<button class="blank lb${cls}" data-b="${u.i}">${esc(w)||'&nbsp;'}</button>`;
     };
@@ -1692,12 +1692,12 @@
     const next=S.level!=='pro'&&ul[lvIdx+1]?`<button class="btn ghost sm" data-m="level" data-v="${LEVELS[lvIdx+1][0]}">Next level ›</button>`:'';
     const best=cur?`<span class="rs">${cur.s?starTrio(S.level,cur.s):(cur.e||'😅')}</span>`:'';
     const filled=Object.keys(S.fill).length,total=S.blanks.length,miss=Object.keys(S.miss).length;
-    h+=`<div class="hint" style="margin:4px 0 2px">${hint}</div><div class="mtool"><button class="btn ghost sm" data-m="hint">Hint</button><button class="btn ghost sm" data-m="reset">Start over</button><button class="btn ghost sm" data-m="peek" title="See the whole passage (this round starts over)">👀 Peek</button><button class="btn ghost sm" data-m="reshuffle">Different ${L?'letters':'words'}</button>${next}<span class="rs hint">${filled}/${total}${miss?' · '+miss+' miss'+(miss>1?'es':''):''}</span>${best}</div><div class="msplit">`;
+    h+=`<div class="hint" style="margin:4px 0 2px">${hint}</div><div class="mtool"><button class="btn ghost sm" data-m="hint">Hint</button><button class="btn ghost sm" data-m="reset">Start over</button><button class="btn ghost sm" data-m="peek" title="See the whole passage (this round starts over)">👀 Peek</button><button class="btn ghost sm" data-m="reshuffle">Different ${L?'letters':'words'}</button>${next}<span class="rs hint">${filled}/${total}${miss?' · '+miss+' miss'+(miss>1?'es':''):''}</span>${best}</div>${S.peeked?'<div class="hint" style="color:var(--gold);margin:-4px 0 8px">👀 You peeked, so this round doesn’t count. Tap Start over to try again.</div>':''}<div class="msplit">`;
     if(!L){
       h+='<div class="mpane"><div class="mex">'+S.tokens.map((t,i)=>{
         if(!S.blanks.includes(i))return esc(t.pre+t.w+t.post);
         const f=S.fill[i],w=f===undefined?'':S.bank.find(b=>b.id===f).word;
-        let cls=f!==undefined?' ok':(i===S.active?' active':'');
+        let cls=f!==undefined?(S.peeked?' peek':' ok'):(i===S.active?' active':'');
         if(S.flash===i)cls+=' rej';
         return esc(t.pre)+`<button class="blank${cls}" data-b="${i}" style="min-width:${Math.max(3,t.w.length)}ch">${esc(w)||'&nbsp;'}</button>`+esc(t.post);
       }).join(' ')+'</div></div>';
