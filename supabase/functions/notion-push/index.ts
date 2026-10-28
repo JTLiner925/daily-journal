@@ -12,6 +12,8 @@ const DBS: Record<string, string> = {
   office: "d637a6bd-4d9a-4fe3-a130-e82b82a85939",
   examen: "69c63a5f-75fe-4bb7-848d-5cecc4f2650c",
 };
+// People database (one row per person, matched by Name; synced from the People page)
+const PEOPLE_DB = "22471c50-f1da-4d04-827e-608f751aaaca";
 const TZ = "America/Chicago";
 const NOTION = "https://api.notion.com/v1";
 const cors = {
@@ -97,13 +99,58 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
   try {
     if (!Deno.env.get("NOTION_TOKEN")) return json({ ok: false, error: "NOTION_TOKEN secret is not set" });
-    const { id, action } = await req.json();
+    const body = await req.json();
+    const { id, action } = body;
 
     if (action === "status") {
       const me = await fetch(`${NOTION}/users/me`, { headers: nh() });
       if (!me.ok) return json({ ok: false, error: "Notion rejected the token" });
       const db = await fetch(`${NOTION}/databases/${DBS.thought}`, { headers: nh() });
       return json(db.ok ? { ok: true } : { ok: false, error: "The integration can't see the Daily Journal page. In Notion: open it → ••• → Connections → add your integration." });
+    }
+
+    if (action === "people") {
+      // upsert people by Name; "remove" archives rows. Capped per call so it stays well inside the time limit.
+      const list = (Array.isArray(body.people) ? body.people : []).slice(0, 25);
+      const remove = (Array.isArray(body.remove) ? body.remove : []).slice(0, 25);
+      const find = async (name: string) => {
+        const q = await fetch(`${NOTION}/databases/${PEOPLE_DB}/query`, {
+          method: "POST", headers: nh(),
+          body: JSON.stringify({ filter: { property: "Name", title: { equals: name } }, page_size: 1 }),
+        });
+        const j = await q.json();
+        if (!q.ok) throw new Error(j.message || "Notion query failed");
+        return j.results?.[0];
+      };
+      let saved = 0, removed = 0;
+      for (const p of list) {
+        const name = String(p?.name || "").trim().slice(0, 200);
+        if (!name) continue;
+        const email = String(p.email || "").trim();
+        const props = {
+          Name: title(name), Company: text(p.company), Role: text(p.role),
+          Phone: { phone_number: p.phone ? String(p.phone).slice(0, 100) : null },
+          Email: { email: /^\S+@\S+$/.test(email) ? email : null },
+          "How we met": text(p.met), Birthday: text(p.birthday), Notes: text(p.notes),
+          Meetings: { number: Number.isFinite(+p.meetings) ? +p.meetings : null },
+          "Last met": { date: /^\d{4}-\d{2}-\d{2}$/.test(String(p.lastMet || "")) ? { start: p.lastMet } : null },
+        };
+        const existing = await find(name);
+        const res = existing
+          ? await fetch(`${NOTION}/pages/${existing.id}`, { method: "PATCH", headers: nh(), body: JSON.stringify({ properties: props }) })
+          : await fetch(`${NOTION}/pages`, { method: "POST", headers: nh(), body: JSON.stringify({ parent: { database_id: PEOPLE_DB }, properties: props }) });
+        const out = await res.json();
+        if (!res.ok) return json({ ok: false, error: out.message || "Notion error" });
+        saved++;
+      }
+      for (const n of remove) {
+        const existing = await find(String(n || "").trim());
+        if (existing) {
+          await fetch(`${NOTION}/pages/${existing.id}`, { method: "PATCH", headers: nh(), body: JSON.stringify({ archived: true }) });
+          removed++;
+        }
+      }
+      return json({ ok: true, saved, removed });
     }
 
     const supa = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!, {

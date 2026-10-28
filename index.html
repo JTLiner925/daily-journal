@@ -1139,9 +1139,9 @@
         <div class="detail">${profKV(pr)||(p.about?kv('About',esc(p.about)):'')}${p.m.length?kv('Meetings',p.m.map(esc).join('<br>')):''}${kv('Open items',items.length?items.map(i=>'☐ '+esc(i.t)).join('<br>'):'None 🎉')}
         <div class="eactions"><button class="mini" data-pmeet="${esc(p.n)}">New meeting</button><button class="mini" data-pedit="${esc(p.n)}">Edit details</button></div></div></div><div class="when">${p.m.length?'Last met<br>'+p.last:'Added'}</div></div>`}).join('');
     $('#people').innerHTML=`<div class="eyebrow">People</div>
-      <div class="pagehead"><h1>👥 People</h1><span style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn ghost" onclick="newPersonForm()">+ Add person</button><button class="btn" onclick="go('meeting-new')">+ New Meeting</button></span></div>
+      <div class="pagehead"><h1>👥 People</h1><span style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn ghost" onclick="newPersonForm()">+ Add person</button><button class="btn ghost" onclick="syncAllPeople()">↻ Sync to Notion</button><button class="btn" onclick="go('meeting-new')">+ New Meeting</button></span></div>
       <p class="sub" style="margin-top:6px">Everyone you've met with or added, with their details, meetings and anything still open.</p>
-      <div class="card">${rows||'<div class="empty">People appear here as you log meetings, or tap “Add person”.</div>'}</div><p class="hint">Details you add here (company, role, phone and so on) are saved to your account and follow you across devices.</p>`;
+      <div class="card">${rows||'<div class="empty">People appear here as you log meetings, or tap “Add person”.</div>'}</div><p class="hint">Details you add here (company, role, phone and so on) are saved to your account and follow you across devices. They also sync to the People database under Daily Journal in Notion when Notion is connected.</p>`;
   }
 
   // People field on the meeting form (suggests people you've met before)
@@ -2396,7 +2396,8 @@
       if(a==='cancel'){close();return}
       if(a==='remove'){
         if(!confirm(has?'Clear the saved details for '+name+'? Their meetings stay.':'Remove '+name+'?'))return;
-        delete PREFS.people[name];savePrefs(true);close();rebuild();toast('Details cleared');return}
+        delete PREFS.people[name];savePrefs(true);close();rebuild();toast('Details cleared');
+        if(has)syncPeople([name],[],false);else syncPeople([],[name],false);return}
       let n=name;
       if(isNew){n=(bg.querySelector('[data-pf=name]').value||'').trim();if(!n){toast('Add a name first');return}
         if(PEOPLE.some(p=>p.n.toLowerCase()===n.toLowerCase())){toast(n+' is already on your People page');return}}
@@ -2404,10 +2405,30 @@
       PREFS.people=PREFS.people||{};
       const clean=cleanProfile(v);
       if(Object.keys(clean).length||isNew)PREFS.people[n]=clean;else delete PREFS.people[n];
-      savePrefs(true);close();rebuild();toast('✓ Saved '+n);
+      savePrefs(true);close();rebuild();toast('✓ Saved '+n);syncPeople([n],[],false);
     });
     setTimeout(()=>{const f=bg.querySelector('input');if(f)f.focus()},0);
   }
+  // Sends people (details, meeting count, last met) to the People database in Notion, matched by name.
+  function peoplePayload(names){
+    return names.map(n=>{const p=PEOPLE.find(x=>x.n===n)||{m:[],lastD:0},pr=profOf(n);
+      return {name:n,...pr,meetings:p.m.length,lastMet:p.lastD?ymd(new Date(p.lastD)):''}});
+  }
+  async function syncPeople(names,remove,loud){
+    if(!sb)return false;
+    if(!notionReady){if(loud)toast('Notion isn’t connected yet');return false}
+    const list=peoplePayload(names||[]);let saved=0;
+    try{
+      for(let i=0;i<Math.max(list.length,1);i+=25){
+        const {data,error}=await sb.functions.invoke('notion-push',{body:{action:'people',people:list.slice(i,i+25),remove:i===0?(remove||[]):[]}});
+        if(error||!data||!data.ok){const m=(data&&data.error)||(error&&error.message)||'unknown error';toast(m==='Entry not found'?'Update the notion-push function in Supabase to sync people (see the README).':'Couldn’t sync people: '+m);return false}
+        saved+=data.saved||0;
+      }
+    }catch(e){toast('Couldn’t sync people: '+e.message);return false}
+    if(loud)toast('✓ '+saved+' '+(saved===1?'person':'people')+' synced to Notion');
+    return true;
+  }
+  const syncAllPeople=()=>syncPeople(PEOPLE.map(p=>p.n),[],true);
   function editPerson(name){personForm(name,false)}
   function newPersonForm(){personForm('',true)}
 
