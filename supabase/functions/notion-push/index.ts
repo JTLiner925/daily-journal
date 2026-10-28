@@ -136,8 +136,18 @@ Deno.serve(async (req) => {
           "Last met": { date: /^\d{4}-\d{2}-\d{2}$/.test(String(p.lastMet || "")) ? { start: p.lastMet } : null },
         };
         const existing = await find(name);
+        // On update, never blank a field in Notion just because the app has nothing for it
+        // (details can be filled in or edited directly in Notion).
+        const upd: Record<string, unknown> = { ...props };
+        const blank: Record<string, boolean> = {
+          Company: !String(p.company || "").trim(), Role: !String(p.role || "").trim(),
+          "How we met": !String(p.met || "").trim(), Birthday: !String(p.birthday || "").trim(),
+          Notes: !String(p.notes || "").trim(), Phone: !String(p.phone || "").trim(),
+          Email: !/^\S+@\S+$/.test(email),
+        };
+        for (const k of Object.keys(blank)) if (blank[k]) delete upd[k];
         const res = existing
-          ? await fetch(`${NOTION}/pages/${existing.id}`, { method: "PATCH", headers: nh(), body: JSON.stringify({ properties: props }) })
+          ? await fetch(`${NOTION}/pages/${existing.id}`, { method: "PATCH", headers: nh(), body: JSON.stringify({ properties: upd }) })
           : await fetch(`${NOTION}/pages`, { method: "POST", headers: nh(), body: JSON.stringify({ parent: { database_id: PEOPLE_DB }, properties: props }) });
         const out = await res.json();
         if (!res.ok) return json({ ok: false, error: out.message || "Notion error" });
