@@ -334,6 +334,20 @@
   .people-field>span{display:contents}
   .people-field input{border:0;flex:1;min-width:130px;width:auto;background:transparent;padding:6px}
   .people-field input:focus{outline:none}
+  .collhead{display:flex;align-items:center;gap:8px;width:100%;background:none;border:0;padding:0 0 6px;text-align:left;color:inherit;cursor:pointer;font:inherit}
+  .collhead h3{margin:0;flex:1}
+  .collhead .chev{width:16px;color:var(--muted);font-size:13px}
+  .todoadd{display:flex;gap:8px;flex-wrap:wrap}.todoadd input{flex:1;min-width:180px}.todoadd select{width:auto}
+  .tfilter{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0 4px}
+  .todo{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}
+  .todo:last-child{border-bottom:0}
+  .todo input[type=checkbox]{width:auto;flex:none}
+  .todo .tmain{flex:1;min-width:0;display:flex;flex-direction:column}
+  .todo .ttitle{overflow-wrap:anywhere}
+  .todo.done .ttitle{text-decoration:line-through;color:var(--muted)}
+  .todo .tnote{font-size:12px;color:var(--muted);overflow-wrap:anywhere}
+  .ttype{font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;white-space:nowrap;background:color-mix(in srgb,var(--tcx,var(--muted)) 15%,var(--card));color:var(--tcx,var(--muted))}
+  .tt-ASAP{--tcx:#e0705e}.tt-Task{--tcx:var(--tc-note)}.tt-Growth{--tcx:var(--tc-meeting)}.tt-Training{--tcx:var(--tc-scripture)}.tt-Meeting{--tcx:var(--tc-thought)}.tt-Call{--tcx:var(--tc-examen)}.tt-Prayer{--tcx:var(--tc-office)}
   .editbanner{margin:0 0 12px;padding:8px 12px;border-radius:var(--radius-sm);border:1px solid var(--gold);color:var(--gold);font-size:13px}
   .pform-bg{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:60;display:flex;align-items:flex-start;justify-content:center;overflow:auto;padding:24px 14px}
   .pform{background:var(--card,var(--field));border:1px solid var(--line);border-radius:var(--radius);padding:18px;max-width:520px;width:100%;margin:auto}
@@ -393,8 +407,8 @@
   <nav>
     <h2><img src="icon.svg" alt="" width="26" height="26" style="vertical-align:-6px;margin-right:6px">Journal</h2>
     <a class="on" data-p="home"><span>🏠</span><span>Today</span></a>
-    <a class="extra" data-p="thought"><span>💭</span><span>Thought</span></a>
-    <a class="extra" data-p="note"><span>📝</span><span>Note</span></a>
+    <a class="extra" data-p="thought"><span>💭</span><span>Thoughts & Notes</span></a>
+    <a class="extra" data-p="todo"><span>✅</span><span>To-Do</span></a>
     <a class="extra" data-p="meeting"><span>🤝</span><span>Meeting</span></a>
     <a class="extra" data-p="bible"><span>📜</span><span>Bible</span></a>
     <a class="extra" data-p="memory"><span>🧠</span><span>Memorize</span></a>
@@ -416,8 +430,8 @@
       <div class="homehead"><div><div class="eyebrow" id="today"></div><h1 id="greet">Good evening, JT.</h1></div><div class="streakchip openstreak" id="openStreak" title="Days in a row you’ve opened the app">⚡ <b>1</b></div></div>
       <p class="sub">What's on your mind? Pick a form to capture it.</p>
       <div class="grid" style="margin-bottom:22px">
-        <button class="tile" onclick="go('thought-new')"><div class="ic">💭</div><b>Thought</b><span>Personal or work</span></button>
-        <button class="tile" onclick="go('note-new')"><div class="ic">📝</div><b>Note</b><span>Random, quick</span></button>
+        <button class="tile" onclick="go('thought-new')"><div class="ic">💭</div><b>Thought / Note</b><span>Ideas, links, quick captures</span></button>
+        <button class="tile" onclick="go('todo')"><div class="ic">✅</div><b>To-Do</b><span>Tasks, calls, growth</span></button>
         <button class="tile" onclick="go('meeting-new')"><div class="ic">🤝</div><b>Meeting</b><span>People & next steps</span></button>
         <button class="tile" onclick="go('bible')"><div class="ic">📜</div><b>Bible</b><span>Read, highlight, study</span></button>
         <button class="tile" onclick="go('scripture-new')"><div class="ic">📖</div><b>Scripture note</b><span>Verses auto-fill</span></button>
@@ -433,6 +447,7 @@
       </div>
       <div class="card" id="weekCard"></div>
       <div class="card" id="followCard"></div>
+      <div class="card" id="todoCard"></div>
       <div class="card" id="memDueCard" hidden></div>
       <div class="card">
         <h3 style="margin-bottom:6px">Today so far</h3>
@@ -440,10 +455,10 @@
       </div>
     </div>
 
-    <!-- THOUGHT -->
+    <!-- THOUGHT / NOTE (combined) -->
     <div class="page" id="thought-new">
-      <div class="eyebrow">New entry</div><h1>💭 Thought</h1>
-      <p class="sub">Get it out of your head. Sort it later.</p>
+      <div class="eyebrow">New entry</div><h1>💭 Thought / Note</h1>
+      <p class="sub">Get it out of your head. Add a folder or link if it's a note to keep.</p>
       <div class="card">
         <label style="margin-top:0">Category</label>
         <div class="chips" data-single data-f="category"><button class="chip on">Personal</button><button class="chip">Work</button><button class="chip">Faith</button><button class="chip">Family</button></div>
@@ -451,25 +466,13 @@
         <label>What are you thinking?</label><textarea data-f="text" placeholder="Write freely…"></textarea>
         <label>Mood</label>
         <div class="chips" data-single data-f="mood"><button class="chip">😌 Peaceful</button><button class="chip">😊 Joyful</button><button class="chip">😟 Anxious</button><button class="chip">😔 Heavy</button><button class="chip">🔥 Energized</button></div>
+        <div class="row2">
+          <div><label>Folder (optional)</label><select data-f="folder"><option value="">None</option><option>Inbox</option><option>Reading list</option><option>Ideas</option><option>Podcast</option><option>Merch store</option></select></div>
+          <div><label>Link (optional)</label><input data-f="link" placeholder="https://"></div>
+        </div>
         <label class="notion-lbl">Tags</label><input data-f="tags" placeholder="e.g. vision, prayer, idea">
         <div class="toggle"><input type="checkbox" checked id="t1"><label for="t1" style="margin:0;text-transform:none;letter-spacing:0;font-size:14px;color:var(--ink)">Push to Notion → <b>Thoughts</b> database</label></div>
         <div class="actions"><button class="btn ghost" onclick="go('home')">Cancel</button><button class="btn" onclick="submitForm('thought')">Save</button></div>
-      </div>
-    </div>
-
-    <!-- NOTE -->
-    <div class="page" id="note-new">
-      <div class="eyebrow">New entry</div><h1>📝 Note</h1>
-      <p class="sub">Quick capture — links, ideas, reminders, anything.</p>
-      <div class="card">
-        <label style="margin-top:0">Title</label><input data-f="title" placeholder="What's this note about?">
-        <label>Note</label><textarea data-f="text" placeholder="Jot it down…" style="min-height:110px"></textarea>
-        <div class="row2">
-          <div><label>Folder</label><select data-f="folder"><option>Inbox</option><option>Reading list</option><option>Ideas</option><option>Podcast</option><option>Merch store</option></select></div>
-          <div><label>Link (optional)</label><input data-f="link" placeholder="https://"></div>
-        </div>
-        <div class="toggle"><input type="checkbox" checked id="n1"><label for="n1" style="margin:0;text-transform:none;letter-spacing:0;font-size:14px;color:var(--ink)">Push to Notion → <b>Notes</b> database</label></div>
-        <div class="actions"><button class="btn ghost" onclick="go('home')">Cancel</button><button class="btn" onclick="submitForm('note')">Save</button></div>
       </div>
     </div>
 
@@ -659,7 +662,7 @@
     </div>
 
     <!-- LIST PAGES (rendered by script) -->
-    <div class="page" id="thought"></div><div class="page" id="note"></div><div class="page" id="meeting"></div>
+    <div class="page" id="thought"></div><div class="page" id="note"></div><div class="page" id="todo"></div><div class="page" id="meeting"></div>
     <div class="page" id="scripture"></div><div class="page" id="memory"></div><div class="page" id="people"></div><div class="page" id="office"></div><div class="page" id="examen"></div>
 
     <!-- LOG -->
@@ -668,7 +671,7 @@
       <p class="sub">Search and filter everything you've captured.</p>
       <div class="card">
         <input id="logSearch" placeholder="🔍 Search entries…" style="margin-bottom:12px">
-        <div class="chips" data-single style="margin-bottom:8px"><button class="chip on" data-t="all">All</button><button class="chip" data-t="thought">Thoughts</button><button class="chip" data-t="note">Notes</button><button class="chip" data-t="meeting">Meetings</button><button class="chip" data-t="scripture">Scripture</button><button class="chip" data-t="office">Office</button><button class="chip" data-t="examen">Examen</button></div>
+        <div class="chips" data-single style="margin-bottom:8px"><button class="chip on" data-t="all">All</button><button class="chip" data-t="thought">Thoughts &amp; Notes</button><button class="chip" data-t="meeting">Meetings</button><button class="chip" data-t="scripture">Scripture</button><button class="chip" data-t="office">Office</button><button class="chip" data-t="examen">Examen</button></div>
         <div id="logList"></div>
       </div>
     </div>
@@ -736,7 +739,7 @@
   <p class="hint" style="margin:4px 0 10px">Recording starts automatically. Say it, then tap stop.</p>
   <textarea id="qcText" placeholder="Speak or type…" style="min-height:110px"></textarea>
   <label>Save as</label>
-  <div class="chips" data-single><button class="chip on">Note</button><button class="chip">Thought</button><button class="chip">Scripture</button></div>
+  <div class="chips" data-single><button class="chip on">Note</button><button class="chip">To-Do</button><button class="chip">Scripture</button></div>
   <div class="actions"><button class="btn ghost" id="qcCancel">Cancel</button><button class="btn" id="qcSave">Save</button></div>
  </div></div>
 </section>
@@ -839,7 +842,7 @@
 
   // Per-section list pages with a "New …" button
   const SECTIONS={
-    thought:{icon:'💭',title:'Thoughts',sub:'Everything on your mind, personal and work.',btn:'New Thought',tag:'t-thought',label:'Thought'},
+    thought:{icon:'💭',title:'Thoughts & Notes',sub:'Everything on your mind, plus links and quick captures.',btn:'New Thought / Note',tag:'t-thought',label:'Thought'},
     note:{icon:'📝',title:'Notes',sub:'Quick captures, links and ideas.',btn:'New Note',tag:'t-note',label:'Note'},
     meeting:{icon:'🤝',title:'Meetings',sub:'Who you met, how long, and what comes next.',btn:'New Meeting',tag:'t-meeting',label:'Meeting'},
     scripture:{icon:'📖',title:'Scripture Notes',sub:'Notes with passages pulled from your Bible.',btn:'New Scripture Note',tag:'t-scripture',label:'Scripture'},
@@ -916,7 +919,7 @@
     $('#'+k).innerHTML=`<div class="eyebrow">${s.title}</div>
       <div class="pagehead"><h1>${s.icon} ${s.title}</h1><button class="btn" id="hb-${k}" onclick="go('${k}-new')">+ ${s.btn}</button></div>
       <p class="sub" style="margin-top:6px">${s.sub}</p>${(k==='office'||k==='examen')?`<div class="streakline"><span class="streakchip">⚡ <b>${WEEK.both||0}</b> day streak</span><span class="hint">Counts only on days you finish both the Morning Office and the Examen.</span></div>`:''}${plan}
-      <div class="card">${listHTML(ENTRIES.filter(e=>e[0]===k))}</div>`;
+      <div class="card">${listHTML(ENTRIES.filter(e=>e[0]===k||(k==='thought'&&e[0]==='note')))}</div>`;
   });
   }
 
@@ -924,7 +927,7 @@
   let logType='all';
   function renderLog(){
     const q=$('#logSearch').value.toLowerCase();
-    $('#logList').innerHTML=listHTML(ENTRIES.filter(e=>(logType==='all'||e[0]===logType)&&(e[1]+' '+e[2]+' '+e[5]).toLowerCase().includes(q)),'No matching entries.');
+    $('#logList').innerHTML=listHTML(ENTRIES.filter(e=>(logType==='all'||e[0]===logType||(logType==='thought'&&e[0]==='note'))&&(e[1]+' '+e[2]+' '+e[5]).toLowerCase().includes(q)),'No matching entries.');
   }
   $('#logSearch').oninput=renderLog;
   $$('#log .chip').forEach(c=>c.addEventListener('click',()=>{logType=c.dataset.t;renderLog()}));
@@ -954,6 +957,7 @@
       if(mb.dataset.del!==undefined){delEntry(mb.dataset.del);return}
       if(mb.dataset.send){pushEntry(mb.dataset.send);return}
       if(mb.dataset.edit!==undefined){editEntry(mb.dataset.edit);return}
+      if(mb.dataset.todo!==undefined)return; // handled by the To-Do listener
       if(mb.dataset.pedit!==undefined){editPerson(mb.dataset.pedit);return}
       if(mb.dataset.pmeet!==undefined){go('meeting-new');if(mb.dataset.pmeet&&!picked.includes(mb.dataset.pmeet)){picked.push(mb.dataset.pmeet);renderPeopleField()}return}
       toast(sb?'That’s coming soon.':'Mockup: this would '+mb.textContent.toLowerCase());return}
@@ -1093,9 +1097,11 @@
     }else if(sb)await qcRec._busy;
     const text=$('#qcText').value.trim();closeQC();
     if(!text){toast('Nothing to save yet');return}
-    const body=k==='note'?{folder:'Inbox',text}:k==='thought'?{category:'',text}:{text};
+    if(k==='to-do'){delete AUDIO.qc;if(await addTodo({title:snip(text,120),type:'Task'}))toast('✓ Added to your To-Do list');return}
+    const type=k==='note'?'thought':k;
+    const body=type==='thought'?{category:'',folder:'Inbox',text}:{text};
     const au=takeAudio('qc');if(au)body.audio=au;
-    const st=await saveRow(k,snip(text,50),snip(text),body);
+    const st=await saveRow(type,snip(text,50),snip(text),body);
     toast(st==='queued'?QUEUED_MSG:'✓ Saved as a '+k);
   };
 
@@ -1117,8 +1123,8 @@
   function renderFollow(){
     const rows=FOLLOW.slice().sort((a,b)=>(a.done-b.done)||rank[a.st]-rank[b.st]);
     const open=FOLLOW.filter(f=>!f.done).length;
-    $('#followCard').innerHTML=`<div class="pagehead"><h3>📋 Follow-ups</h3><span class="hint" style="margin:0">${open?open+' open':'All caught up 🎉'}</span></div>`+
-      rows.map(f=>`<label class="fu ${f.done?'done':''}"><input type="checkbox" data-fu="${FOLLOW.indexOf(f)}" ${f.done?'checked':''}><div><div class="ft">${esc(f.t)}</div><div class="fm">From ${esc(f.from)}${f.who.length?' · with '+esc(f.who.join(', ')):''}</div></div><span class="due ${f.done?'':f.st}">${f.done?'Done':f.due}</span></label>`).join('');
+    $('#followCard').innerHTML=collHead('follow','📋 Follow-ups',open?open+' open':'All caught up 🎉')+(isColl('follow')?'':
+      rows.map(f=>`<label class="fu ${f.done?'done':''}"><input type="checkbox" data-fu="${FOLLOW.indexOf(f)}" ${f.done?'checked':''}><div><div class="ft">${esc(f.t)}</div><div class="fm">From ${esc(f.from)}${f.who.length?' · with '+esc(f.who.join(', ')):''}</div></div><span class="due ${f.done?'':f.st}">${f.done?'Done':f.due}</span></label>`).join(''));
     renderPeople();
   }
   $('#followCard').addEventListener('change',e=>{const i=e.target.dataset.fu;if(i===undefined)return;const f=FOLLOW[i];f.done=e.target.checked;if(sb){persistFollow(f)}else renderFollow()});
@@ -2093,7 +2099,7 @@
   function rowToEntry(r){
     const b=r.body||{},d=new Date(r.created_at),T=(k,v)=>v?kv(k,v):'';
     let when=whenLabel(d),html='';
-    if(r.type==='thought')html=T('Category',esc(b.category))+T('Mood',esc(b.mood))+T('Thought',nl(b.text))+T('Tags',esc(b.tags));
+    if(r.type==='thought')html=T('Category',esc(b.category))+T('Mood',esc(b.mood))+T('Thought',nl(b.text))+T('Folder',esc(b.folder))+T('Link',b.link?safeLink(b.link):'')+T('Tags',esc(b.tags));
     if(r.type==='note')html=T('Folder',esc(b.folder))+T('Note',nl(b.text))+T('Link',b.link?safeLink(b.link):'');
     if(r.type==='meeting'){
       const md=meetingDate(b);if(md)when=whenLabel(md);
@@ -2140,7 +2146,7 @@
     WEEK={office:mk('office'),examen:mk('examen'),runs:[run('office'),run('examen')],both:runBoth()};
   }
   function renderAll(){
-    renderPlan();renderLists();renderLog();renderFollow();renderPeopleField();renderWeek();renderIntent();renderSync();
+    renderPlan();renderLists();renderLog();renderFollow();renderTodos();renderPeopleField();renderWeek();renderIntent();renderSync();
     if(typeof renderBibleAgain==='function')renderBibleAgain();
     try{renderMemDue()}catch(e){}
     try{renderStreaks()}catch(e){}
@@ -2253,10 +2259,8 @@
   const F=(pg,k)=>{const el=$('#'+pg+'-new [data-f="'+k+'"]');return el?el.value.trim():''};
   const chipVal=(pg,k)=>{const g=$('#'+pg+'-new [data-f="'+k+'"]'),c=g&&g.querySelector('.chip.on');return c?c.textContent:''};
   const COLLECT={
-    thought(){const text=F('thought','text');if(!text)return null;const category=chipVal('thought','category');
-      return {title:F('thought','title')||snip(text,50),summary:[category,snip(text)].filter(Boolean).join(' · '),body:{category,mood:chipVal('thought','mood'),text,tags:F('thought','tags'),pushNotion:$('#t1').checked}}},
-    note(){const text=F('note','text'),title=F('note','title');if(!text&&!title)return null;
-      return {title:title||snip(text,50),summary:[F('note','folder'),snip(text,50)].filter(Boolean).join(' · '),body:{folder:F('note','folder'),text,link:F('note','link'),pushNotion:$('#n1').checked}}},
+    thought(){const text=F('thought','text');if(!text)return null;const category=chipVal('thought','category'),folder=F('thought','folder');
+      return {title:F('thought','title')||snip(text,50),summary:[category,folder,snip(text)].filter(Boolean).join(' · '),body:{category,mood:chipVal('thought','mood'),text,folder,link:F('thought','link'),tags:F('thought','tags'),pushNotion:$('#t1').checked}}},
     meeting(){const title=F('meeting','title');if(!title)return null;
       const people=picked.slice(),actions=$$('#actions > div').map(d=>({t:d.querySelector('input:not([type=checkbox])').value.trim(),done:d.querySelector('input[type=checkbox]').checked})).filter(a=>a.t);
       const body={date:$('#mDate').value,time:$('#mTime').value,dur:+$('#mDur').value,type:F('meeting','type'),people,text:F('meeting','text'),actions,followUp:F('meeting','followUp'),pushNotion:$('#m1').checked};
@@ -2306,8 +2310,7 @@
   const setChip=(pg,k,val)=>{const g=$('#'+pg+'-new [data-f="'+k+'"]');if(!g)return;g.querySelectorAll('.chip').forEach(c=>c.classList.toggle('on',c.textContent===val))};
   const autoTitle=(r,text,n)=>!r.title||r.title===snip(text||'',n||50);
   const FILL={
-    thought(r){const b=r.body||{};setChip('thought','category',b.category);setChip('thought','mood',b.mood);setF('thought','title',autoTitle(r,b.text)?'':r.title);setF('thought','text',b.text);setF('thought','tags',b.tags);$('#t1').checked=!!(b.pushNotion||r.sent_to_notion)},
-    note(r){const b=r.body||{};setF('note','title',autoTitle(r,b.text)?'':r.title);setF('note','text',b.text);setF('note','folder',b.folder);setF('note','link',b.link);$('#n1').checked=!!(b.pushNotion||r.sent_to_notion)},
+    thought(r){const b=r.body||{};setChip('thought','category',b.category);setChip('thought','mood',b.mood);setF('thought','title',autoTitle(r,b.text)?'':r.title);setF('thought','text',b.text);setF('thought','tags',b.tags);setF('thought','folder',b.folder);setF('thought','link',b.link);$('#t1').checked=!!(b.pushNotion||r.sent_to_notion)},
     meeting(r){const b=r.body||{};
       setF('meeting','title',r.title);$('#mDate').value=b.date||'';$('#mTime').value=b.time||'';
       if(b.dur){const sel=$('#mDur');if(![...sel.options].some(o=>+o.value===+b.dur))sel.add(new Option(durLabel(+b.dur),b.dur));sel.value=String(b.dur);sel.dispatchEvent(new Event('change'))}
@@ -2343,12 +2346,13 @@
   function editEntry(id){
     if(!sb){toast('Mockup: this would open the entry for editing');return}
     if(!id||id.startsWith('q')||id.startsWith('demo')){toast('This entry is still waiting to save. Try again once it has synced.');return}
-    const r=DBROWS.find(x=>x.id===id);if(!r||!FILL[r.type]){toast('Couldn’t open that entry');return}
+    const r=DBROWS.find(x=>x.id===id);const T=r&&(r.type==='note'?'thought':r.type);
+    if(!r||!FILL[T]){toast('Couldn’t open that entry');return}
     if(EDITING)endEdit();
-    EDITING={id:r.id,type:r.type};
-    go(r.type+'-new');
-    resetForm(r.type);FILL[r.type](r);editUI(r.type,true);
-    if(flows[r.type]){flows[r.type].i=0;flowRender(r.type)}
+    EDITING={id:r.id,type:T,legacy:r.type==='note'}; // older Notes open in the combined form and become Thoughts when saved
+    go(T+'-new');
+    resetForm(T);FILL[T](r);editUI(T,true);
+    if(flows[T]){flows[T].i=0;flowRender(T)}
   }
   function endEdit(){
     if(!EDITING)return;
@@ -2364,7 +2368,8 @@
     let title=c.title,summary=c.summary;
     if(type==='office'){['day','psalmRef','proverbRef','ntRef'].forEach(k=>{body[k]=old[k]});title=r.title;summary=r.summary}
     if(type==='examen')title=r.title;
-    const {data,error}=await sb.from('entries').update({title,summary,body,sent_to_notion:false}).eq('id',r.id).select().single();
+    const patch={title,summary,body,sent_to_notion:false};if(EDITING.legacy)patch.type='thought';
+    const {data,error}=await sb.from('entries').update(patch).eq('id',r.id).select().single();
     if(error)return 'Couldn’t save your changes: '+error.message;
     Object.assign(r,data);rebuild();
     if(body.pushNotion&&notionReady)pushEntry(r.id,true);
@@ -2460,8 +2465,128 @@
   window.addEventListener('online',()=>{flushQueue();renderSync()});
   window.addEventListener('offline',renderSync);
 
+  // ===== Expand / collapse (Follow-ups, To-Do, Completed). Remembered on this device. =====
+  const COLL=(()=>{try{return JSON.parse(localStorage.getItem('jr-coll')||'{}')}catch(e){return{}}})();
+  const isColl=k=>k in COLL?!!COLL[k]:k==='done';
+  const collHead=(k,title,meta)=>`<button type="button" class="collhead" data-coll="${k}" aria-expanded="${!isColl(k)}"><span class="chev">${isColl(k)?'▸':'▾'}</span><h3>${title}</h3><span class="hint" style="margin:0">${meta||''}</span></button>`;
+  document.addEventListener('click',e=>{
+    const c=e.target.closest('[data-coll]');if(!c)return;
+    const k=c.dataset.coll;COLL[k]=!isColl(k);try{localStorage.setItem('jr-coll',JSON.stringify(COLL))}catch(err){}
+    renderFollow();renderTodos();
+  });
+
+  // ===== To-Do =====
+  const TODO_TYPES=['ASAP','Task','Growth','Training','Meeting','Call','Prayer'];
+  const TODO_EMOJI={ASAP:'🔥',Task:'✅',Growth:'🌱',Training:'🎓',Meeting:'🤝',Call:'📞',Prayer:'🙏'};
+  let TODOS=sb?[]:[
+    {id:'d1',title:'Call Pastor Luis about the spring team',type:'Call',done:false,due:null,notes:'',created_at:new Date().toISOString()},
+    {id:'d2',title:'Finish the training outline',type:'ASAP',done:false,due:null,notes:'',created_at:new Date().toISOString()},
+    {id:'d3',title:'Read two chapters this week',type:'Growth',done:false,due:null,notes:'',created_at:new Date().toISOString()}
+  ];
+  let TODO_OK=true,todoFilter='all';
+  const todoErr=e=>(e&&(e.code==='PGRST205'||/todos/i.test(e.message||'')&&/(does not exist|schema cache|relation)/i.test(e.message||'')))?'To-Do needs one setup step: run supabase/todos.sql in Supabase (see the README).':'Couldn’t save that: '+((e&&e.message)||'unknown error');
+  async function loadTodos(){
+    if(!sb)return;
+    const {data,error}=await sb.from('todos').select('*').order('created_at',{ascending:false}).limit(1000);
+    if(error){TODO_OK=false;renderTodos();return}
+    TODO_OK=true;TODOS=data;renderTodos();
+  }
+  const todoSort=(a,b)=>((b.type==='ASAP')-(a.type==='ASAP'))||((a.due||'9999')<(b.due||'9999')?-1:(a.due||'9999')>(b.due||'9999')?1:0)||(new Date(b.created_at)-new Date(a.created_at));
+  async function addTodo(t){
+    const row={title:String(t.title||'').trim().slice(0,300),type:TODO_TYPES.includes(t.type)?t.type:'Task',due:t.due||null,notes:String(t.notes||'').trim().slice(0,2000),done:false};
+    if(!row.title)return false;
+    if(!sb){TODOS.unshift({...row,id:'d'+Date.now(),created_at:new Date().toISOString()});renderTodos();return true}
+    const {data,error}=await sb.from('todos').insert(row).select().single();
+    if(error){TODO_OK=!/setup step/.test(todoErr(error));toast(todoErr(error));renderTodos();return false}
+    TODOS.unshift(data);renderTodos();return true;
+  }
+  async function updateTodo(id,patch){
+    const t=TODOS.find(x=>x.id===id);if(!t)return;
+    const old={...t};Object.assign(t,patch);renderTodos();
+    if(!sb)return;
+    const {error}=await sb.from('todos').update(patch).eq('id',id);
+    if(error){Object.assign(t,old);renderTodos();toast(todoErr(error))}
+  }
+  const toggleTodo=(id,done)=>updateTodo(id,{done,done_at:done?new Date().toISOString():null});
+  async function deleteTodo(id){
+    if(!confirm('Delete this to-do?'))return false;
+    if(sb){const {error}=await sb.from('todos').delete().eq('id',id);if(error){toast(todoErr(error));return false}}
+    TODOS=TODOS.filter(x=>x.id!==id);renderTodos();return true;
+  }
+  async function clearDoneTodos(){
+    const done=TODOS.filter(t=>t.done);if(!done.length)return;
+    if(!confirm('Delete '+done.length+' completed to-do'+(done.length>1?'s':'')+'?'))return;
+    if(sb){const {error}=await sb.from('todos').delete().eq('done',true);if(error){toast(todoErr(error));return}}
+    TODOS=TODOS.filter(t=>!t.done);renderTodos();
+  }
+  const todoRow=t=>{const di=t.due?dueInfo(t.due):null;
+    return `<div class="todo ${t.done?'done':''}"><input type="checkbox" data-tck="${esc(t.id)}" ${t.done?'checked':''} aria-label="Mark done"><div class="tmain"><span class="ttitle">${esc(t.title)}</span>${t.notes?`<span class="tnote">${esc(t.notes)}</span>`:''}</div><span class="ttype tt-${esc(t.type)}">${TODO_EMOJI[t.type]||''} ${esc(t.type)}</span>${di&&!t.done?`<span class="due ${di.st}">${di.label}</span>`:''}<button class="mini" data-tedit="${esc(t.id)}" aria-label="Edit to-do">✎</button></div>`};
+  function renderTodos(){
+    const open=TODOS.filter(t=>!t.done).sort(todoSort),done=TODOS.filter(t=>t.done).sort((a,b)=>new Date(b.done_at||b.created_at)-new Date(a.done_at||a.created_at));
+    // home card
+    const hc=$('#todoCard');
+    if(hc)hc.innerHTML=collHead('todo','✅ To-Do',TODO_OK?(open.length?open.length+' open':'All clear 🎉'):'Setup needed')+(isColl('todo')?'':
+      (TODO_OK?(open.length?open.slice(0,8).map(todoRow).join('')+(open.length>8?`<p class="hint" style="margin:8px 0 0">+ ${open.length-8} more</p>`:''):'<div class="empty" style="padding:10px 0">Nothing on your list.</div>'):`<p class="hint" style="color:var(--gold)">${esc(todoErr({code:'PGRST205'}))}</p>`)+
+      `<div class="eactions"><button class="mini" data-todo="add">+ Add</button><button class="mini" data-todo="page">View all ›</button></div>`);
+    // page
+    const pg=$('#todo');if(!pg)return;
+    const keep=($('#todoNew')||{}).value||'',keepT=($('#todoNewType')||{}).value;
+    const shown=todoFilter==='all'?open:open.filter(t=>t.type===todoFilter);
+    const cnt=t=>open.filter(x=>x.type===t).length;
+    pg.innerHTML=`<div class="eyebrow">To-Do</div>
+      <div class="pagehead"><h1>✅ To-Do</h1><button class="btn" data-todo="add">+ Add To-Do</button></div>
+      <p class="sub" style="margin-top:6px">Check things off as you go. ASAP items stay at the top, then the soonest due.</p>
+      ${TODO_OK?'':`<div class="editbanner">${esc(todoErr({code:'PGRST205'}))}</div>`}
+      <div class="card"><div class="todoadd"><input id="todoNew" placeholder="Add a to-do and press Enter…" autocomplete="off"><select id="todoNewType" aria-label="Type">${TODO_TYPES.map(t=>`<option value="${t}">${TODO_EMOJI[t]} ${t}</option>`).join('')}</select><button class="btn" data-todo="quick">Add</button></div>
+        <div class="tfilter"><button class="chip ${todoFilter==='all'?'on':''}" data-tf="all">All ${open.length}</button>${TODO_TYPES.map(t=>`<button class="chip ${todoFilter===t?'on':''}" data-tf="${t}">${TODO_EMOJI[t]} ${t}${cnt(t)?' '+cnt(t):''}</button>`).join('')}</div>
+        <div>${shown.length?shown.map(todoRow).join(''):`<div class="empty">${open.length?'Nothing of this type.':'Nothing on your list. Add something above.'}</div>`}</div></div>
+      <div class="card">${collHead('done','Completed',done.length?done.length+' done':'None yet')}${isColl('done')?'':(done.length?done.map(todoRow).join('')+`<div class="eactions"><button class="mini" data-todo="clear">Clear completed</button></div>`:'<div class="empty" style="padding:10px 0">Nothing completed yet.</div>')}</div>`;
+    if(keep){$('#todoNew').value=keep}if(keepT)$('#todoNewType').value=keepT;
+  }
+  async function quickAddTodo(){
+    const i=$('#todoNew');if(!i||!i.value.trim())return;
+    const ok=await addTodo({title:i.value,type:$('#todoNewType').value});
+    if(ok){const n=$('#todoNew');if(n){n.value='';n.focus()}}
+  }
+  function todoForm(id){
+    const t=id?TODOS.find(x=>x.id===id):null;if(id&&!t)return;
+    const bg=document.createElement('div');bg.className='pform-bg';
+    bg.innerHTML=`<div class="pform" role="dialog" aria-modal="true" aria-label="To-Do">
+      <h3>${t?'Edit to-do':'New to-do'}</h3>
+      <label>To-do</label><input data-tf-f="title" value="${esc(t?t.title:'')}" placeholder="What needs doing?" autocomplete="off">
+      <div class="row2"><div><label>Type</label><select data-tf-f="type">${TODO_TYPES.map(x=>`<option value="${x}" ${(t?t.type:(TODO_TYPES.includes(todoFilter)?todoFilter:'Task'))===x?'selected':''}>${TODO_EMOJI[x]} ${x}</option>`).join('')}</select></div>
+        <div><label>Due (optional)</label><input type="date" data-tf-f="due" value="${esc(t&&t.due?t.due:'')}"></div></div>
+      <label>Notes (optional)</label><textarea data-tf-f="notes" style="min-height:80px">${esc(t?t.notes||'':'')}</textarea>
+      <div class="actions"><span>${t?'<button class="btn ghost" data-tf-act="del" style="color:var(--rose,#c0504d)">Delete</button>':''}</span><span style="display:flex;gap:8px"><button class="btn ghost" data-tf-act="cancel">Cancel</button><button class="btn" data-tf-act="save">Save</button></span></div></div>`;
+    document.body.appendChild(bg);const close=()=>bg.remove();
+    const val=k=>bg.querySelector('[data-tf-f="'+k+'"]').value;
+    const save=async()=>{
+      if(!val('title').trim()){toast('Add a to-do first');return}
+      const f={title:val('title').trim().slice(0,300),type:val('type'),due:val('due')||null,notes:val('notes').trim().slice(0,2000)};
+      close();if(t)await updateTodo(t.id,f);else await addTodo(f);
+    };
+    bg.addEventListener('click',async e=>{
+      if(e.target===bg){close();return}
+      const a=e.target.closest('[data-tf-act]');if(!a)return;
+      if(a.dataset.tfAct==='cancel')close();
+      if(a.dataset.tfAct==='save')save();
+      if(a.dataset.tfAct==='del'){if(await deleteTodo(t.id))close()}
+    });
+    bg.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.matches('input'))save();if(e.key==='Escape')close()});
+    setTimeout(()=>bg.querySelector('input').focus(),0);
+  }
+  document.addEventListener('change',e=>{const id=e.target.dataset&&e.target.dataset.tck;if(id)toggleTodo(id,e.target.checked)});
+  document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.id==='todoNew'){e.preventDefault();quickAddTodo()}});
+  document.addEventListener('click',e=>{
+    const tf=e.target.closest('[data-tf]');if(tf){todoFilter=tf.dataset.tf;renderTodos();return}
+    const te=e.target.closest('[data-tedit]');if(te){todoForm(te.dataset.tedit);return}
+    const ta=e.target.closest('[data-todo]');if(!ta)return;
+    const a=ta.dataset.todo;
+    if(a==='add')todoForm(null);if(a==='page')go('todo');if(a==='quick')quickAddTodo();if(a==='clear')clearDoneTodos();
+  });
+
   // ===== Sign-in (Supabase Auth; demo mode until config.js is filled in) =====
-  async function enterApp(){show('app');const u=await sb.auth.getUser();CURRENT_UID=u.data&&u.data.user?u.data.user.id:null;await loadRows();await loadStudy();await loadMemory();await loadPrefs();markOpen();await checkNotion();await flushQueue()}
+  async function enterApp(){show('app');const u=await sb.auth.getUser();CURRENT_UID=u.data&&u.data.user?u.data.user.id:null;await loadRows();await loadTodos();await loadStudy();await loadMemory();await loadPrefs();markOpen();await checkNotion();await flushQueue()}
   async function doLogin(e){
     e.preventDefault();
     if(!sb){show('app');return}
@@ -2471,7 +2596,7 @@
     if(error){msg.textContent='That email or password didn’t work.';return}
     $('#p').value='';await enterApp();
   }
-  function clearData(){DBROWS=[];try{PREFS=mergePrefs(null);applyPrefs();MEMP=[];MS=null;renderMemory();renderMemDue();R.data=null;R.sel.clear();R.search=null;R.cmp={};HL={};LINKS=[];$('#bText').innerHTML='';$('#bPanel').innerHTML='';$('#bBar').hidden=true}catch(e){}rebuild();go('home')}
+  function clearData(){DBROWS=[];TODOS=[];try{PREFS=mergePrefs(null);applyPrefs();MEMP=[];MS=null;renderMemory();renderMemDue();R.data=null;R.sel.clear();R.search=null;R.cmp={};HL={};LINKS=[];$('#bText').innerHTML='';$('#bPanel').innerHTML='';$('#bBar').hidden=true}catch(e){}rebuild();go('home')}
   async function signOut(){if(sb)await sb.auth.signOut();clearData();show('login')}
   (async function initAuth(){
     renderAll();renderMemory();

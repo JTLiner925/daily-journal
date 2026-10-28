@@ -51,7 +51,7 @@ function build(r: any) {
   const base = { "Journal ID": text(r.id) };
   switch (r.type) {
     case "thought":
-      return { props: { Title: title(r.title), Date: when(r.created_at), Category: sel(b.category), Mood: sel(b.mood), Tags: multi(b.tags), Comments: text(b.text), ...base }, kids: paras(b.text) };
+      return { props: { Title: title(r.title), Date: when(r.created_at), Category: sel(b.category), Mood: sel(b.mood), Tags: multi(b.tags), Folder: sel(b.folder), Link: { url: /^https?:\/\//i.test(b.link || "") ? b.link : null }, Comments: text(b.text), ...base }, kids: paras(b.text) };
     case "note":
       return { props: { Title: title(r.title), Date: when(r.created_at), Folder: sel(b.folder), Link: { url: /^https?:\/\//i.test(b.link || "") ? b.link : null }, Comments: text(b.text), ...base }, kids: paras(b.text) };
     case "meeting": {

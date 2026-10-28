@@ -105,3 +105,9 @@ Whatever you write in a step is saved automatically as a draft (on the device ri
 **Peek.** The 👀 Peek button fills in every blank so you can see the answers (words or letters). That round no longer counts for stars or time; tap Start over to try again.
 
 **Capitals and punctuation.** In First letters, a missing letter must be the exact capital or lowercase letter (the bank has both). When you type the whole verse, capital letters and punctuation count: a word only counts as right if its punctuation and capitalization match too. Words that are right except for a capital letter or punctuation show in gold. Straight and curly quotes are treated the same.
+
+
+## Thoughts & Notes, and To-Do
+Thoughts and Notes are one form now (Category, Mood, optional Folder and Link). Older Notes still show in the list; opening one to edit it moves it into the Thoughts database in Notion. New entries go to the **Thoughts** database, which gained **Folder** and **Link** columns, so redeploy `notion-push` after pulling this change.
+
+The **To-Do** checklist (types: ASAP, Task, Growth, Training, Meeting, Call, Prayer) is stored in its own table. One-time setup: run [`supabase/todos.sql`](supabase/todos.sql) in the Supabase SQL Editor. On the Today page the Follow-ups and To-Do cards expand and collapse; the choice is remembered on each device.
