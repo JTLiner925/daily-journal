@@ -768,6 +768,7 @@
     if(p==='bible'&&typeof bibleOpen==='function')bibleOpen();
     if(p==='memory'&&typeof renderMemory==='function')renderMemory();
     if(p==='notion'&&sb&&CURRENT_UID&&typeof loadPrefs==='function')loadPrefs();
+    if(p==='people'&&sb&&notionReady&&!PULLED){PULLED=true;pullPeople().then(r=>{if(r.ok&&r.changed)toast('Filled in details from Notion for '+r.changed+(r.changed===1?' person':' people'))})}
     window.scrollTo(0,0);
   }
   $$('nav a[data-p]').forEach(a=>a.onclick=()=>go(a.dataset.p));
@@ -1136,10 +1137,10 @@
       const items=FOLLOW.filter(f=>!f.done&&f.who.includes(p.n)),pr=profOf(p.n),sub=[pr.role,pr.company].filter(Boolean).join(' · ');
       const meet=p.m.length?`${p.m.length} meeting${p.m.length>1?'s':''} · last ${p.last}`:'No meetings yet';
       return `<div class="entry"><span class="tag t-meeting">Person</span><div class="emain"><h4>${esc(p.n)}${sub?` <span style="font-weight:400;color:var(--muted);font-size:14px">· ${esc(sub)}</span>`:''}</h4><p class="esub">${meet} · ${items.length?items.length+' open item'+(items.length>1?'s':''):'nothing open'}</p>
-        <div class="detail">${profKV(pr)||(p.about?kv('About',esc(p.about)):'')}${p.m.length?kv('Meetings',p.m.map(esc).join('<br>')):''}${kv('Open items',items.length?items.map(i=>'☐ '+esc(i.t)).join('<br>'):'None 🎉')}
+        <div class="detail">${profKV(pr)||kv('Details','<span style="color:var(--muted)">None yet.</span> <button type="button" class="plink" data-pedit="'+esc(p.n)+'">Add company, phone, email…</button>')}${p.m.length?kv('Meetings',p.m.map(esc).join('<br>')):''}${kv('Open items',items.length?items.map(i=>'☐ '+esc(i.t)).join('<br>'):'None 🎉')}
         <div class="eactions"><button class="mini" data-pmeet="${esc(p.n)}">New meeting</button><button class="mini" data-pedit="${esc(p.n)}">Edit details</button></div></div></div><div class="when">${p.m.length?'Last met<br>'+p.last:'Added'}</div></div>`}).join('');
     $('#people').innerHTML=`<div class="eyebrow">People</div>
-      <div class="pagehead"><h1>👥 People</h1><span style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn ghost" onclick="newPersonForm()">+ Add person</button><button class="btn ghost" onclick="syncAllPeople()">↻ Sync to Notion</button><button class="btn" onclick="go('meeting-new')">+ New Meeting</button></span></div>
+      <div class="pagehead"><h1>👥 People</h1><span style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn ghost" onclick="newPersonForm()">+ Add person</button><button class="btn ghost" onclick="syncAllPeople()">↻ Sync with Notion</button><button class="btn" onclick="go('meeting-new')">+ New Meeting</button></span></div>
       <p class="sub" style="margin-top:6px">Everyone you've met with or added, with their details, meetings and anything still open.</p>
       <div class="card">${rows||'<div class="empty">People appear here as you log meetings, or tap “Add person”.</div>'}</div><p class="hint">Details you add here (company, role, phone and so on) are saved to your account and follow you across devices. They also sync to the People database under Daily Journal in Notion when Notion is connected.</p>`;
   }
@@ -2428,7 +2429,31 @@
     if(loud)toast('✓ '+saved+' '+(saved===1?'person':'people')+' synced to Notion');
     return true;
   }
-  const syncAllPeople=()=>syncPeople(PEOPLE.map(p=>p.n),[],true);
+  // Fills blank details from the People database in Notion. What is already in the app is never overwritten.
+  let PULLED=false;
+  async function pullPeople(){
+    if(!sb||!notionReady)return {ok:false,error:'Notion isn’t connected yet'};
+    const {data,error}=await sb.functions.invoke('notion-push',{body:{action:'people-list'}});
+    if(error||!data||!data.ok){const m=(data&&data.error)||(error&&error.message)||'unknown error';return {ok:false,error:m==='Entry not found'?'Update the notion-push function in Supabase to pull people (see the README).':m}}
+    PREFS.people=PREFS.people||{};let changed=0;
+    (data.people||[]).forEach(n=>{
+      const name=String(n.name||'').trim();if(!name)return;
+      const cur=PREFS.people[name]||{},next={...cur};
+      PROFILE_KEYS.forEach(k=>{if(!String(cur[k]||'').trim()&&String(n[k]||'').trim())next[k]=String(n[k]).trim()});
+      const clean=cleanProfile(next);
+      if(JSON.stringify(clean)!==JSON.stringify(cleanProfile(cur))||(!PREFS.people[name]&&!PEOPLE.some(p=>p.n===name))){PREFS.people[name]=clean;changed++}
+    });
+    if(changed){savePrefs(true);rebuild()}
+    return {ok:true,changed};
+  }
+  async function syncAllPeople(){
+    if(!sb)return;
+    if(!notionReady){toast('Notion isn’t connected yet');return}
+    const r=await pullPeople();
+    if(!r.ok){toast(r.error);return}
+    const ok=await syncPeople(PEOPLE.map(p=>p.n),[],false);
+    if(ok)toast('✓ Synced with Notion'+(r.changed?' · filled in details for '+r.changed+(r.changed===1?' person':' people'):''));
+  }
   function editPerson(name){personForm(name,false)}
   function newPersonForm(){personForm('',true)}
 

@@ -32,7 +32,7 @@ Entries with "Push to Notion" ticked are sent to the **Daily Journal** page in N
 Settings → Notion shows "Connected" once it works. Re-sending an entry replaces its earlier Notion page.
 
 ### People sync
-The People page (company, role, phone, email, how you met, birthday, notes, meeting count, last met) syncs to a **People** database under Daily Journal in Notion, one row per person matched by name. It syncs when you save a person's details, and the **Sync to Notion** button on the People page sends everyone. This uses the same `notion-push` function, so after pulling this change, open the function in Supabase, replace its code with the new `index.ts` and deploy again.
+The People page (company, role, phone, email, how you met, birthday, notes, meeting count, last met) syncs to a **People** database under Daily Journal in Notion, one row per person matched by name. It syncs when you save a person's details, and the **Sync with Notion** button on the People page first pulls any details you added in Notion into blank fields in the app (the app's own values are never overwritten), then sends everyone. Opening the People page also pulls once per visit to the app. This uses the same `notion-push` function, so after pulling this change, open the function in Supabase, replace its code with the new `index.ts` and deploy again.
 
 ## Voice notes
 

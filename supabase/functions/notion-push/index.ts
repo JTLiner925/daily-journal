@@ -109,6 +109,31 @@ Deno.serve(async (req) => {
       return json(db.ok ? { ok: true } : { ok: false, error: "The integration can't see the Daily Journal page. In Notion: open it → ••• → Connections → add your integration." });
     }
 
+    if (action === "people-list") {
+      // read every person from the People database so the app can fill in details you added in Notion
+      const plain = (x: any) => ((x?.rich_text || x?.title || []) as any[]).map((t) => t.plain_text).join("");
+      const out: unknown[] = [];
+      let cursor: string | undefined;
+      do {
+        const q = await fetch(`${NOTION}/databases/${PEOPLE_DB}/query`, {
+          method: "POST", headers: nh(),
+          body: JSON.stringify({ page_size: 100, ...(cursor ? { start_cursor: cursor } : {}) }),
+        });
+        const j = await q.json();
+        if (!q.ok) return json({ ok: false, error: j.message || "Notion query failed" });
+        for (const r of j.results || []) {
+          const pr = r.properties || {};
+          out.push({
+            name: plain(pr.Name), company: plain(pr.Company), role: plain(pr.Role),
+            phone: pr.Phone?.phone_number || "", email: pr.Email?.email || "",
+            met: plain(pr["How we met"]), birthday: plain(pr.Birthday), notes: plain(pr.Notes),
+          });
+        }
+        cursor = j.has_more ? j.next_cursor : undefined;
+      } while (cursor);
+      return json({ ok: true, people: out });
+    }
+
     if (action === "people") {
       // upsert people by Name; "remove" archives rows. Capped per call so it stays well inside the time limit.
       const list = (Array.isArray(body.people) ? body.people : []).slice(0, 25);
