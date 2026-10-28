@@ -334,6 +334,12 @@
   .people-field>span{display:contents}
   .people-field input{border:0;flex:1;min-width:130px;width:auto;background:transparent;padding:6px}
   .people-field input:focus{outline:none}
+  .editbanner{margin:0 0 12px;padding:8px 12px;border-radius:var(--radius-sm);border:1px solid var(--gold);color:var(--gold);font-size:13px}
+  .pform-bg{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:60;display:flex;align-items:flex-start;justify-content:center;overflow:auto;padding:24px 14px}
+  .pform{background:var(--card,var(--field));border:1px solid var(--line);border-radius:var(--radius);padding:18px;max-width:520px;width:100%;margin:auto}
+  .pform h3{margin:0 0 4px}
+  .pform label{display:block}
+  .pform .actions{display:flex;gap:8px;justify-content:space-between;flex-wrap:wrap;margin-top:16px}
   .pchip{background:var(--accent-soft);color:var(--accent);border-radius:99px;padding:3px 6px 3px 12px;font-size:13px;display:inline-flex;gap:4px;align-items:center}
   .pchip button{background:none;border:0;color:inherit;padding:0 4px;font-size:14px}
   .suggest{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;font-size:12px;color:var(--muted);align-items:center}
@@ -750,7 +756,9 @@
   function show(id){$$('.view').forEach(v=>v.classList.toggle('active',v.id===id));window.scrollTo(0,0)}
   let cur='home';
   const base=p=>p.replace(/-new$/,'');
+  let EDITING=null; // {id,type} while a saved entry is open for editing
   function go(p){
+    if(EDITING&&p!==EDITING.type+'-new')endEdit();
     cur=p;
     $$('.page').forEach(x=>x.classList.toggle('active',x.id===p));
     $$('nav a[data-p]').forEach(a=>a.classList.toggle('on',a.dataset.p===base(p)));
@@ -893,7 +901,7 @@
   const tagOf=e=>SECTIONS[e[0]];
   const entryHTML=e=>{const s=tagOf(e);
     return `<div class="entry"><span class="tag ${s.tag}">${s.label}</span><div class="emain"><h4>${e[1]}</h4><p class="esub">${e[2]}</p>
-      <div class="detail">${e[5]}<div class="eactions"><button class="mini">Edit</button><button class="mini" data-send="${e[6]||''}">${e[4]===1?'Re-send to Notion':'Send to Notion'}</button><button class="mini" data-del="${e[6]||''}">Delete</button></div></div></div>
+      <div class="detail">${e[5]}<div class="eactions"><button class="mini" data-edit="${e[6]||''}">Edit</button><button class="mini" data-send="${e[6]||''}">${e[4]===1?'Re-send to Notion':'Send to Notion'}</button><button class="mini" data-del="${e[6]||''}">Delete</button></div></div></div>
       <div class="when">${e[3].replace(' · ','<br>')}<br><span class="sync ${e[4]===1?'':'pending'}">${e[4]===2?'◌ Waiting to save':e[4]===1?'✓ Notion':'● Not sent'}</span></div></div>`};
   const listHTML=(rows,empty)=>rows.length?rows.map(entryHTML).join(''):`<div class="empty">${empty||'Nothing here yet.'}</div>`;
   function renderLists(){
@@ -944,6 +952,9 @@
       if(mb.dataset.play){playAudio(mb);return}
       if(mb.dataset.del!==undefined){delEntry(mb.dataset.del);return}
       if(mb.dataset.send){pushEntry(mb.dataset.send);return}
+      if(mb.dataset.edit!==undefined){editEntry(mb.dataset.edit);return}
+      if(mb.dataset.pedit!==undefined){editPerson(mb.dataset.pedit);return}
+      if(mb.dataset.pmeet!==undefined){go('meeting-new');if(mb.dataset.pmeet&&!picked.includes(mb.dataset.pmeet)){picked.push(mb.dataset.pmeet);renderPeopleField()}return}
       toast(sb?'That’s coming soon.':'Mockup: this would '+mb.textContent.toLowerCase());return}
     const en=e.target.closest('.entry');
     $$('.entry.open').forEach(x=>{if(x!==en)x.classList.remove('open')});
@@ -1110,16 +1121,27 @@
     renderPeople();
   }
   $('#followCard').addEventListener('change',e=>{const i=e.target.dataset.fu;if(i===undefined)return;const f=FOLLOW[i];f.done=e.target.checked;if(sb){persistFollow(f)}else renderFollow()});
+  const profOf=n=>(PREFS.people&&PREFS.people[n])||{};
+  const PROF_LABELS={company:'Company',role:'Role',phone:'Phone',email:'Email',met:'How we met',birthday:'Birthday',notes:'Notes'};
+  function profKV(pr){
+    return ['company','role','phone','email','met','birthday','notes'].filter(k=>pr[k]).map(k=>{
+      let v=esc(pr[k]);
+      if(k==='phone')v=`<a href="tel:${esc(pr[k].replace(/[^+\d]/g,''))}" style="color:var(--accent)">${v}</a>`;
+      if(k==='email')v=`<a href="mailto:${esc(pr[k])}" style="color:var(--accent)">${v}</a>`;
+      if(k==='notes')v=v.replace(/\n/g,'<br>');
+      return kv(PROF_LABELS[k],v)}).join('');
+  }
   function renderPeople(){
     const rows=PEOPLE.map(p=>{
-      const items=FOLLOW.filter(f=>!f.done&&f.who.includes(p.n));
-      return `<div class="entry"><span class="tag t-meeting">Person</span><div class="emain"><h4>${esc(p.n)}</h4><p class="esub">${p.m.length} meeting${p.m.length>1?'s':''} · last ${p.last} · ${items.length?items.length+' open item'+(items.length>1?'s':''):'nothing open'}</p>
-        <div class="detail">${p.about?kv('About',esc(p.about)):''}${kv('Meetings',p.m.map(esc).join('<br>'))}${kv('Open items',items.length?items.map(i=>'☐ '+esc(i.t)).join('<br>'):'None 🎉')}
-        <div class="eactions"><button class="mini">New meeting</button><button class="mini">Edit</button></div></div></div><div class="when">Last met<br>${p.last}</div></div>`}).join('');
+      const items=FOLLOW.filter(f=>!f.done&&f.who.includes(p.n)),pr=profOf(p.n),sub=[pr.role,pr.company].filter(Boolean).join(' · ');
+      const meet=p.m.length?`${p.m.length} meeting${p.m.length>1?'s':''} · last ${p.last}`:'No meetings yet';
+      return `<div class="entry"><span class="tag t-meeting">Person</span><div class="emain"><h4>${esc(p.n)}${sub?` <span style="font-weight:400;color:var(--muted);font-size:14px">· ${esc(sub)}</span>`:''}</h4><p class="esub">${meet} · ${items.length?items.length+' open item'+(items.length>1?'s':''):'nothing open'}</p>
+        <div class="detail">${profKV(pr)||(p.about?kv('About',esc(p.about)):'')}${p.m.length?kv('Meetings',p.m.map(esc).join('<br>')):''}${kv('Open items',items.length?items.map(i=>'☐ '+esc(i.t)).join('<br>'):'None 🎉')}
+        <div class="eactions"><button class="mini" data-pmeet="${esc(p.n)}">New meeting</button><button class="mini" data-pedit="${esc(p.n)}">Edit details</button></div></div></div><div class="when">${p.m.length?'Last met<br>'+p.last:'Added'}</div></div>`}).join('');
     $('#people').innerHTML=`<div class="eyebrow">People</div>
-      <div class="pagehead"><h1>👥 People</h1><button class="btn" onclick="go('meeting-new')">+ New Meeting</button></div>
-      <p class="sub" style="margin-top:6px">Everyone you've met with, their meetings and anything still open.</p>
-      <div class="card">${rows||'<div class="empty">People appear here as you log meetings.</div>'}</div><p class="hint">The real build can sync this with the People database in your Missions Pipeline in Notion.</p>`;
+      <div class="pagehead"><h1>👥 People</h1><span style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn ghost" onclick="newPersonForm()">+ Add person</button><button class="btn" onclick="go('meeting-new')">+ New Meeting</button></span></div>
+      <p class="sub" style="margin-top:6px">Everyone you've met with or added, with their details, meetings and anything still open.</p>
+      <div class="card">${rows||'<div class="empty">People appear here as you log meetings, or tap “Add person”.</div>'}</div><p class="hint">Details you add here (company, role, phone and so on) are saved to your account and follow you across devices.</p>`;
   }
 
   // People field on the meeting form (suggests people you've met before)
@@ -1129,7 +1151,7 @@
     const q=$('#peopleInput').value.trim().toLowerCase();
     const opts=PEOPLE.filter(p=>!picked.includes(p.n)&&(!q||p.n.toLowerCase().includes(q)));
     const exact=PEOPLE.some(p=>p.n.toLowerCase()===q)||picked.map(x=>x.toLowerCase()).includes(q);
-    $('#peopleSuggest').innerHTML=(q?'':'Met before: ')+opts.map(p=>`<button type="button" data-add="${esc(p.n)}">${esc(p.n)} <span style="color:var(--muted)">· met ${p.m.length}×</span></button>`).join('')+(q&&!exact?`<button type="button" data-add="${esc($('#peopleInput').value.trim())}">＋ Add “${esc($('#peopleInput').value.trim())}” as new</button>`:'');
+    $('#peopleSuggest').innerHTML=(q?'':'Met before: ')+opts.map(p=>`<button type="button" data-add="${esc(p.n)}">${esc(p.n)} <span style="color:var(--muted)">· ${[profOf(p.n).company,p.m.length?'met '+p.m.length+'×':''].filter(Boolean).map(esc).join(' · ')}</span></button>`).join('')+(q&&!exact?`<button type="button" data-add="${esc($('#peopleInput').value.trim())}">＋ Add “${esc($('#peopleInput').value.trim())}” as new</button>`:'');
   }
   function addPerson(n){n=n.trim();if(n&&!picked.includes(n))picked.push(n);$('#peopleInput').value='';renderPeopleField()}
   $('#peopleSuggest').onclick=e=>{const b=e.target.closest('[data-add]');if(b)addPerson(b.dataset.add)};
@@ -1811,9 +1833,11 @@
 
 
   // ===== Settings that follow you across devices =====
-  const PREF_DEFAULT={rem:{office:{on:true,time:'06:30'},examen:{on:true,time:'21:00'},follow:{on:true,time:'08:00'}},days:['Mon','Tue','Wed','Thu','Fri'],bk:true,sync:'ask',opens:[],drafts:{},memDays:[]};
+  const PREF_DEFAULT={rem:{office:{on:true,time:'06:30'},examen:{on:true,time:'21:00'},follow:{on:true,time:'08:00'}},days:['Mon','Tue','Wed','Thu','Fri'],bk:true,sync:'ask',opens:[],drafts:{},memDays:[],people:{}};
+  const PROFILE_KEYS=['company','role','phone','email','met','birthday','notes'];
+  const cleanProfile=v=>{const o={};PROFILE_KEYS.forEach(k=>{const s=String((v&&v[k])??'').trim().slice(0,k==='notes'?2000:300);if(s)o[k]=s});return o};
   let PREFS=JSON.parse(JSON.stringify(PREF_DEFAULT)),prefTimer=null,PREFS_OK=true,prefRev=0,prefLoud=false;
-  const mergePrefs=p=>{const d=JSON.parse(JSON.stringify(PREF_DEFAULT));if(!p)return d;['office','examen','follow'].forEach(k=>{if(p.rem&&p.rem[k])d.rem[k]={on:p.rem[k].on!==false,time:p.rem[k].time||d.rem[k].time}});if(Array.isArray(p.days))d.days=p.days;if(typeof p.bk==='boolean')d.bk=p.bk;if(['ask','auto','manual'].includes(p.sync))d.sync=p.sync;if(Array.isArray(p.opens))d.opens=p.opens.filter(x=>typeof x==='string').slice(-400);if(p.drafts&&typeof p.drafts==='object')d.drafts=p.drafts;if(Array.isArray(p.memDays))d.memDays=p.memDays.filter(x=>typeof x==='string').slice(-400);return d};
+  const mergePrefs=p=>{const d=JSON.parse(JSON.stringify(PREF_DEFAULT));if(!p)return d;['office','examen','follow'].forEach(k=>{if(p.rem&&p.rem[k])d.rem[k]={on:p.rem[k].on!==false,time:p.rem[k].time||d.rem[k].time}});if(Array.isArray(p.days))d.days=p.days;if(typeof p.bk==='boolean')d.bk=p.bk;if(['ask','auto','manual'].includes(p.sync))d.sync=p.sync;if(Array.isArray(p.opens))d.opens=p.opens.filter(x=>typeof x==='string').slice(-400);if(p.drafts&&typeof p.drafts==='object')d.drafts=p.drafts;if(Array.isArray(p.memDays))d.memDays=p.memDays.filter(x=>typeof x==='string').slice(-400);if(p.people&&typeof p.people==='object'&&!Array.isArray(p.people))Object.entries(p.people).slice(0,1000).forEach(([n,v])=>{if(v&&typeof v==='object')d.people[String(n).slice(0,120)]=cleanProfile(v)});return d};
   function applyPrefs(){
     ['office','examen','follow'].forEach(k=>{$(`[data-rem="${k}"]`).checked=PREFS.rem[k].on;$(`[data-remt="${k}"]`).value=PREFS.rem[k].time});
     $$('[data-day]').forEach(b=>b.classList.toggle('on',PREFS.days.includes(b.dataset.day)));
@@ -1874,6 +1898,7 @@
     if(typeof refreshFlowButtons==='function')refreshFlowButtons();
   }
   function saveDraft(p){
+    if(EDITING)return; // never auto-save an edit as today's draft
     const d=collectDraft(p),n=$('#draftNote-'+p);
     if(isEmptyDraft(d)&&!(d.step>0)){if(n)n.textContent='';try{localStorage.removeItem('jr-draft-'+p)}catch(e){}refreshFlowButtons();return}
     try{localStorage.setItem('jr-draft-'+p,JSON.stringify(d))}catch(e){}
@@ -1883,6 +1908,7 @@
   }
   const queueDraft=p=>{clearTimeout(draftTimers[p]);draftTimers[p]=setTimeout(()=>saveDraft(p),500)};
   function restoreDraft(p){
+    if(EDITING)return;
     if(allRows().some(r=>r.type===p&&sameDay(new Date(r.created_at),new Date()))){clearDraft(p);return}
     let local=null;try{local=JSON.parse(localStorage.getItem('jr-draft-'+p)||'null')}catch(e){}
     const d=[local,PREFS.drafts&&PREFS.drafts[p]].filter(x=>x&&x.d===todayStr()&&(x.step>0||!isEmptyDraft(x))).sort((a,b)=>b.at-a.at)[0];
@@ -1902,7 +1928,7 @@
     if(allRows().some(r=>r.type===p&&sameDay(new Date(r.created_at),new Date())))return 'done';
     let local=null;try{local=JSON.parse(localStorage.getItem('jr-draft-'+p)||'null')}catch(e){}
     const started=x=>x&&x.d===todayStr()&&(x.step>0||!isEmptyDraft(x));
-    if(started(local)||started(PREFS.drafts&&PREFS.drafts[p])||started(collectDraft(p)))return 'continue';
+    if(started(local)||started(PREFS.drafts&&PREFS.drafts[p])||(!(EDITING&&EDITING.type===p)&&started(collectDraft(p))))return 'continue';
     return 'begin';
   }
   function refreshFlowButtons(){
@@ -2102,7 +2128,8 @@
       (b.people||[]).forEach(n=>{const p=map[n]=map[n]||{n,about:'',m:[],lastD:0};p.m.push((r.title||'Meeting')+' · '+md.toLocaleDateString([],{month:'short',day:'numeric'}));if(md>p.lastD)p.lastD=md});
       (b.actions||[]).forEach((a,i)=>{if(!a.t)return;const di=dueInfo(b.followUp);FOLLOW.push({t:a.t,who:b.people||[],from:r.title||'Meeting',due:di.label,st:di.st,done:!!a.done,rowId:r.id,idx:i})});
     });
-    PEOPLE=Object.values(map).map(p=>({...p,m:p.m.reverse(),last:shortDay(p.lastD)})).sort((a,b)=>b.lastD-a.lastD);
+    Object.keys(PREFS.people||{}).forEach(n=>{if(!map[n])map[n]={n,about:'',m:[],lastD:0}});
+    PEOPLE=Object.values(map).map(p=>({...p,m:p.m.reverse(),last:p.lastD?shortDay(p.lastD):'—'})).sort((a,b)=>(b.lastD||0)-(a.lastD||0)||a.n.localeCompare(b.n));
     // week at a glance
     const dow=now.getDay(),has=(t,dt)=>rows.some(r=>r.type===t&&sameDay(new Date(r.created_at),dt));
     const mk=t=>Array.from({length:7},(_,i)=>{const dt=day0(now);dt.setDate(dt.getDate()-dow+i);if(dt>day0(now))return -1;return has(t,dt)?1:(sameDay(dt,now)?'t':0)});
@@ -2256,15 +2283,134 @@
     await settleRecorders(type);
     const c=COLLECT[type]();
     if(!c){toast('Add a little something first');return}
+    const editing=!!(EDITING&&EDITING.type===type);
     const au=takeAudio(type);if(au)c.body.audio=au;
     saving=true;
     try{
+      if(editing){
+        const res=await saveEdit(type,c);
+        if(res!=='saved'){if(au)AUDIO[type]=au;toast(res);return}
+        endEdit();toast('✓ Changes saved');go(type);return;
+      }
       const st=await saveRow(type,c.title,c.summary,c.body);
       resetForm(type);if(type==='office'||type==='examen')clearDraft(type);
       toast(st==='queued'?QUEUED_MSG:'✓ '+LABEL[type]+' saved');
       go(type);
     }finally{saving=false}
   }
+
+  // ===== Editing a saved entry =====
+  // Opens the same form the entry was written in, filled in. Saving replaces the original row (same id, same date).
+  const setF=(pg,k,v)=>{const el=$('#'+pg+'-new [data-f="'+k+'"]');if(el){if(el.tagName==='SELECT'&&v&&![...el.options].some(o=>o.value===String(v)||o.text===String(v)))el.add(new Option(v,v));el.value=v==null?'':v}};
+  const setChip=(pg,k,val)=>{const g=$('#'+pg+'-new [data-f="'+k+'"]');if(!g)return;g.querySelectorAll('.chip').forEach(c=>c.classList.toggle('on',c.textContent===val))};
+  const autoTitle=(r,text,n)=>!r.title||r.title===snip(text||'',n||50);
+  const FILL={
+    thought(r){const b=r.body||{};setChip('thought','category',b.category);setChip('thought','mood',b.mood);setF('thought','title',autoTitle(r,b.text)?'':r.title);setF('thought','text',b.text);setF('thought','tags',b.tags);$('#t1').checked=!!(b.pushNotion||r.sent_to_notion)},
+    note(r){const b=r.body||{};setF('note','title',autoTitle(r,b.text)?'':r.title);setF('note','text',b.text);setF('note','folder',b.folder);setF('note','link',b.link);$('#n1').checked=!!(b.pushNotion||r.sent_to_notion)},
+    meeting(r){const b=r.body||{};
+      setF('meeting','title',r.title);$('#mDate').value=b.date||'';$('#mTime').value=b.time||'';
+      if(b.dur){const sel=$('#mDur');if(![...sel.options].some(o=>+o.value===+b.dur))sel.add(new Option(durLabel(+b.dur),b.dur));sel.value=String(b.dur);sel.dispatchEvent(new Event('change'))}
+      setF('meeting','type',b.type);picked.length=0;(b.people||[]).forEach(n=>picked.push(n));renderPeopleField();
+      setF('meeting','text',b.text);
+      const box=$('#actions');box.innerHTML='';
+      (b.actions||[]).concat([{t:'',done:false}]).forEach(a=>{addAction();const d=box.lastElementChild;d.querySelector('input[type=checkbox]').checked=!!a.done;d.querySelector('input:not([type=checkbox])').value=a.t||''});
+      setF('meeting','followUp',b.followUp);$('#m1').checked=!!(b.pushNotion||r.sent_to_notion)},
+    scripture(r){const b=r.body||{};
+      setF('scripture','title',r.title);$('#scrText').value=b.text||b.note||'';$('#scrTags').value=b.tags||'';
+      SCR_COPY={};(b.copyright||[]).forEach((c,i)=>{SCR_COPY['k'+i]=c});$('#verseCopy').textContent=(b.copyright||[]).join(' ');
+      $('#s1c').checked=!!(b.pushNotion||r.sent_to_notion)},
+    office(r){const b=r.body||{},t=$$('#office-new .xstep > textarea');
+      [b.psalm,b.proverb,b.nt,b.praying,b.intention].forEach((v,i)=>{if(t[i])t[i].value=v||''});
+      // show this entry's own readings, not today's
+      today={psalm:b.psalmRef||'',proverb:b.proverbRef||'',nt:b.ntRef||''};
+      $$('.refbadge').forEach(x=>{x.textContent=today[x.dataset.ref]||''});$('#planDayLbl').textContent='Day '+(b.day||'?')+' (editing)';
+      $('#o1').checked=!!(b.pushNotion||r.sent_to_notion)},
+    examen(r){const b=r.body||{},t=$$('#examen-new .xstep > textarea');
+      [b.gratitude,b.emotionsNote,b.prayer,b.tomorrow].forEach((v,i)=>{if(t[i])t[i].value=v||''});
+      const on=(b.emotions||'').split(',').map(x=>x.trim());$$('#examen-new .emo .chip').forEach(c=>c.classList.toggle('on',on.includes(c.textContent)));
+      $('#x1').checked=!!(b.pushNotion||r.sent_to_notion)}
+  };
+  function editUI(type,on){
+    const pg=$('#'+type+'-new'),card=pg.querySelector('.card');
+    let bn=pg.querySelector('.editbanner');
+    if(on){
+      if(!bn){bn=document.createElement('div');bn.className='editbanner';card.insertBefore(bn,card.firstChild)}
+      bn.textContent='✎ Editing a saved '+LABEL[type].toLowerCase()+'. Saving replaces the original.';
+    }else if(bn)bn.remove();
+    const sv=pg.querySelector('.actions .btn:not(.ghost):not(.flow-next)');if(sv)sv.textContent=on?'Save changes':'Save';
+  }
+  function editEntry(id){
+    if(!sb){toast('Mockup: this would open the entry for editing');return}
+    if(!id||id.startsWith('q')||id.startsWith('demo')){toast('This entry is still waiting to save. Try again once it has synced.');return}
+    const r=DBROWS.find(x=>x.id===id);if(!r||!FILL[r.type]){toast('Couldn’t open that entry');return}
+    if(EDITING)endEdit();
+    EDITING={id:r.id,type:r.type};
+    go(r.type+'-new');
+    resetForm(r.type);FILL[r.type](r);editUI(r.type,true);
+    if(flows[r.type]){flows[r.type].i=0;flowRender(r.type)}
+  }
+  function endEdit(){
+    if(!EDITING)return;
+    const type=EDITING.type;EDITING=null;
+    try{resetForm(type);editUI(type,false);if(type==='office')renderPlan()}catch(e){}
+  }
+  async function saveEdit(type,c){
+    const r=DBROWS.find(x=>x.id===EDITING.id);if(!r)return 'Couldn’t find that entry to update. Reload the app and try again.';
+    if(isOffline())return 'You’re offline. Reconnect to save changes to an entry.';
+    const old=r.body||{};
+    const body={...old,...c.body};
+    const audio=[...(old.audio||[]),...(c.body.audio||[])];if(audio.length)body.audio=audio;else delete body.audio;
+    let title=c.title,summary=c.summary;
+    if(type==='office'){['day','psalmRef','proverbRef','ntRef'].forEach(k=>{body[k]=old[k]});title=r.title;summary=r.summary}
+    if(type==='examen')title=r.title;
+    const {data,error}=await sb.from('entries').update({title,summary,body,sent_to_notion:false}).eq('id',r.id).select().single();
+    if(error)return 'Couldn’t save your changes: '+error.message;
+    Object.assign(r,data);rebuild();
+    if(body.pushNotion&&notionReady)pushEntry(r.id,true);
+    return 'saved';
+  }
+
+  // ===== Details for the people you meet (company, role, phone, …) =====
+  function personForm(name,isNew){
+    const pr=profOf(name),has=!isNew&&PEOPLE.some(p=>p.n===name&&p.m.length);
+    const bg=document.createElement('div');bg.className='pform-bg';
+    const fld=(k,label,ph,type)=>`<label>${label}</label><input data-pf="${k}" type="${type||'text'}" placeholder="${ph||''}" value="${esc(pr[k]||'')}">`;
+    bg.innerHTML=`<div class="pform" role="dialog" aria-modal="true" aria-label="Person details">
+      <h3>${isNew?'Add a person':esc(name)}</h3>
+      <p class="hint" style="margin:0 0 8px">${isNew?'Add someone before you meet, or to keep track of a contact.':'Details save to your account and show on the People page.'}</p>
+      ${isNew?`<label>Name</label><input data-pf="name" placeholder="First and last name" autocomplete="off">`:''}
+      ${fld('company','Company / organization','e.g. Pioneers')}
+      ${fld('role','Role / title','e.g. Mobilizer')}
+      <div class="row2"><div>${fld('phone','Phone','','tel')}</div><div>${fld('email','Email','','email')}</div></div>
+      ${fld('met','How we met','e.g. Missions class, referral from Mark')}
+      ${fld('birthday','Birthday','')}
+      <label>Notes</label><textarea data-pf="notes" style="min-height:90px" placeholder="Family, interests, prayer needs, what to remember…">${esc(pr.notes||'')}</textarea>
+      <div class="actions"><span>${isNew?'':`<button class="btn ghost" data-pf-act="remove" style="color:var(--rose,#c0504d)">${has?'Clear details':'Remove person'}</button>`}</span><span style="display:flex;gap:8px"><button class="btn ghost" data-pf-act="cancel">Cancel</button><button class="btn" data-pf-act="save">Save</button></span></div>
+    </div>`;
+    document.body.appendChild(bg);
+    const close=()=>bg.remove();
+    bg.addEventListener('click',e=>{
+      if(e.target===bg){close();return}
+      const act=e.target.closest('[data-pf-act]');if(!act)return;
+      const a=act.dataset.pfAct;
+      if(a==='cancel'){close();return}
+      if(a==='remove'){
+        if(!confirm(has?'Clear the saved details for '+name+'? Their meetings stay.':'Remove '+name+'?'))return;
+        delete PREFS.people[name];savePrefs(true);close();rebuild();toast('Details cleared');return}
+      let n=name;
+      if(isNew){n=(bg.querySelector('[data-pf=name]').value||'').trim();if(!n){toast('Add a name first');return}
+        if(PEOPLE.some(p=>p.n.toLowerCase()===n.toLowerCase())){toast(n+' is already on your People page');return}}
+      const v={};bg.querySelectorAll('[data-pf]').forEach(el=>{if(el.dataset.pf!=='name')v[el.dataset.pf]=el.value});
+      PREFS.people=PREFS.people||{};
+      const clean=cleanProfile(v);
+      if(Object.keys(clean).length||isNew)PREFS.people[n]=clean;else delete PREFS.people[n];
+      savePrefs(true);close();rebuild();toast('✓ Saved '+n);
+    });
+    setTimeout(()=>{const f=bg.querySelector('input');if(f)f.focus()},0);
+  }
+  function editPerson(name){personForm(name,false)}
+  function newPersonForm(){personForm('',true)}
+
   window.addEventListener('online',()=>{flushQueue();renderSync()});
   window.addEventListener('offline',renderSync);
 
