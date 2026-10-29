@@ -2485,6 +2485,24 @@
   ];
   let TODO_OK=true,todoFilter='all';
   const todoErr=e=>(e&&(e.code==='PGRST205'||/todos/i.test(e.message||'')&&/(does not exist|schema cache|relation)/i.test(e.message||'')))?'To-Do needs one setup step: run supabase/todos.sql in Supabase (see the README).':'Couldn’t save that: '+((e&&e.message)||'unknown error');
+  // Sends to-dos to the To-Do database in Notion (matched by id). Quiet unless it fails; the app stays the source of truth.
+  let todoWarned=false;
+  async function syncTodos(items,remove,loud){
+    if(!sb||!notionReady){if(loud)toast('Notion isn’t connected yet');return false}
+    const list=(items||[]).map(t=>({id:t.id,title:t.title,type:t.type,done:!!t.done,due:t.due||'',done_at:t.done_at||'',notes:t.notes||''}));
+    let saved=0;
+    try{
+      for(let i=0;i<Math.max(list.length,1);i+=25){
+        const {data,error}=await sb.functions.invoke('notion-push',{body:{action:'todos',todos:list.slice(i,i+25),remove:i===0?(remove||[]):[]}});
+        if(error||!data||!data.ok){const m=(data&&data.error)||(error&&error.message)||'unknown error';
+          if(loud||!todoWarned){todoWarned=true;toast(m==='Entry not found'?'Update the notion-push function in Supabase to sync to-dos (see the README).':'Couldn’t sync to-dos: '+m)}
+          return false}
+        saved+=data.saved||0;
+      }
+    }catch(e){if(loud)toast('Couldn’t sync to-dos: '+e.message);return false}
+    if(loud)toast('✓ '+saved+' to-do'+(saved===1?'':'s')+' synced to Notion');
+    return true;
+  }
   async function loadTodos(){
     if(!sb)return;
     const {data,error}=await sb.from('todos').select('*').order('created_at',{ascending:false}).limit(1000);
@@ -2498,26 +2516,27 @@
     if(!sb){TODOS.unshift({...row,id:'d'+Date.now(),created_at:new Date().toISOString()});renderTodos();return true}
     const {data,error}=await sb.from('todos').insert(row).select().single();
     if(error){TODO_OK=!/setup step/.test(todoErr(error));toast(todoErr(error));renderTodos();return false}
-    TODOS.unshift(data);renderTodos();return true;
+    TODOS.unshift(data);renderTodos();syncTodos([data]);return true;
   }
   async function updateTodo(id,patch){
     const t=TODOS.find(x=>x.id===id);if(!t)return;
     const old={...t};Object.assign(t,patch);renderTodos();
     if(!sb)return;
     const {error}=await sb.from('todos').update(patch).eq('id',id);
-    if(error){Object.assign(t,old);renderTodos();toast(todoErr(error))}
+    if(error){Object.assign(t,old);renderTodos();toast(todoErr(error));return}
+    syncTodos([t]);
   }
   const toggleTodo=(id,done)=>updateTodo(id,{done,done_at:done?new Date().toISOString():null});
   async function deleteTodo(id){
     if(!confirm('Delete this to-do?'))return false;
     if(sb){const {error}=await sb.from('todos').delete().eq('id',id);if(error){toast(todoErr(error));return false}}
-    TODOS=TODOS.filter(x=>x.id!==id);renderTodos();return true;
+    TODOS=TODOS.filter(x=>x.id!==id);renderTodos();syncTodos([],[id]);return true;
   }
   async function clearDoneTodos(){
     const done=TODOS.filter(t=>t.done);if(!done.length)return;
     if(!confirm('Delete '+done.length+' completed to-do'+(done.length>1?'s':'')+'?'))return;
     if(sb){const {error}=await sb.from('todos').delete().eq('done',true);if(error){toast(todoErr(error));return}}
-    TODOS=TODOS.filter(t=>!t.done);renderTodos();
+    TODOS=TODOS.filter(t=>!t.done);renderTodos();syncTodos([],done.map(t=>t.id));
   }
   const todoRow=t=>{const di=t.due?dueInfo(t.due):null;
     return `<div class="todo ${t.done?'done':''}"><input type="checkbox" data-tck="${esc(t.id)}" ${t.done?'checked':''} aria-label="Mark done"><div class="tmain"><span class="ttitle">${esc(t.title)}</span>${t.notes?`<span class="tnote">${esc(t.notes)}</span>`:''}</div><span class="ttype tt-${esc(t.type)}">${TODO_EMOJI[t.type]||''} ${esc(t.type)}</span>${di&&!t.done?`<span class="due ${di.st}">${di.label}</span>`:''}<button class="mini" data-tedit="${esc(t.id)}" aria-label="Edit to-do">✎</button></div>`};
@@ -2534,7 +2553,7 @@
     const shown=todoFilter==='all'?open:open.filter(t=>t.type===todoFilter);
     const cnt=t=>open.filter(x=>x.type===t).length;
     pg.innerHTML=`<div class="eyebrow">To-Do</div>
-      <div class="pagehead"><h1>✅ To-Do</h1><button class="btn" data-todo="add">+ Add To-Do</button></div>
+      <div class="pagehead"><h1>✅ To-Do</h1><span style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn ghost" data-todo="sync">↻ Sync to Notion</button><button class="btn" data-todo="add">+ Add To-Do</button></span></div>
       <p class="sub" style="margin-top:6px">Check things off as you go. ASAP items stay at the top, then the soonest due.</p>
       ${TODO_OK?'':`<div class="editbanner">${esc(todoErr({code:'PGRST205'}))}</div>`}
       <div class="card"><div class="todoadd"><input id="todoNew" placeholder="Add a to-do and press Enter…" autocomplete="off"><select id="todoNewType" aria-label="Type">${TODO_TYPES.map(t=>`<option value="${t}">${TODO_EMOJI[t]} ${t}</option>`).join('')}</select><button class="btn" data-todo="quick">Add</button></div>
@@ -2582,7 +2601,7 @@
     const te=e.target.closest('[data-tedit]');if(te){todoForm(te.dataset.tedit);return}
     const ta=e.target.closest('[data-todo]');if(!ta)return;
     const a=ta.dataset.todo;
-    if(a==='add')todoForm(null);if(a==='page')go('todo');if(a==='quick')quickAddTodo();if(a==='clear')clearDoneTodos();
+    if(a==='add')todoForm(null);if(a==='page')go('todo');if(a==='quick')quickAddTodo();if(a==='clear')clearDoneTodos();if(a==='sync')syncTodos(TODOS,[],true);
   });
 
   // ===== Sign-in (Supabase Auth; demo mode until config.js is filled in) =====

@@ -111,3 +111,5 @@ Whatever you write in a step is saved automatically as a draft (on the device ri
 Thoughts and Notes are one form now (Category, Mood, optional Folder and Link). Older Notes still show in the list; opening one to edit it moves it into the Thoughts database in Notion. New entries go to the **Thoughts** database, which gained **Folder** and **Link** columns, so redeploy `notion-push` after pulling this change.
 
 The **To-Do** checklist (types: ASAP, Task, Growth, Training, Meeting, Call, Prayer) is stored in its own table. One-time setup: run [`supabase/todos.sql`](supabase/todos.sql) in the Supabase SQL Editor. On the Today page the Follow-ups and To-Do cards expand and collapse; the choice is remembered on each device.
+
+To-Dos also sync to a **To-Do** database under Daily Journal in Notion (one row per to-do, matched by id; Type, Done, Due, Completed and Notes). Adding, editing, checking off or deleting a to-do updates its row, and **↻ Sync to Notion** on the To-Do page sends everything. The sync goes one way (app to Notion), so the app is the source of truth. It uses the same `notion-push` function, so redeploy it after pulling this change.

@@ -14,6 +14,8 @@ const DBS: Record<string, string> = {
 };
 // People database (one row per person, matched by Name; synced from the People page)
 const PEOPLE_DB = "22471c50-f1da-4d04-827e-608f751aaaca";
+// To-Do database (one row per to-do, matched by Journal ID = the to-do's id)
+const TODO_DB = "8db5be9b-2066-43fd-9f08-3f4922bbaae8";
 const TZ = "America/Chicago";
 const NOTION = "https://api.notion.com/v1";
 const cors = {
@@ -107,6 +109,48 @@ Deno.serve(async (req) => {
       if (!me.ok) return json({ ok: false, error: "Notion rejected the token" });
       const db = await fetch(`${NOTION}/databases/${DBS.thought}`, { headers: nh() });
       return json(db.ok ? { ok: true } : { ok: false, error: "The integration can't see the Daily Journal page. In Notion: open it → ••• → Connections → add your integration." });
+    }
+
+    if (action === "todos") {
+      // upsert to-dos by Journal ID; "remove" archives rows. Capped per call.
+      const list = (Array.isArray(body.todos) ? body.todos : []).slice(0, 25);
+      const remove = (Array.isArray(body.remove) ? body.remove : []).slice(0, 25);
+      const findTodo = async (jid: string) => {
+        const q = await fetch(`${NOTION}/databases/${TODO_DB}/query`, {
+          method: "POST", headers: nh(),
+          body: JSON.stringify({ filter: { property: "Journal ID", rich_text: { equals: jid } }, page_size: 1 }),
+        });
+        const j = await q.json();
+        if (!q.ok) throw new Error(j.message || "Notion query failed");
+        return j.results?.[0];
+      };
+      let saved = 0, removed = 0;
+      for (const t of list) {
+        const jid = String(t?.id || "").trim();
+        const name = String(t?.title || "").trim().slice(0, 300);
+        if (!jid || !name) continue;
+        const props = {
+          Name: title(name), Type: sel(t.type), Done: { checkbox: !!t.done },
+          Due: { date: /^\d{4}-\d{2}-\d{2}$/.test(String(t.due || "")) ? { start: t.due } : null },
+          Completed: { date: t.done && t.done_at ? { start: t.done_at } : null },
+          Notes: text(t.notes), "Journal ID": text(jid),
+        };
+        const existing = await findTodo(jid);
+        const res = existing
+          ? await fetch(`${NOTION}/pages/${existing.id}`, { method: "PATCH", headers: nh(), body: JSON.stringify({ properties: props }) })
+          : await fetch(`${NOTION}/pages`, { method: "POST", headers: nh(), body: JSON.stringify({ parent: { database_id: TODO_DB }, properties: props }) });
+        const out = await res.json();
+        if (!res.ok) return json({ ok: false, error: out.message || "Notion error" });
+        saved++;
+      }
+      for (const jid of remove) {
+        const existing = await findTodo(String(jid || "").trim());
+        if (existing) {
+          await fetch(`${NOTION}/pages/${existing.id}`, { method: "PATCH", headers: nh(), body: JSON.stringify({ archived: true }) });
+          removed++;
+        }
+      }
+      return json({ ok: true, saved, removed });
     }
 
     if (action === "people-list") {
