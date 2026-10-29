@@ -2549,23 +2549,24 @@
       `<div class="eactions"><button class="mini" data-todo="add">+ Add</button><button class="mini" data-todo="page">View all ›</button></div>`);
     // page
     const pg=$('#todo');if(!pg)return;
-    const keep=($('#todoNew')||{}).value||'',keepT=($('#todoNewType')||{}).value;
+    const keep=['todoNew','todoNewType','todoNewDue','todoNewNotes'].map(i=>($('#'+i)||{}).value||'');
     const shown=todoFilter==='all'?open:open.filter(t=>t.type===todoFilter);
     const cnt=t=>open.filter(x=>x.type===t).length;
     pg.innerHTML=`<div class="eyebrow">To-Do</div>
       <div class="pagehead"><h1>✅ To-Do</h1><span style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn ghost" data-todo="sync">↻ Sync to Notion</button><button class="btn" data-todo="add">+ Add To-Do</button></span></div>
       <p class="sub" style="margin-top:6px">Check things off as you go. ASAP items stay at the top, then the soonest due.</p>
       ${TODO_OK?'':`<div class="editbanner">${esc(todoErr({code:'PGRST205'}))}</div>`}
-      <div class="card"><div class="todoadd"><input id="todoNew" placeholder="Add a to-do and press Enter…" autocomplete="off"><select id="todoNewType" aria-label="Type">${TODO_TYPES.map(t=>`<option value="${t}">${TODO_EMOJI[t]} ${t}</option>`).join('')}</select><button class="btn" data-todo="quick">Add</button></div>
+      <div class="card"><div class="todoadd"><input id="todoNew" placeholder="Add a to-do…" autocomplete="off"><select id="todoNewType" aria-label="Type">${TODO_TYPES.map(t=>`<option value="${t}">${TODO_EMOJI[t]} ${t}</option>`).join('')}</select></div>
+        <div class="todoadd" style="margin-top:8px"><input type="date" id="todoNewDue" aria-label="Due date (optional)" title="Due date (optional)" style="flex:0 1 170px;min-width:150px"><input id="todoNewNotes" placeholder="Comments (optional)" autocomplete="off"><button class="btn" data-todo="quick">Add</button></div>
         <div class="tfilter"><button class="chip ${todoFilter==='all'?'on':''}" data-tf="all">All ${open.length}</button>${TODO_TYPES.map(t=>`<button class="chip ${todoFilter===t?'on':''}" data-tf="${t}">${TODO_EMOJI[t]} ${t}${cnt(t)?' '+cnt(t):''}</button>`).join('')}</div>
         <div>${shown.length?shown.map(todoRow).join(''):`<div class="empty">${open.length?'Nothing of this type.':'Nothing on your list. Add something above.'}</div>`}</div></div>
       <div class="card">${collHead('done','Completed',done.length?done.length+' done':'None yet')}${isColl('done')?'':(done.length?done.map(todoRow).join('')+`<div class="eactions"><button class="mini" data-todo="clear">Clear completed</button></div>`:'<div class="empty" style="padding:10px 0">Nothing completed yet.</div>')}</div>`;
-    if(keep){$('#todoNew').value=keep}if(keepT)$('#todoNewType').value=keepT;
+    ['todoNew','todoNewType','todoNewDue','todoNewNotes'].forEach((id,i)=>{if(keep[i])$('#'+id).value=keep[i]});
   }
   async function quickAddTodo(){
     const i=$('#todoNew');if(!i||!i.value.trim())return;
-    const ok=await addTodo({title:i.value,type:$('#todoNewType').value});
-    if(ok){const n=$('#todoNew');if(n){n.value='';n.focus()}}
+    const ok=await addTodo({title:i.value,type:$('#todoNewType').value,due:$('#todoNewDue').value,notes:$('#todoNewNotes').value});
+    if(ok){['todoNewDue','todoNewNotes'].forEach(id=>{const e=$('#'+id);if(e)e.value=''});const n=$('#todoNew');if(n){n.value='';n.focus()}}
   }
   function todoForm(id){
     const t=id?TODOS.find(x=>x.id===id):null;if(id&&!t)return;
@@ -2595,7 +2596,7 @@
     setTimeout(()=>bg.querySelector('input').focus(),0);
   }
   document.addEventListener('change',e=>{const id=e.target.dataset&&e.target.dataset.tck;if(id)toggleTodo(id,e.target.checked)});
-  document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.id==='todoNew'){e.preventDefault();quickAddTodo()}});
+  document.addEventListener('keydown',e=>{if(e.key==='Enter'&&['todoNew','todoNewDue','todoNewNotes'].includes(e.target.id)){e.preventDefault();quickAddTodo()}});
   document.addEventListener('click',e=>{
     const tf=e.target.closest('[data-tf]');if(tf){todoFilter=tf.dataset.tf;renderTodos();return}
     const te=e.target.closest('[data-tedit]');if(te){todoForm(te.dataset.tedit);return}
